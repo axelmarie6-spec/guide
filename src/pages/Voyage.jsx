@@ -54,7 +54,7 @@ function QuaiDisplay({ label, value }) {
   )
 }
 
-function TrainCard({ train, isAdmin, onSaved }) {
+function TrainCard({ train, isAdmin, onSaved, pdfs }) {
   const [editing, setEditing] = useState(false)
   const [depQ, setDepQ] = useState(train.platform_dep || '')
   const [arrQ, setArrQ] = useState(train.platform_arr || '')
@@ -62,6 +62,7 @@ function TrainCard({ train, isAdmin, onSaved }) {
 
   const isCritical = train.notes?.includes('⚠️')
   const stationMapUrl = getStationMapUrl(train.from_station)
+  const myPdfs = pdfs.filter(p => p.leg_order === train.leg_order)
 
   async function save() {
     setSaving(true)
@@ -71,6 +72,11 @@ function TrainCard({ train, isAdmin, onSaved }) {
     onSaved()
     setEditing(false)
     setSaving(false)
+  }
+
+  function openPdf(pdf) {
+    const { data } = supabase.storage.from('tickets').getPublicUrl(pdf.storage_path)
+    window.open(data.publicUrl, '_blank', 'noopener,noreferrer')
   }
 
   return (
@@ -146,6 +152,20 @@ function TrainCard({ train, isAdmin, onSaved }) {
       {train.notes && !isCritical && (
         <div className="px-4 pb-3">
           <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{train.notes}</p>
+        </div>
+      )}
+
+      {myPdfs.length > 0 && (
+        <div className="border-t px-4 py-3 flex flex-col gap-2"
+          style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+          {myPdfs.map(pdf => (
+            <button key={pdf.id} onClick={() => openPdf(pdf)}
+              className="flex items-center gap-2 text-sm font-medium w-fit"
+              style={{ color: 'var(--accent)' }}>
+              <span>📄</span>
+              <span>{pdf.label}</span>
+            </button>
+          ))}
         </div>
       )}
 
@@ -364,15 +384,18 @@ export default function Voyage() {
   const [tab, setTab] = useState('trains')
   const [trains, setTrains] = useState([])
   const [airbnbs, setAirbnbs] = useState([])
+  const [pdfs, setPdfs] = useState([])
   const [loading, setLoading] = useState(true)
 
   async function fetchData() {
-    const [trainsRes, airbnbsRes] = await Promise.all([
+    const [trainsRes, airbnbsRes, pdfsRes] = await Promise.all([
       supabase.from('trains').select('*').order('leg_order'),
       supabase.from('airbnbs').select('*'),
+      supabase.from('ticket_pdfs').select('*').order('created_at'),
     ])
     if (trainsRes.data) setTrains(trainsRes.data)
     if (airbnbsRes.data) setAirbnbs(airbnbsRes.data)
+    if (pdfsRes.data) setPdfs(pdfsRes.data)
     setLoading(false)
   }
 
@@ -427,7 +450,7 @@ export default function Voyage() {
                 subtitle={`${cap(legs[0].city_from)} → ${cap(legs[legs.length - 1].city_to)}`}
               />
               {legs.map(train => (
-                <TrainCard key={train.id} train={train} isAdmin={isAdmin} onSaved={fetchData} />
+                <TrainCard key={train.id} train={train} isAdmin={isAdmin} onSaved={fetchData} pdfs={pdfs} />
               ))}
             </div>
           ))}
