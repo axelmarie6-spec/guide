@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { EMERGENCY, CITY_SCHEDULE, getCurrentCity } from '../lib/travel'
+import { EMERGENCY, CITY_SCHEDULE, getCurrentCity, getStationMapUrl } from '../lib/travel'
 import { useAuth } from '../context/AuthContext'
 
 // ── Composants UI ─────────────────────────────────────────────
@@ -55,22 +55,71 @@ function QuaiDisplay({ label, value }) {
   )
 }
 
-function TrainCard({ train, isAdmin, onSaved }) {
-  const [editing, setEditing] = useState(false)
+function TrainCard({ train, isAdmin, onSaved, pdfs }) {
+  const [editingPlatforms, setEditingPlatforms] = useState(false)
   const [depQ, setDepQ] = useState(train.platform_dep || '')
   const [arrQ, setArrQ] = useState(train.platform_arr || '')
-  const [saving, setSaving] = useState(false)
+  const [savingPlatforms, setSavingPlatforms] = useState(false)
+
+  const [showUpload, setShowUpload] = useState(false)
+  const [uploadLabel, setUploadLabel] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const fileRef = useRef(null)
 
   const isCritical = train.notes?.includes('⚠️')
+  const stationMapUrl = getStationMapUrl(train.from_station)
+  const myPdfs = pdfs.filter(p => p.leg_order === train.leg_order)
 
-  async function save() {
-    setSaving(true)
+  async function savePlatforms() {
+    setSavingPlatforms(true)
     await supabase.from('trains')
       .update({ platform_dep: depQ || null, platform_arr: arrQ || null })
       .eq('id', train.id)
     onSaved()
-    setEditing(false)
-    setSaving(false)
+    setEditingPlatforms(false)
+    setSavingPlatforms(false)
+  }
+
+  async function uploadPdf(file) {
+    if (!file) return
+    if (!uploadLabel.trim()) { setUploadError('Entre un label pour ce billet.'); return }
+    setUploadError('')
+    setUploading(true)
+    const safeName = uploadLabel.trim().replace(/\s+/g, '_')
+    const path = `leg_${train.leg_order}/${Date.now()}_${safeName}.pdf`
+    const { error: storageErr } = await supabase.storage
+      .from('tickets')
+      .upload(path, file, { contentType: 'application/pdf' })
+    if (storageErr) {
+      setUploadError('Erreur upload. Réessaie.')
+      setUploading(false)
+      return
+    }
+    const { error: dbErr } = await supabase.from('ticket_pdfs').insert({
+      leg_order: train.leg_order,
+      label: uploadLabel.trim(),
+      storage_path: path,
+    })
+    if (dbErr) {
+      setUploadError('Envoyé, mais erreur DB. Réessaie.')
+    } else {
+      setShowUpload(false)
+      setUploadLabel('')
+      onSaved()
+    }
+    setUploading(false)
+  }
+
+  async function deletePdf(pdf) {
+    await supabase.storage.from('tickets').remove([pdf.storage_path])
+    await supabase.from('ticket_pdfs').delete().eq('id', pdf.id)
+    onSaved()
+  }
+
+  function openPdf(pdf) {
+    const { data } = supabase.storage.from('tickets').getPublicUrl(pdf.storage_path)
+    window.open(data.publicUrl, '_blank', 'noopener,noreferrer')
   }
 
   return (
@@ -78,9 +127,7 @@ function TrainCard({ train, isAdmin, onSaved }) {
       {/* Ligne principale */}
       <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold leading-snug">
-            {train.from_station}
-          </p>
+          <p className="text-sm font-semibold leading-snug">{train.from_station}</p>
           <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--text-secondary)' }}>
             → {train.to_station}
           </p>
@@ -91,7 +138,7 @@ function TrainCard({ train, isAdmin, onSaved }) {
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-lg font-bold tabular-nums">{train.departure_time?.slice(0, 5)}</p>
+          <p className="text-lg font-bold tabular-nums">{train.departure_time?.slice(0, 5) || '?'}</p>
           <p className="text-sm tabular-nums" style={{ color: 'var(--text-secondary)' }}>
             → {train.arrival_time?.slice(0, 5) || '?'}
           </p>
@@ -101,7 +148,7 @@ function TrainCard({ train, isAdmin, onSaved }) {
       {/* Quais */}
       <div className="border-t flex items-center justify-between px-4 py-3 gap-3"
         style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
-        {editing ? (
+        {editingPlatforms ? (
           <>
             <div className="flex gap-3 flex-1">
               <div className="flex-1">
@@ -116,12 +163,12 @@ function TrainCard({ train, isAdmin, onSaved }) {
               </div>
             </div>
             <div className="flex flex-col gap-1 pt-4 shrink-0">
-              <button onClick={save} disabled={saving}
+              <button onClick={savePlatforms} disabled={savingPlatforms}
                 className="text-xs font-bold px-3 py-2 rounded-xl"
                 style={{ backgroundColor: 'var(--accent)', color: 'white' }}>
-                {saving ? '…' : 'OK'}
+                {savingPlatforms ? '…' : 'OK'}
               </button>
-              <button onClick={() => setEditing(false)}
+              <button onClick={() => setEditingPlatforms(false)}
                 className="text-xs px-3 py-2 rounded-xl"
                 style={{ backgroundColor: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)' }}>
                 ✕
@@ -135,7 +182,7 @@ function TrainCard({ train, isAdmin, onSaved }) {
               <QuaiDisplay label="Quai arrivée" value={train.platform_arr} />
             </div>
             {isAdmin && (
-              <button onClick={() => setEditing(true)}
+              <button onClick={() => setEditingPlatforms(true)}
                 className="text-xs font-semibold px-3 py-1.5 rounded-full shrink-0"
                 style={{ backgroundColor: 'var(--accent-light)', color: 'var(--accent)' }}>
                 Modifier quais
@@ -145,10 +192,98 @@ function TrainCard({ train, isAdmin, onSaved }) {
         )}
       </div>
 
-      {/* Note texte (hors alertes ⚠️ déjà affichées en badge) */}
+      {/* Note (hors ⚠️ déjà en badge) */}
       {train.notes && !isCritical && (
         <div className="px-4 pb-3">
           <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{train.notes}</p>
+        </div>
+      )}
+
+      {/* Billets PDF */}
+      {(myPdfs.length > 0 || isAdmin) && (
+        <div className="border-t px-4 py-3" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+          {myPdfs.length > 0 && (
+            <div className="flex flex-col gap-2 mb-2.5">
+              {myPdfs.map(pdf => (
+                <div key={pdf.id} className="flex items-center justify-between">
+                  <button onClick={() => openPdf(pdf)}
+                    className="flex items-center gap-1.5 text-sm font-medium"
+                    style={{ color: 'var(--accent)' }}>
+                    <span>📄</span>
+                    <span>{pdf.label}</span>
+                  </button>
+                  {isAdmin && (
+                    <button onClick={() => deletePdf(pdf)}
+                      className="text-xs w-5 h-5 flex items-center justify-center rounded-full"
+                      style={{ backgroundColor: 'rgba(220,38,38,0.08)', color: 'var(--trash)' }}>
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {isAdmin && !showUpload && (
+            <button onClick={() => setShowUpload(true)}
+              className="text-xs font-semibold"
+              style={{ color: 'var(--accent)' }}>
+              + Ajouter un billet
+            </button>
+          )}
+
+          {isAdmin && showUpload && (
+            <div className="flex flex-col gap-2">
+              <input
+                value={uploadLabel}
+                onChange={e => setUploadLabel(e.target.value)}
+                placeholder="Label : Groupe, Marin…"
+                style={{ padding: '8px 12px', fontSize: '0.875rem' }}
+              />
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/pdf"
+                className="hidden"
+                onChange={e => uploadPdf(e.target.files?.[0])}
+              />
+              {uploadError && (
+                <p className="text-xs" style={{ color: 'var(--trash)' }}>{uploadError}</p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  className="btn-primary text-sm py-2 flex-1">
+                  {uploading ? 'Envoi en cours…' : 'Choisir le PDF'}
+                </button>
+                <button
+                  onClick={() => { setShowUpload(false); setUploadLabel(''); setUploadError('') }}
+                  className="text-sm px-3 py-2 rounded-xl"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)' }}>
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Lien plan de gare */}
+      {stationMapUrl && (
+        <div className="border-t px-4 py-2.5 flex items-center justify-between"
+          style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            {train.from_station}
+          </span>
+          <a
+            href={stationMapUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-semibold"
+            style={{ color: 'var(--accent)' }}>
+            Plan de gare ↗
+          </a>
         </div>
       )}
     </div>
@@ -157,17 +292,52 @@ function TrainCard({ train, isAdmin, onSaved }) {
 
 // ── Section Hébergements ──────────────────────────────────────
 
-function AirbnbSection({ airbnbs }) {
+function AirbnbSection({ airbnbs, isAdmin, onSaved }) {
   const [open, setOpen] = useState(null)
+  const [editingCity, setEditingCity] = useState(null)
+  const [editForm, setEditForm] = useState({})
+  const [saving, setSaving] = useState(false)
+
+  function startEdit(city, data) {
+    setEditForm({
+      address:      data?.address      || '',
+      entry_code:   data?.entry_code   || '',
+      checkin_time:  data?.checkin_time  || '',
+      checkout_time: data?.checkout_time || '',
+      instructions: data?.instructions || '',
+    })
+    setEditingCity(city)
+  }
+
+  function setField(field, value) {
+    setEditForm(f => ({ ...f, [field]: value }))
+  }
+
+  async function saveEdit() {
+    setSaving(true)
+    await supabase.from('airbnbs').update({
+      address:      editForm.address.trim()      || null,
+      entry_code:   editForm.entry_code.trim()   || null,
+      checkin_time:  editForm.checkin_time.trim()  || null,
+      checkout_time: editForm.checkout_time.trim() || null,
+      instructions: editForm.instructions.trim() || null,
+    }).eq('city', editingCity)
+    setEditingCity(null)
+    onSaved()
+    setSaving(false)
+  }
 
   return (
     <div>
       {CITY_SCHEDULE.map(({ city, label, flag }) => {
         const data = airbnbs.find(a => a.city === city)
-        const hasData = data?.address
+        const hasData = !!data?.address
+        const isOpen = open === city
+        const isEditing = editingCity === city
+
         return (
           <div key={city} className="mx-4 mb-2">
-            <button onClick={() => setOpen(open === city ? null : city)} className="w-full text-left">
+            <button onClick={() => setOpen(isOpen ? null : city)} className="w-full text-left">
               <div className="card px-4 py-3.5 flex items-center justify-between">
                 <span className="text-sm font-medium">{flag} {label}</span>
                 <span className="text-xs" style={{ color: hasData ? 'var(--text-secondary)' : 'var(--snooze)' }}>
@@ -176,12 +346,13 @@ function AirbnbSection({ airbnbs }) {
               </div>
             </button>
 
-            {open === city && data && (
+            {/* Détails (lecture) */}
+            {isOpen && !isEditing && hasData && (
               <div className="card mt-1.5">
-                {data.address     && <InfoRow label="Adresse"     value={data.address} />}
-                {data.entry_code  && <InfoRow label="Code entrée"  value={data.entry_code} mono />}
-                {data.checkin_time  && <InfoRow label="Check-in"   value={data.checkin_time} />}
-                {data.checkout_time && <InfoRow label="Check-out"  value={data.checkout_time} />}
+                {data.address     && <InfoRow label="Adresse"    value={data.address} />}
+                {data.entry_code  && <InfoRow label="Code entrée" value={data.entry_code} mono />}
+                {data.checkin_time  && <InfoRow label="Check-in"  value={data.checkin_time} />}
+                {data.checkout_time && <InfoRow label="Check-out" value={data.checkout_time} />}
                 {data.instructions && (
                   <div className="px-4 pb-4 pt-1">
                     <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
@@ -189,6 +360,84 @@ function AirbnbSection({ airbnbs }) {
                     </p>
                   </div>
                 )}
+                {isAdmin && (
+                  <div className="px-4 pb-3">
+                    <button
+                      onClick={() => startEdit(city, data)}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-full"
+                      style={{ backgroundColor: 'var(--accent-light)', color: 'var(--accent)' }}>
+                      Modifier
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Placeholder non-admin */}
+            {isOpen && !isEditing && !hasData && !isAdmin && (
+              <div className="card mt-1.5 px-4 py-3">
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  Infos à venir — l'admin va les ajouter bientôt.
+                </p>
+              </div>
+            )}
+
+            {/* Bouton admin si pas encore de données */}
+            {isOpen && !isEditing && !hasData && isAdmin && (
+              <div className="card mt-1.5 px-4 py-3">
+                <button onClick={() => startEdit(city, data)}
+                  className="text-xs font-semibold"
+                  style={{ color: 'var(--accent)' }}>
+                  + Ajouter les infos de l'hébergement
+                </button>
+              </div>
+            )}
+
+            {/* Formulaire d'édition */}
+            {isOpen && isEditing && (
+              <div className="card mt-1.5 p-4 flex flex-col gap-3">
+                <div>
+                  <p className="text-xs mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>Adresse</p>
+                  <input value={editForm.address} onChange={e => setField('address', e.target.value)}
+                    placeholder="123 Rue de la Paix, Bruxelles" style={{ padding: '8px 12px', fontSize: '0.875rem' }} />
+                </div>
+                <div>
+                  <p className="text-xs mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>Code d'entrée</p>
+                  <input value={editForm.entry_code} onChange={e => setField('entry_code', e.target.value)}
+                    placeholder="ex : 1234A#" style={{ padding: '8px 12px', fontSize: '0.875rem' }} />
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <p className="text-xs mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>Check-in</p>
+                    <input value={editForm.checkin_time} onChange={e => setField('checkin_time', e.target.value)}
+                      placeholder="15h00" style={{ padding: '8px 12px', fontSize: '0.875rem' }} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>Check-out</p>
+                    <input value={editForm.checkout_time} onChange={e => setField('checkout_time', e.target.value)}
+                      placeholder="11h00" style={{ padding: '8px 12px', fontSize: '0.875rem' }} />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>Instructions</p>
+                  <textarea
+                    value={editForm.instructions}
+                    onChange={e => setField('instructions', e.target.value)}
+                    placeholder="Sonner à l'interphone B, clé dans la boîte à code…"
+                    rows={3}
+                    style={{ padding: '8px 12px', fontSize: '0.875rem', resize: 'vertical' }}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={saveEdit} disabled={saving} className="btn-primary flex-1 text-sm">
+                    {saving ? 'Sauvegarde…' : 'Sauvegarder'}
+                  </button>
+                  <button onClick={() => setEditingCity(null)}
+                    className="text-sm px-4 py-2 rounded-xl"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)' }}>
+                    Annuler
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -262,15 +511,27 @@ export default function CoffreFort() {
   const [tab, setTab] = useState('trains')
   const [trains, setTrains] = useState([])
   const [airbnbs, setAirbnbs] = useState([])
+  const [pdfs, setPdfs] = useState([])
   const [loading, setLoading] = useState(true)
 
   async function fetchData() {
-    const [trainsRes, airbnbsRes] = await Promise.all([
+    const [trainsRes, airbnbsRes, pdfsRes] = await Promise.all([
       supabase.from('trains').select('*').order('leg_order'),
       supabase.from('airbnbs').select('*'),
+      supabase.from('ticket_pdfs').select('*').order('created_at'),
     ])
     if (trainsRes.data) setTrains(trainsRes.data)
     if (airbnbsRes.data) setAirbnbs(airbnbsRes.data)
+    if (pdfsRes.data) {
+      setPdfs(pdfsRes.data)
+      // Précharge les PDFs dans le cache Workbox pour utilisation hors-ligne
+      if (navigator.onLine) {
+        pdfsRes.data.forEach(pdf => {
+          const { data } = supabase.storage.from('tickets').getPublicUrl(pdf.storage_path)
+          fetch(data.publicUrl, { mode: 'no-cors' }).catch(() => {})
+        })
+      }
+    }
     setLoading(false)
   }
 
@@ -294,7 +555,6 @@ export default function CoffreFort() {
 
   return (
     <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-base)' }}>
-      {/* Header */}
       <div className="px-4 pt-6 pb-2">
         <h1 className="text-2xl font-semibold">Coffre-Fort</h1>
         <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
@@ -302,7 +562,6 @@ export default function CoffreFort() {
         </p>
       </div>
 
-      {/* Onglets internes */}
       <div className="flex gap-2 px-4 py-3 overflow-x-auto">
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
@@ -323,7 +582,6 @@ export default function CoffreFort() {
         </div>
       ) : (
         <div className="pb-6">
-          {/* ── Trains ── */}
           {tab === 'trains' && Object.entries(trainsByDate).map(([date, legs]) => (
             <div key={date}>
               <SectionHeader
@@ -331,20 +589,24 @@ export default function CoffreFort() {
                 subtitle={`${capitalize(legs[0].city_from)} → ${capitalize(legs[legs.length - 1].city_to)}`}
               />
               {legs.map(train => (
-                <TrainCard key={train.id} train={train} isAdmin={isAdmin} onSaved={fetchData} />
+                <TrainCard
+                  key={train.id}
+                  train={train}
+                  isAdmin={isAdmin}
+                  onSaved={fetchData}
+                  pdfs={pdfs}
+                />
               ))}
             </div>
           ))}
 
-          {/* ── Hébergements ── */}
           {tab === 'airbnbs' && (
             <>
               <SectionHeader title="Hébergements" subtitle="Tap sur une ville pour les détails" />
-              <AirbnbSection airbnbs={airbnbs} />
+              <AirbnbSection airbnbs={airbnbs} isAdmin={isAdmin} onSaved={fetchData} />
             </>
           )}
 
-          {/* ── Urgences ── */}
           {tab === 'urgences' && (
             <>
               <SectionHeader title="Urgences" subtitle="Tap pour développer un pays" />

@@ -1,5 +1,18 @@
 // Données statiques du voyage — ville active selon la date
 
+export const STATION_MAP = {
+  'Bruxelles-Midi':       'https://www.belgiantrain.be/fr/stations/bruxelles-midi',
+  'Berlin Südkreuz':      'https://www.bahnhof.de/berlin-suedkreuz',
+  'Praha Hlavní nádraží': 'https://www.cd.cz/cs/stanice/Praha_hl.n./',
+  'Wien Hbf':             'https://www.oebb.at/de/reisen-services/an-und-abreise/bahnhof/wien-hauptbahnhof',
+  'Zürich HB':            'https://www.sbb.ch/de/bahnhof-services/am-bahnhof/bahnhoefe/zuerich-hb.html',
+}
+
+export function getStationMapUrl(stationName) {
+  if (!stationName) return null
+  return STATION_MAP[stationName] ?? null
+}
+
 export const CITY_SCHEDULE = [
   { city: 'bruxelles', label: 'Bruxelles', flag: '🇧🇪', currency: 'EUR', from: '2026-08-01', to: '2026-08-03' },
   { city: 'amsterdam', label: 'Amsterdam', flag: '🇳🇱', currency: 'EUR', from: '2026-08-04', to: '2026-08-07' },
