@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { EMERGENCY, CITY_SCHEDULE, getCurrentCity, getStationMapUrl } from '../lib/travel'
 import { useAuth } from '../context/AuthContext'
@@ -60,6 +60,12 @@ function TrainCard({ train, isAdmin, onSaved, pdfs }) {
   const [arrQ, setArrQ] = useState(train.platform_arr || '')
   const [saving, setSaving] = useState(false)
 
+  const [showUpload, setShowUpload] = useState(false)
+  const [uploadLabel, setUploadLabel] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const fileRef = useRef(null)
+
   const isCritical = train.notes?.includes('⚠️')
   const stationMapUrl = getStationMapUrl(train.from_station)
   const myPdfs = pdfs.filter(p => p.leg_order === train.leg_order)
@@ -72,6 +78,25 @@ function TrainCard({ train, isAdmin, onSaved, pdfs }) {
     onSaved()
     setEditing(false)
     setSaving(false)
+  }
+
+  async function uploadPdf(file) {
+    if (!file) return
+    if (!uploadLabel.trim()) { setUploadError('Entre un label.'); return }
+    setUploadError('')
+    setUploading(true)
+    const safe = uploadLabel.trim().replace(/\s+/g, '_')
+    const path = `leg_${train.leg_order}/${Date.now()}_${safe}.pdf`
+    const { error: storageErr } = await supabase.storage
+      .from('tickets').upload(path, file, { contentType: 'application/pdf' })
+    if (storageErr) { setUploadError('Erreur upload.'); setUploading(false); return }
+    await supabase.from('ticket_pdfs').insert({
+      leg_order: train.leg_order, label: uploadLabel.trim(), storage_path: path,
+    })
+    setShowUpload(false)
+    setUploadLabel('')
+    onSaved()
+    setUploading(false)
   }
 
   function openPdf(pdf) {
@@ -155,7 +180,7 @@ function TrainCard({ train, isAdmin, onSaved, pdfs }) {
         </div>
       )}
 
-      {myPdfs.length > 0 && (
+      {(myPdfs.length > 0 || isAdmin) && (
         <div className="border-t px-4 py-3 flex flex-col gap-2"
           style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
           {myPdfs.map(pdf => (
@@ -166,6 +191,39 @@ function TrainCard({ train, isAdmin, onSaved, pdfs }) {
               <span>{pdf.label}</span>
             </button>
           ))}
+
+          {isAdmin && !showUpload && (
+            <button onClick={() => setShowUpload(true)}
+              className="text-xs font-semibold w-fit"
+              style={{ color: 'var(--accent)' }}>
+              + Ajouter un billet
+            </button>
+          )}
+
+          {isAdmin && showUpload && (
+            <div className="flex flex-col gap-2 pt-1">
+              <input
+                value={uploadLabel}
+                onChange={e => setUploadLabel(e.target.value)}
+                placeholder="Label : Groupe, Marin…"
+                style={{ padding: '8px 12px', fontSize: '0.875rem' }}
+              />
+              <input ref={fileRef} type="file" accept="application/pdf" className="hidden"
+                onChange={e => uploadPdf(e.target.files?.[0])} />
+              {uploadError && <p className="text-xs" style={{ color: 'var(--trash)' }}>{uploadError}</p>}
+              <div className="flex gap-2">
+                <button onClick={() => fileRef.current?.click()} disabled={uploading}
+                  className="btn-primary text-sm py-2 flex-1">
+                  {uploading ? 'Envoi…' : 'Choisir PDF'}
+                </button>
+                <button onClick={() => { setShowUpload(false); setUploadLabel(''); setUploadError('') }}
+                  className="text-sm px-3 py-2 rounded-xl"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)' }}>
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
