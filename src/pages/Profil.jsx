@@ -51,6 +51,7 @@ function Row({ label, value, blur }) {
 // ── Formulaire d'édition (onboarding + modification) ─────────
 
 function ProfileForm({ profile, onSuccess, onCancel, isOnboarding }) {
+  const { user } = useAuth()
   const [form, setForm] = useState({
     emergency_name: profile?.emergency_name || '',
     emergency_phone: profile?.emergency_phone || '',
@@ -70,16 +71,20 @@ function ProfileForm({ profile, onSuccess, onCancel, isOnboarding }) {
       return
     }
     setLoading(true)
-    const { error } = await supabase.from('profiles').update({
-      emergency_name: form.emergency_name.trim(),
-      emergency_phone: form.emergency_phone.trim(),
-      allergies: form.allergies.trim() || null,
-      passport_number: form.passport_number.trim(),
-      ceam_number: form.ceam_number.trim(),
-    }).eq('id', profile.id)
+    try {
+      const { error } = await supabase.from('profiles').update({
+        emergency_name: form.emergency_name.trim(),
+        emergency_phone: form.emergency_phone.trim(),
+        allergies: form.allergies.trim() || null,
+        passport_number: form.passport_number.trim(),
+        ceam_number: form.ceam_number.trim(),
+      }).eq('id', user.id)
 
-    if (error) setError('Erreur lors de la sauvegarde. Réessaie.')
-    else onSuccess()
+      if (error) setError('Erreur lors de la sauvegarde. Réessaie.')
+      else onSuccess()
+    } catch (e) {
+      setError('Erreur inattendue. Réessaie.')
+    }
     setLoading(false)
   }
 
