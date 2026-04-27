@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom'
 const tabs = [
   {
     path: '/',
-    label: "Aujourd'hui",
+    label: "Auj.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-[22px] h-[22px]">
         <path strokeLinecap="round" strokeLinejoin="round"
@@ -22,8 +22,18 @@ const tabs = [
     ),
   },
   {
+    path: '/voyage',
+    label: 'Voyage',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-[22px] h-[22px]">
+        <path strokeLinecap="round" strokeLinejoin="round"
+          d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+      </svg>
+    ),
+  },
+  {
     path: '/coffre-fort',
-    label: 'Coffre-Fort',
+    label: 'Coffre',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-[22px] h-[22px]">
         <path strokeLinecap="round" strokeLinejoin="round"
@@ -75,9 +85,9 @@ export default function BottomBar() {
             alignItems: 'center',
             justifyContent: 'center',
             flex: 1,
-            padding: '8px 4px',
+            padding: '8px 2px',
             gap: '3px',
-            fontSize: '10px',
+            fontSize: '9px',
             fontWeight: isActive ? 600 : 400,
             fontFamily: 'inherit',
             color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
