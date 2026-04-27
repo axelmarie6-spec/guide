@@ -46,9 +46,8 @@ export function AuthProvider({ children }) {
     profile.ceam_number
   )
 
-  async function signIn(pseudo, password) {
-    const email = `${pseudo.toLowerCase()}@travelhub.group`
-    return supabase.auth.signInWithPassword({ email, password })
+  async function signIn(email, password) {
+    return supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
   }
 
   async function signOut() {

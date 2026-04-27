@@ -16,7 +16,7 @@ function EyeIcon({ open }) {
 
 export default function Login() {
   const { signIn } = useAuth()
-  const [pseudo, setPseudo] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -26,8 +26,8 @@ export default function Login() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const { error } = await signIn(pseudo.trim(), password)
-    if (error) setError('Pseudo ou mot de passe incorrect.')
+    const { error } = await signIn(email, password)
+    if (error) setError('Email ou mot de passe incorrect.')
     setLoading(false)
   }
 
@@ -37,7 +37,7 @@ export default function Login() {
       <div className="w-full max-w-sm">
 
         <h1 className="text-3xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-          Travel Hub
+          Guide
         </h1>
         <p className="mb-10 text-sm" style={{ color: 'var(--text-secondary)' }}>
           Bruxelles → Amsterdam → Berlin → Prague → Budapest → Vienne → Genève
@@ -46,10 +46,10 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="block text-xs mb-1.5 font-medium" style={{ color: 'var(--text-secondary)' }}>
-              Pseudo
+              Email
             </label>
-            <input type="text" value={pseudo} onChange={e => setPseudo(e.target.value)}
-              placeholder="ton pseudo" autoComplete="username" required />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="ton@email.com" autoComplete="email" required />
           </div>
 
           <div>

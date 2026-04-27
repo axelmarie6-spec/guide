@@ -40,6 +40,7 @@ export default function Register() {
   const [tokenLoading, setTokenLoading] = useState(true)
 
   const [pseudo, setPseudo] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
@@ -70,8 +71,9 @@ export default function Register() {
       .from('profiles').select('id').eq('pseudo', pseudo.trim()).single()
     if (existing) { setError('Ce pseudo est déjà pris.'); setLoading(false); return }
 
-    const email = `${pseudo.trim().toLowerCase()}@travelhub.group`
-    const { data: authData, error: signUpError } = await supabase.auth.signUp({ email, password })
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(), password
+    })
     if (signUpError) {
       setError(`Erreur : ${signUpError.message}`)
       setLoading(false)
@@ -131,6 +133,14 @@ export default function Register() {
             </label>
             <input type="text" value={pseudo} onChange={e => setPseudo(e.target.value)}
               placeholder="ton pseudo" autoComplete="username" required />
+          </div>
+
+          <div>
+            <label className="block text-xs mb-1.5 font-medium" style={{ color: 'var(--text-secondary)' }}>
+              Email
+            </label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="ton@email.com" autoComplete="email" required />
           </div>
 
           <div>
