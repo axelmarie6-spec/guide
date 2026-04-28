@@ -1,7 +1,4 @@
-import { useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import AdminPopup from './AdminPopup'
+import { NavLink } from 'react-router-dom'
 
 const TABS = [
   {
@@ -46,74 +43,41 @@ const TABS = [
   },
 ]
 
-
 export default function BottomBar() {
-  const { profile, initials, displayName } = useAuth()
-  const navigate = useNavigate()
-  const isAdmin = profile?.role === 'admin'
-  const [adminOpen, setAdminOpen] = useState(false)
-
-  function handleAvatar() {
-    if (isAdmin) setAdminOpen(true)
-    else navigate('/profil')
-  }
-
   return (
-    <>
-      {adminOpen && <AdminPopup onClose={() => setAdminOpen(false)} />}
-
-      <nav style={{
-        position: 'fixed', bottom: '16px', left: '50%', transform: 'translateX(-50%)',
-        width: 'calc(100% - 32px)', maxWidth: '480px',
-        background: 'var(--glass-bar)',
-        backdropFilter: 'blur(32px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(32px) saturate(180%)',
-        borderRadius: '26px',
-        border: '1px solid rgba(255,255,255,0.9)',
-        boxShadow: '0 1px 0 rgba(255,255,255,1) inset, 0 8px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)',
-        display: 'flex',
-        padding: '6px',
-        zIndex: 50,
-      }}>
-        {TABS.map(({ path, label, icon }) => (
-          <NavLink
-            key={path}
-            to={path}
-            end={path === '/'}
-            style={({ isActive }) => ({
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              justifyContent: 'center', flex: 1, padding: '8px 2px', gap: '3px',
-              fontSize: '9px', fontWeight: isActive ? 600 : 400,
-              fontFamily: 'inherit',
-              color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-              borderRadius: '20px',
-              background: isActive ? 'var(--accent-light)' : 'transparent',
-              transition: 'all 0.18s', textDecoration: 'none',
-            })}
-          >
-            {icon}
-            <span>{label}</span>
-          </NavLink>
-        ))}
-
-        <button onClick={handleAvatar} style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          justifyContent: 'center', flex: 1, padding: '8px 2px', gap: '4px',
-          background: 'transparent', border: 'none', cursor: 'pointer',
-          fontFamily: 'inherit',
-        }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: '50%',
-            background: 'var(--ink)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--sand-50)', fontWeight: 700, fontSize: '0.65rem',
-            letterSpacing: '-0.01em',
-          }}>{initials}</div>
-          <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 400 }}>
-            {isAdmin ? 'Admin' : 'Moi'}
-          </span>
-        </button>
-      </nav>
-    </>
+    <nav style={{
+      position: 'fixed', bottom: '16px', left: '50%', transform: 'translateX(-50%)',
+      width: 'calc(100% - 32px)', maxWidth: '480px',
+      background: 'var(--glass-bar)',
+      backdropFilter: 'blur(32px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(32px) saturate(180%)',
+      borderRadius: '26px',
+      border: '1px solid rgba(255,255,255,0.9)',
+      boxShadow: '0 1px 0 rgba(255,255,255,1) inset, 0 8px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)',
+      display: 'flex',
+      padding: '6px',
+      zIndex: 50,
+    }}>
+      {TABS.map(({ path, label, icon }) => (
+        <NavLink
+          key={path}
+          to={path}
+          end={path === '/'}
+          style={({ isActive }) => ({
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', flex: 1, padding: '8px 2px', gap: '3px',
+            fontSize: '9px', fontWeight: isActive ? 600 : 400,
+            fontFamily: 'inherit',
+            color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+            borderRadius: '20px',
+            background: isActive ? 'var(--accent-light)' : 'transparent',
+            transition: 'all 0.18s', textDecoration: 'none',
+          })}
+        >
+          {icon}
+          <span>{label}</span>
+        </NavLink>
+      ))}
+    </nav>
   )
 }
