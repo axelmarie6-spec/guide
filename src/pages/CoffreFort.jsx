@@ -5,9 +5,21 @@ import { useAuth } from '../context/AuthContext'
 // ── Ligne PDF ─────────────────────────────────────────────────
 
 function PdfRow({ pdf, isAdmin, onDelete }) {
-  function open() {
+  async function open() {
     const { data } = supabase.storage.from('tickets').getPublicUrl(pdf.storage_path)
-    window.open(data.publicUrl, '_blank', 'noopener,noreferrer')
+    try {
+      const res = await fetch(data.publicUrl)
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.target = '_blank'
+      a.rel = 'noopener noreferrer'
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000)
+    } catch {
+      window.open(data.publicUrl, '_blank', 'noopener,noreferrer')
+    }
   }
 
   return (

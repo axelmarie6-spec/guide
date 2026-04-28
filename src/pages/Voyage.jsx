@@ -40,6 +40,67 @@ function Badge({ children, color }) {
   )
 }
 
+// ── Viewer PDF (full-screen, blob via SW cache) ───────────────
+
+function PdfViewer({ pdf, onClose }) {
+  const [blobUrl, setBlobUrl] = useState(null)
+  const [loadingPdf, setLoadingPdf] = useState(true)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    let url = null
+    async function load() {
+      const { data } = supabase.storage.from('tickets').getPublicUrl(pdf.storage_path)
+      try {
+        const res = await fetch(data.publicUrl) // passe par le SW → sert depuis le cache si offline
+        const blob = await res.blob()
+        url = URL.createObjectURL(blob)
+        setBlobUrl(url)
+      } catch {
+        setError(true)
+      }
+      setLoadingPdf(false)
+    }
+    load()
+    return () => { if (url) URL.revokeObjectURL(url) }
+  }, [pdf.storage_path])
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, backgroundColor: 'var(--bg-base)', display: 'flex', flexDirection: 'column' }}>
+      <div className="flex items-center justify-between px-4 py-4 shrink-0"
+        style={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+        <span className="text-base font-semibold">{pdf.label}</span>
+        <button onClick={onClose}
+          className="text-sm font-semibold px-3 py-1.5 rounded-full"
+          style={{ backgroundColor: 'rgba(0,0,0,0.06)', color: 'var(--text-secondary)' }}>
+          Fermer
+        </button>
+      </div>
+
+      {loadingPdf && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
+        </div>
+      )}
+
+      {error && (
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
+          <p className="text-5xl">📵</p>
+          <p className="text-sm font-semibold">Billet non disponible hors-ligne</p>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            Ouvre ce billet une fois connecté — il sera mis en cache pour la prochaine fois.
+          </p>
+        </div>
+      )}
+
+      {blobUrl && (
+        <iframe src={blobUrl} title={pdf.label} className="flex-1 w-full" style={{ border: 'none' }} />
+      )}
+    </div>
+  )
+}
+
 // ── Trains ────────────────────────────────────────────────────
 
 function QuaiDisplay({ label, value }) {
@@ -65,6 +126,8 @@ function TrainCard({ train, isAdmin, onSaved, pdfs = [] }) {
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const fileRef = useRef(null)
+
+  const [viewerPdf, setViewerPdf] = useState(null)
 
   const isCritical = train.notes?.includes('⚠️')
   const stationMapUrl = getStationMapUrl(train.from_station)
@@ -99,12 +162,9 @@ function TrainCard({ train, isAdmin, onSaved, pdfs = [] }) {
     setUploading(false)
   }
 
-  function openPdf(pdf) {
-    const { data } = supabase.storage.from('tickets').getPublicUrl(pdf.storage_path)
-    window.open(data.publicUrl, '_blank', 'noopener,noreferrer')
-  }
-
   return (
+    <>
+    {viewerPdf && <PdfViewer pdf={viewerPdf} onClose={() => setViewerPdf(null)} />}
     <div className="card mx-4 mb-3">
       {/* Ligne principale */}
       <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
@@ -203,7 +263,7 @@ function TrainCard({ train, isAdmin, onSaved, pdfs = [] }) {
         {myPdfs.length > 0 && (
           <div className="px-4 pb-3 flex flex-col gap-2">
             {myPdfs.map(pdf => (
-              <button key={pdf.id} onClick={() => openPdf(pdf)}
+              <button key={pdf.id} onClick={() => setViewerPdf(pdf)}
                 className="flex items-center gap-2 text-sm font-medium w-fit"
                 style={{ color: 'var(--accent)' }}>
                 <span>📄</span>
@@ -250,6 +310,7 @@ function TrainCard({ train, isAdmin, onSaved, pdfs = [] }) {
         </div>
       )}
     </div>
+    </>
   )
 }
 
@@ -465,7 +526,16 @@ export default function Voyage() {
     ])
     if (trainsRes.data) setTrains(trainsRes.data)
     if (airbnbsRes.data) setAirbnbs(airbnbsRes.data)
-    if (pdfsRes.data) setPdfs(pdfsRes.data)
+    if (pdfsRes.data) {
+      setPdfs(pdfsRes.data)
+      // Précharge les PDFs dans le cache Workbox pour accès offline
+      if (navigator.onLine) {
+        pdfsRes.data.forEach(pdf => {
+          const { data } = supabase.storage.from('tickets').getPublicUrl(pdf.storage_path)
+          fetch(data.publicUrl, { mode: 'no-cors' }).catch(() => {})
+        })
+      }
+    }
     setLoading(false)
   }
 
