@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Travel Hub · Profil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { jakarta: ['Plus Jakarta Sans', 'sans-serif'] },
+      colors: {
+        sand: { 50: '#faf9f7', 100: '#f3f1ec', 200: '#e8e3d9', 300: '#d4ccc0' },
+        ink:  { DEFAULT: '#1a1714', light: '#6b6560', xlight: '#b0aaa3' },
+        sun:  { DEFAULT: '#e8a030', light: '#fef3dc' },
+        sky:  { DEFAULT: '#4a90d9', light: '#e8f2fc' },
+        mint: { DEFAULT: '#3baa7a', light: '#e4f6ee' },
+        rose: { DEFAULT: '#e05a5a', light: '#fdeaea' },
+      }
+    }
+  }
+}
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#e8e3d9; font-family:'Plus Jakarta Sans',sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; }
+  ::-webkit-scrollbar { display: none; }
+  input:focus { outline: none; }
+  textarea:focus { outline: none; }
+  @keyframes slideUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
+  .slide-up { animation: slideUp 0.35s cubic-bezier(0.22,1,0.36,1) both; }
+  .fade-in  { animation: fadeIn 0.3s ease both; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+
+// ── Shared glass styles ────────────────────────────────────────────────────────
+const glass = {
+  background: 'rgba(255,255,255,0.62)',
+  backdropFilter: 'blur(20px) saturate(1.6)',
+  WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
+  border: '1px solid rgba(255,255,255,0.75)',
+  boxShadow: '0 2px 16px rgba(26,23,20,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+};
+
+// ── Nav icons ──────────────────────────────────────────────────────────────────
+const SunIcon    = ({ active }) => <svg width={22} height={22} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke={active?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/>{[0,45,90,135,180,225,270,315].map((d,i)=><line key={i} x1={12+7*Math.cos(d*Math.PI/180)} y1={12+7*Math.sin(d*Math.PI/180)} x2={12+9.5*Math.cos(d*Math.PI/180)} y2={12+9.5*Math.sin(d*Math.PI/180)} stroke={active?'#1a1714':'#b0aaa3'} strokeWidth="1.8" strokeLinecap="round"/>)}</svg>;
+const CardIcon   = ({ active }) => <svg width={22} height={22} viewBox="0 0 24 24" fill="none"><rect x="4" y="7" width="16" height="11" rx="2.5" stroke={active?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/><path d="M4 11h16" stroke={active?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/><rect x="7" y="14" width="4" height="1.5" rx="0.75" fill={active?'#1a1714':'#b0aaa3'}/></svg>;
+const MapIcon    = ({ active }) => <svg width={22} height={22} viewBox="0 0 24 24" fill="none"><path d="M9 4L3 7v13l6-3 6 3 6-3V4l-6 3-6-3z" stroke={active?'#1a1714':'#b0aaa3'} strokeWidth="1.8" strokeLinejoin="round"/><line x1="9" y1="4" x2="9" y2="17" stroke={active?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/><line x1="15" y1="7" x2="15" y2="20" stroke={active?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/></svg>;
+const LockIcon   = ({ active }) => <svg width={22} height={22} viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="10" rx="2.5" stroke={active?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/><path d="M8 11V7a4 4 0 018 0v4" stroke={active?'#1a1714':'#b0aaa3'} strokeWidth="1.8" strokeLinecap="round"/><circle cx="12" cy="16" r="1.5" fill={active?'#1a1714':'#b0aaa3'}/></svg>;
+const PersonIcon = ({ active }) => <svg width={22} height={22} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke={active?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke={active?'#1a1714':'#b0aaa3'} strokeWidth="1.8" strokeLinecap="round"/></svg>;
+
+// ── Floating nav ───────────────────────────────────────────────────────────────
+const BottomNav = ({ hidden }) => {
+  if (hidden) return null;
+  const tabs = [
+    { Icon: SunIcon,    label: "Aujourd'hui" },
+    { Icon: CardIcon,   label: 'Explorer'    },
+    { Icon: MapIcon,    label: 'Voyage'      },
+    { Icon: LockIcon,   label: 'Coffre'      },
+    { Icon: PersonIcon, label: 'Profil', active: true },
+  ];
+  return (
+    <div className="absolute bottom-6 left-0 right-0 flex justify-center px-4 z-50">
+      <div className="flex items-center gap-1 px-2 py-2 rounded-full" style={{
+        background: 'rgba(250,249,247,0.72)',
+        backdropFilter: 'blur(28px) saturate(1.8)',
+        WebkitBackdropFilter: 'blur(28px) saturate(1.8)',
+        border: '1px solid rgba(255,255,255,0.6)',
+        boxShadow: '0 8px 32px rgba(26,23,20,0.12), inset 0 1px 0 rgba(255,255,255,0.8)',
+      }}>
+        {tabs.map(({ Icon, label, active }) => (
+          <div key={label} className="flex flex-col items-center gap-0.5 transition-all" style={{
+            padding: '6px 12px', borderRadius: 9999,
+            background: active ? 'rgba(26,23,20,0.08)' : 'transparent', minWidth: 52,
+          }}>
+            <Icon active={!!active} />
+            <span style={{ fontSize: 9, fontWeight: 600, color: active ? '#1a1714' : '#b0aaa3' }}>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── Glass input ────────────────────────────────────────────────────────────────
+const GlassInput = ({ label, value, onChange, type = 'text', placeholder, icon }) => (
+  <div>
+    {label && <p className="text-ink-light text-xs font-600 mb-1.5 ml-1">{label}</p>}
+    <div className="flex items-center gap-3 rounded-2xl px-4 py-3.5" style={{
+      background: 'rgba(255,255,255,0.55)',
+      border: '1px solid rgba(255,255,255,0.8)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 4px rgba(26,23,20,0.05)',
+    }}>
+      {icon && <span className="text-lg shrink-0">{icon}</span>}
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="bg-transparent text-ink font-600 text-sm flex-1 placeholder-ink-xlight"
+      />
+    </div>
+  </div>
+);
+
+// ── Step progress bar ──────────────────────────────────────────────────────────
+const StepBar = ({ current, total }) => (
+  <div className="flex gap-1.5 w-full">
+    {Array.from({length: total}).map((_, i) => (
+      <div key={i} className="flex-1 h-1 rounded-full transition-all duration-500"
+        style={{ background: i < current ? '#1a1714' : 'rgba(26,23,20,0.12)' }} />
+    ))}
+  </div>
+);
+
+// ── ONBOARDING STEPS ───────────────────────────────────────────────────────────
+const STEPS = [
+  {
+    id: 'urgence',
+    emoji: '🆘',
+    title: 'Contact d\'urgence',
+    subtitle: 'En cas de pépin, qui appelle-t-on ?',
+    fields: [
+      { key: 'urgence_nom',   label: 'Nom complet',    placeholder: 'Marie Dupont',      icon: '👤', type: 'text'  },
+      { key: 'urgence_tel',   label: 'Téléphone',      placeholder: '+33 6 12 34 56 78', icon: '📞', type: 'tel'   },
+    ],
+  },
+  {
+    id: 'sante',
+    emoji: '🩺',
+    title: 'Santé & Allergies',
+    subtitle: 'Pour que le groupe puisse t\'aider si besoin.',
+    fields: [
+      { key: 'allergies',     label: 'Allergies alimentaires', placeholder: 'Noix, lactose… ou aucune', icon: '🚫', type: 'text' },
+      { key: 'ceam',          label: 'N° Carte Européenne d\'Assurance Maladie', placeholder: '1 85 12 75 108 042 87', icon: '🏥', type: 'text' },
+    ],
+  },
+  {
+    id: 'identite',
+    emoji: '🛂',
+    title: 'Identité',
+    subtitle: 'Stocké localement, jamais partagé sans ton accord.',
+    fields: [
+      { key: 'passeport',     label: 'N° Passeport / CNI', placeholder: '23AB12345',           icon: '🪪', type: 'text' },
+    ],
+  },
+];
+
+// ── Onboarding view ────────────────────────────────────────────────────────────
+const OnboardingView = ({ onComplete }) => {
+  const [step, setStep]     = React.useState(0);
+  const [form, setForm]     = React.useState({});
+  const [dir,  setDir]      = React.useState(1); // 1=forward, -1=back
+
+  const current = STEPS[step];
+  const isLast  = step === STEPS.length - 1;
+
+  const setField = (key, val) => setForm(f => ({ ...f, [key]: val }));
+
+  const canAdvance = current.fields.every(f => (form[f.key] || '').trim().length > 0);
+
+  const advance = () => {
+    if (!canAdvance) return;
+    if (isLast) { onComplete(form); return; }
+    setDir(1);
+    setStep(s => s + 1);
+  };
+
+  const back = () => {
+    if (step === 0) return;
+    setDir(-1);
+    setStep(s => s - 1);
+  };
+
+  return (
+    <div className="flex flex-col h-full font-jakarta relative overflow-hidden"
+      style={{background: 'linear-gradient(160deg, #f5f1ea 0%, #ede8df 50%, #e8e2d8 100%)'}}>
+
+      {/* Blobs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute w-48 h-48 rounded-full opacity-30" style={{background:'#fde68a',filter:'blur(48px)',top:'-20px',right:'-20px'}}/>
+        <div className="absolute w-56 h-56 rounded-full opacity-20" style={{background:'#93c5fd',filter:'blur(56px)',bottom:'160px',left:'-40px'}}/>
+      </div>
+
+      {/* Lock banner */}
+      <div className="relative z-10 mx-4 mt-3 rounded-2xl px-4 py-3 flex items-center gap-3" style={{
+        background: 'rgba(26,23,20,0.07)',
+        border: '1px solid rgba(26,23,20,0.10)',
+      }}>
+        <span className="text-base">🔒</span>
+        <p className="text-ink text-xs font-600">Accès verrouillé · Complète ton profil pour continuer</p>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 flex flex-col justify-center px-5 gap-6 relative z-10 pb-8">
+        {/* Step indicator */}
+        <div className="flex flex-col gap-3">
+          <StepBar current={step + 1} total={STEPS.length} />
+          <p className="text-ink-xlight text-xs font-500">{step + 1} sur {STEPS.length}</p>
+        </div>
+
+        {/* Card */}
+        <div key={step} className="rounded-3xl p-6 slide-up" style={{...glass}}>
+          <div className="text-4xl mb-4">{current.emoji}</div>
+          <h2 className="text-ink font-800 text-2xl leading-tight mb-1">{current.title}</h2>
+          <p className="text-ink-light text-sm mb-6">{current.subtitle}</p>
+
+          <div className="flex flex-col gap-4">
+            {current.fields.map(f => (
+              <GlassInput
+                key={f.key}
+                label={f.label}
+                value={form[f.key] || ''}
+                onChange={v => setField(f.key, v)}
+                type={f.type}
+                placeholder={f.placeholder}
+                icon={f.icon}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-3">
+          {step > 0 && (
+            <button onClick={back}
+              className="flex-none w-12 h-12 rounded-2xl flex items-center justify-center transition-opacity"
+              style={{background:'rgba(255,255,255,0.6)', border:'1px solid rgba(255,255,255,0.8)'}}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M15 18l-6-6 6-6" stroke="#1a1714" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          )}
+          <button onClick={advance}
+            className="flex-1 h-12 rounded-2xl font-700 text-sm transition-all"
+            style={{
+              background: canAdvance ? '#1a1714' : 'rgba(26,23,20,0.12)',
+              color: canAdvance ? '#faf9f7' : '#b0aaa3',
+              boxShadow: canAdvance ? '0 4px 16px rgba(26,23,20,0.25)' : 'none',
+            }}>
+            {isLast ? 'Accéder à l\'app ✓' : 'Continuer →'}
+          </button>
+        </div>
+
+        {!canAdvance && (
+          <p className="text-ink-xlight text-xs text-center -mt-2">Remplis tous les champs pour continuer</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── Checklist de départ ────────────────────────────────────────────────────────
+const CHECKLIST_ITEMS = [
+  'Passeport / CNI', 'Chargeur téléphone', 'Écouteurs', 'Carte bancaire',
+  'Médicaments', 'Vêtements de rechange', 'Serviette', 'Cadenas valise',
+  'Billets de train (app)', 'Clés Airbnb rendues',
+];
+
+const ChecklistSection = () => {
+  const [checked, setChecked] = React.useState({});
+  const total   = CHECKLIST_ITEMS.length;
+  const done    = Object.values(checked).filter(Boolean).length;
+  const pct     = Math.round(done / total * 100);
+
+  const toggle = item => setChecked(c => ({...c, [item]: !c[item]}));
+  const reset  = () => setChecked({});
+
+  return (
+    <div className="rounded-3xl p-5" style={glass}>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-ink font-700 text-base">Checklist de départ</p>
+          <p className="text-ink-light text-xs mt-0.5">{done}/{total} affaires prêtes</p>
+        </div>
+        {done > 0 && (
+          <button onClick={reset} className="text-ink-xlight text-xs font-600">Réinitialiser</button>
+        )}
+      </div>
+
+      {/* Progress */}
+      <div className="h-1.5 rounded-full mb-4 overflow-hidden" style={{background:'rgba(26,23,20,0.08)'}}>
+        <div className="h-full rounded-full transition-all duration-500"
+          style={{width:`${pct}%`, background: pct===100?'#3baa7a':'#1a1714'}} />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {CHECKLIST_ITEMS.map(item => (
+          <button key={item} onClick={() => toggle(item)}
+            className="flex items-center gap-3 py-2 text-left transition-opacity"
+            style={{opacity: checked[item] ? 0.45 : 1}}>
+            <div className="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center transition-all"
+              style={{
+                background: checked[item] ? '#1a1714' : 'rgba(255,255,255,0.7)',
+                border: checked[item] ? 'none' : '1.5px solid rgba(26,23,20,0.15)',
+              }}>
+              {checked[item] && (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6.5l2.5 2.5 5.5-6" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </div>
+            <span className={`text-sm font-500 ${checked[item] ? 'line-through text-ink-xlight' : 'text-ink'}`}>{item}</span>
+          </button>
+        ))}
+      </div>
+
+      {pct === 100 && (
+        <div className="mt-4 rounded-2xl px-4 py-3 text-center fade-in"
+          style={{background:'rgba(59,170,122,0.12)', border:'1px solid rgba(59,170,122,0.25)'}}>
+          <p className="text-mint font-700 text-sm">✅ Tout est là — bon voyage !</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Profile view (completed) ───────────────────────────────────────────────────
+const ProfileView = ({ form, onReset }) => {
+  const InfoRow = ({ icon, label, value, sensitive }) => {
+    const [shown, setShown] = React.useState(false);
+    const display = sensitive && !shown
+      ? '•'.repeat(Math.min((value||'').length, 10))
+      : (value || '—');
+    return (
+      <div className="flex items-start gap-3 py-3" style={{borderBottom:'1px solid rgba(26,23,20,0.06)'}}>
+        <span className="text-base mt-0.5 shrink-0">{icon}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-ink-xlight text-xs font-500 mb-0.5">{label}</p>
+          <p className="text-ink font-600 text-sm truncate">{display}</p>
+        </div>
+        {sensitive && (
+          <button onClick={() => setShown(s => !s)} className="shrink-0 ml-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              {shown
+                ? <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="#b0aaa3" strokeWidth="1.8"/><circle cx="12" cy="12" r="3" stroke="#b0aaa3" strokeWidth="1.8"/></>
+                : <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" stroke="#b0aaa3" strokeWidth="1.8" strokeLinecap="round"/><line x1="1" y1="1" x2="23" y2="23" stroke="#b0aaa3" strokeWidth="1.8" strokeLinecap="round"/></>
+              }
+            </svg>
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col h-full font-jakarta relative overflow-hidden"
+      style={{background:'linear-gradient(160deg,#f5f1ea 0%,#ede8df 50%,#e8e2d8 100%)'}}>
+
+      {/* Blobs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute w-48 h-48 rounded-full opacity-30" style={{background:'#fde68a',filter:'blur(48px)',top:'-20px',right:'-20px'}}/>
+        <div className="absolute w-40 h-40 rounded-full opacity-20" style={{background:'#86efac',filter:'blur(40px)',bottom:'200px',right:'10px'}}/>
+      </div>
+
+      {/* Header */}
+      <div className="px-5 pt-4 pb-3 flex items-center justify-between relative z-10">
+        <div>
+          <p className="text-ink-xlight text-xs font-500">Mon profil</p>
+          <h1 className="text-ink font-800 text-2xl leading-tight mt-0.5">Lucas K.</h1>
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="text-xs font-600 px-2.5 py-1 rounded-full" style={{background:'rgba(26,23,20,0.08)', color:'#6b6560'}}>
+              Membre
+            </span>
+            <span className="text-xs font-600 px-2.5 py-1 rounded-full" style={{background:'rgba(59,170,122,0.12)', color:'#3baa7a'}}>
+              ✓ Profil complet
+            </span>
+          </div>
+        </div>
+        <div className="w-14 h-14 rounded-full flex items-center justify-center font-800 text-lg text-white shrink-0"
+          style={{background:'linear-gradient(135deg,#6b6560,#1a1714)', boxShadow:'0 4px 12px rgba(26,23,20,0.25)'}}>
+          LK
+        </div>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-4 pb-32 space-y-3 relative z-10">
+
+        {/* Emergency */}
+        <div className="rounded-3xl p-5" style={glass}>
+          <p className="text-ink font-700 text-base mb-1">Contact d'urgence</p>
+          <InfoRow icon="👤" label="Nom" value={form.urgence_nom || 'Marie Dupont'} />
+          <InfoRow icon="📞" label="Téléphone" value={form.urgence_tel || '+33 6 12 34 56 78'} sensitive />
+        </div>
+
+        {/* Health */}
+        <div className="rounded-3xl p-5" style={glass}>
+          <p className="text-ink font-700 text-base mb-1">Santé</p>
+          <InfoRow icon="🚫" label="Allergies" value={form.allergies || 'Aucune'} />
+          <InfoRow icon="🏥" label="N° CEAM" value={form.ceam || '1 85 12 75 108 042 87'} sensitive />
+        </div>
+
+        {/* Identity */}
+        <div className="rounded-3xl p-5" style={glass}>
+          <p className="text-ink font-700 text-base mb-1">Identité</p>
+          <InfoRow icon="🪪" label="Passeport / CNI" value={form.passeport || '23AB12345'} sensitive />
+        </div>
+
+        {/* Voyage info */}
+        <div className="rounded-3xl p-5" style={{
+          background:'linear-gradient(135deg,rgba(255,255,255,0.65) 0%,rgba(232,240,252,0.55) 100%)',
+          backdropFilter:'blur(20px) saturate(1.6)',
+          WebkitBackdropFilter:'blur(20px) saturate(1.6)',
+          border:'1px solid rgba(255,255,255,0.75)',
+          boxShadow:'0 2px 16px rgba(26,23,20,0.06)',
+        }}>
+          <p className="text-ink font-700 text-base mb-3">Voyage en cours</p>
+          <div className="flex flex-col gap-2">
+            {[
+              { flag:'🇧🇪', city:'Bruxelles',  dates:'14–16 mai',  done:true  },
+              { flag:'🇳🇱', city:'Amsterdam',  dates:'16–18 mai',  done:true  },
+              { flag:'🇩🇪', city:'Berlin',     dates:'18–20 mai',  done:true  },
+              { flag:'🇨🇿', city:'Prague',     dates:'20–24 mai',  active:true },
+              { flag:'🇭🇺', city:'Budapest',   dates:'24–27 mai',  done:false  },
+              { flag:'🇦🇹', city:'Vienne',     dates:'27–30 mai',  done:false  },
+              { flag:'🇨🇭', city:'Genève',     dates:'30 mai–5 juin', done:false },
+            ].map(({ flag, city, dates, done, active }) => (
+              <div key={city} className="flex items-center gap-3 py-1.5">
+                <span className="text-lg shrink-0">{flag}</span>
+                <div className="flex-1">
+                  <p className={`text-sm font-600 ${active?'text-ink':done?'text-ink-xlight line-through':'text-ink-light'}`}>{city}</p>
+                  <p className="text-ink-xlight text-xs">{dates}</p>
+                </div>
+                {active && <span className="text-xs font-700 px-2 py-0.5 rounded-full" style={{background:'rgba(26,23,20,0.1)',color:'#1a1714'}}>Actuel</span>}
+                {done   && <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3.5 3.5 6.5-7" stroke="#b0aaa3" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Departure checklist */}
+        <ChecklistSection />
+
+        {/* Reset demo button */}
+        <button onClick={onReset}
+          className="w-full py-3.5 rounded-2xl text-sm font-600 transition-opacity"
+          style={{background:'rgba(224,90,90,0.08)', color:'#e05a5a', border:'1px solid rgba(224,90,90,0.15)'}}>
+          ↩ Revoir l'onboarding (démo)
+        </button>
+        <div className="h-2"></div>
+      </div>
+
+      <BottomNav />
+    </div>
+  );
+};
+
+// ── App ────────────────────────────────────────────────────────────────────────
+const App = () => {
+  const [completed, setCompleted] = React.useState(false);
+  const [formData,  setFormData]  = React.useState({});
+
+  const handleComplete = data => {
+    setFormData(data);
+    setCompleted(true);
+  };
+
+  return (
+    <IOSDevice statusBarStyle="dark" backgroundColor="#ede8e0">
+      {completed
+        ? <ProfileView form={formData} onReset={() => setCompleted(false)} />
+        : <OnboardingView onComplete={handleComplete} />
+      }
+    </IOSDevice>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

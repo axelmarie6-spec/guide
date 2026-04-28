@@ -21,6 +21,11 @@ const CITY_LABELS = {
   bruxelles: '🇧🇪 Bruxelles', amsterdam: '🇳🇱 Amsterdam', berlin: '🇩🇪 Berlin',
   prague: '🇨🇿 Prague', budapest: '🇭🇺 Budapest', vienne: '🇦🇹 Vienne', geneve: '🇨🇭 Genève',
 }
+// Nuits prévues par ville (sert à rappeler qu'on vote 1x/jour)
+const CITY_NIGHTS = {
+  bruxelles: 2, amsterdam: 3, berlin: 4,
+  prague: 3, budapest: 4, vienne: 3, geneve: 3,
+}
 
 function getCategoryMeta(cat) {
   return CATEGORY_META[cat] ?? { label: cat, emoji: '✨', gradient: 'linear-gradient(135deg,#8e9eab,#eef2f3)' }
@@ -596,11 +601,14 @@ export default function Explorer() {
 
   const myMatchCount = myVotes.filter(v => v.vote === 'match').length
   const votesOpen = dayConfig?.votes_open === true
+  const allDone = groupSize > 0 && doneCount >= groupSize
 
+  // Quand tout le monde a voté, on passe directement aux résultats
   let view = 'closed'
-  if (votesOpen && deck.length > 0) view = 'voting'
-  else if (votesOpen && deck.length === 0) view = 'done'
-  else if (dayConfig && !votesOpen && activities.length > 0) view = 'results'
+  if (votesOpen && deck.length > 0 && !allDone) view = 'voting'
+  else if (votesOpen && deck.length > 0 && allDone) view = 'results'
+  else if (votesOpen && deck.length === 0 && !allDone) view = 'done'
+  else if ((votesOpen && allDone) || (dayConfig && !votesOpen && activities.length > 0)) view = 'results'
 
   return (
     <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-base)' }}>
@@ -635,9 +643,19 @@ export default function Explorer() {
             transition: 'all 0.15s',
           }}>
             {CITY_LABELS[c]}
+            {city === c && CITY_NIGHTS[c] && (
+              <span style={{ fontWeight: 400, opacity: 0.8 }}> · {CITY_NIGHTS[c]}n</span>
+            )}
           </button>
         ))}
       </div>
+
+      {/* Rappel vote/jour pour la ville active */}
+      {dayConfig === null && !loading && (
+        <p style={{ padding: '8px 16px 0', fontSize: '0.72rem', color: 'var(--text-secondary)', margin: 0 }}>
+          1 vote par jour · {CITY_NIGHTS[city] ?? '?'} nuits prévues à {CITY_LABELS[city]?.split(' ')[1]}
+        </p>
+      )}
 
       {/* Compteur "ont terminé" */}
       {votesOpen && groupSize > 0 && (

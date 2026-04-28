@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute, AuthRoute, GuestRoute } from './components/ProtectedRoute'
 import BottomBar from './components/BottomBar'
 import AujourdHui from './pages/AujourdHui'
@@ -6,8 +6,17 @@ import Explorer from './pages/Explorer'
 import Voyage from './pages/Voyage'
 import CoffreFort from './pages/CoffreFort'
 import Profil from './pages/Profil'
+import Admin from './pages/Admin'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import { useAuth } from './context/AuthContext'
+
+function AdminRoute({ children }) {
+  const { profile, loading } = useAuth()
+  if (loading) return null
+  if (!profile || profile.role !== 'admin') return <Navigate to="/" replace />
+  return children
+}
 
 function WithNav({ children }) {
   return (
@@ -40,6 +49,9 @@ export default function App() {
         } />
         <Route path="/coffre-fort" element={
           <ProtectedRoute><WithNav><CoffreFort /></WithNav></ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <AuthRoute><AdminRoute><WithNav><Admin /></WithNav></AdminRoute></AuthRoute>
         } />
       </Routes>
     </div>

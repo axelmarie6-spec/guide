@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Travel Hub · Aujourd'hui</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { jakarta: ['Plus Jakarta Sans', 'sans-serif'] },
+      borderRadius: { '3xl': '24px', '4xl': '32px' },
+      colors: {
+        sand: { 50: '#faf9f7', 100: '#f3f1ec', 200: '#e8e3d9', 300: '#d4ccc0' },
+        ink:  { DEFAULT: '#1a1714', light: '#6b6560', xlight: '#b0aaa3' },
+        sun:  { DEFAULT: '#e8a030', light: '#fef3dc' },
+        sky:  { DEFAULT: '#4a90d9', light: '#e8f2fc' },
+        mint: { DEFAULT: '#3baa7a', light: '#e4f6ee' },
+        rose: { DEFAULT: '#e05a5a', light: '#fdeaea' },
+      }
+    }
+  }
+}
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; background:#e8e3d9; font-family:'Plus Jakarta Sans',sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; }
+  ::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "city": "Prague",
+  "tempC": 18,
+  "condition": "Ensoleillé",
+  "conditionKey": "sunny",
+  "trainFrom": "Praha hl.n.",
+  "trainTo": "Budapest-Keleti",
+  "departure": "14:32",
+  "arrival": "18:55",
+  "platform": "4",
+  "currency": "CZK",
+  "rate": 25.2,
+  "amount": 500,
+  "accentScheme": "warm"
+}/*EDITMODE-END*/;
+
+// ── Weather icons (SVG inline, minimal) ───────────────────────────────────────
+const WeatherIcon = ({ condition, size = 56 }) => {
+  const icons = {
+    sunny: (
+      <svg width={size} height={size} viewBox="0 0 56 56" fill="none">
+        <circle cx="28" cy="28" r="11" fill="#e8a030"/>
+        {[0,45,90,135,180,225,270,315].map((deg,i)=>(
+          <line key={i} x1="28" y1="28"
+            x2={28 + 20*Math.cos(deg*Math.PI/180)}
+            y2={28 + 20*Math.sin(deg*Math.PI/180)}
+            stroke="#e8a030" strokeWidth="2.5" strokeLinecap="round"/>
+        ))}
+      </svg>
+    ),
+    cloudy: (
+      <svg width={size} height={size} viewBox="0 0 56 56" fill="none">
+        <circle cx="22" cy="30" r="10" fill="#b0aaa3"/>
+        <circle cx="32" cy="26" r="12" fill="#d4ccc0"/>
+        <rect x="12" y="34" width="32" height="8" rx="4" fill="#d4ccc0"/>
+      </svg>
+    ),
+    rainy: (
+      <svg width={size} height={size} viewBox="0 0 56 56" fill="none">
+        <circle cx="22" cy="22" r="10" fill="#b0aaa3"/>
+        <circle cx="32" cy="18" r="12" fill="#d4ccc0"/>
+        <rect x="12" y="26" width="32" height="8" rx="4" fill="#d4ccc0"/>
+        {[18,26,34].map((x,i)=>(
+          <line key={i} x1={x} y1="40" x2={x-3} y2="50" stroke="#4a90d9" strokeWidth="2" strokeLinecap="round"/>
+        ))}
+      </svg>
+    ),
+    stormy: (
+      <svg width={size} height={size} viewBox="0 0 56 56" fill="none">
+        <circle cx="22" cy="20" r="10" fill="#6b6560"/>
+        <circle cx="32" cy="16" r="12" fill="#b0aaa3"/>
+        <rect x="12" y="24" width="32" height="8" rx="4" fill="#b0aaa3"/>
+        <polyline points="30,34 24,44 28,44 22,54" stroke="#e8a030" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      </svg>
+    ),
+  };
+  return icons[condition] || icons.sunny;
+};
+
+// ── Currency symbols ───────────────────────────────────────────────────────────
+const CURRENCIES = {
+  CZK: { symbol: 'Kč', name: 'Couronne tchèque', rate: 25.2, flag: '🇨🇿' },
+  HUF: { symbol: 'Ft', name: 'Forint hongrois',  rate: 394.0, flag: '🇭🇺' },
+  CHF: { symbol: 'Fr', name: 'Franc suisse',     rate: 0.93, flag: '🇨🇭' },
+};
+
+// ── Timeline data ──────────────────────────────────────────────────────────────
+const TIMELINE = [
+  { time: '09:30', label: 'Petit-déjeuner', place: 'Café Louvre', cat: 'resto',  dist: null,    indoor: true,  done: true  },
+  { time: '11:00', label: 'Vieux Château',  place: 'Hradčany',    cat: 'visite', dist: '1.2 km', indoor: false, done: true  },
+  { time: '13:15', label: 'Déjeuner',       place: 'Lokál Dlouhá',cat: 'resto',  dist: '900 m',  indoor: true,  done: false },
+  { time: '15:00', label: 'Pont Charles',   place: 'Karlův most', cat: 'visite', dist: '600 m',  indoor: false, done: false },
+  { time: '17:00', label: 'Musée Kafka',    place: 'Cihelná 2b',  cat: 'musée',  dist: '350 m',  indoor: true,  done: false },
+  { time: '19:30', label: 'Dîner',          place: 'Nase Maso',   cat: 'resto',  dist: '1.5 km', indoor: true,  done: false },
+];
+
+const CAT_COLORS = {
+  resto:  { bg: 'bg-rose-light',  text: 'text-rose-DEFAULT',  label: 'Resto' },
+  visite: { bg: 'bg-sky-light',   text: 'text-sky-DEFAULT',   label: 'Visite'},
+  musée:  { bg: 'bg-mint-light',  text: 'text-mint-DEFAULT',  label: 'Musée' },
+  bar:    { bg: 'bg-sun-light',   text: 'text-sun-DEFAULT',   label: 'Bar'   },
+};
+
+// ── Weather card ───────────────────────────────────────────────────────────────
+const WeatherCard = ({ city, tempC, condition, conditionKey }) => {
+  const tintMap = {
+    sunny:  'rgba(255,220,100,0.22)',
+    rainy:  'rgba(100,160,240,0.18)',
+    cloudy: 'rgba(200,200,200,0.18)',
+    stormy: 'rgba(100,100,120,0.18)',
+  };
+  const tint = tintMap[conditionKey] || tintMap.sunny;
+  return (
+    <div className="rounded-3xl p-5 flex items-center justify-between" style={{
+      background: `linear-gradient(135deg, rgba(255,255,255,0.72) 0%, ${tint} 100%)`,
+      backdropFilter: 'blur(20px) saturate(1.6)',
+      WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
+      border: '1px solid rgba(255,255,255,0.75)',
+      boxShadow: '0 2px 16px rgba(26,23,20,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+    }}>
+      <div>
+        <p className="text-ink-light text-sm font-500 mb-1">📍 {city} · Aujourd'hui</p>
+        <p className="text-ink text-6xl font-800 leading-none tracking-tight">{tempC}°</p>
+        <p className="text-ink-light text-sm font-500 mt-2">{condition}</p>
+        <div className="flex gap-2 mt-3">
+          <Pill color="outdoor"  label="Extérieur conseillé" />
+        </div>
+      </div>
+      <div className="opacity-90">
+        <WeatherIcon condition={conditionKey} size={80} />
+      </div>
+    </div>
+  );
+};
+
+// ── Pill badge ─────────────────────────────────────────────────────────────────
+const Pill = ({ label, color }) => {
+  const cls = color === 'outdoor' ? 'bg-mint-light text-mint-DEFAULT' :
+              color === 'indoor'  ? 'bg-sky-light text-sky-DEFAULT'   :
+                                    'bg-sand-200 text-ink-light';
+  return <span className={`${cls} text-xs font-600 px-3 py-1 rounded-full`}>{label}</span>;
+};
+
+// ── Currency converter card ────────────────────────────────────────────────────
+const CurrencyCard = ({ defaultCurrency, defaultAmount }) => {
+  const [from, setFrom]     = React.useState(defaultCurrency || 'CZK');
+  const [rawAmount, setRaw] = React.useState(String(defaultAmount || 500));
+
+  const amount = parseFloat(rawAmount) || 0;
+  const cur    = CURRENCIES[from];
+  const eur    = (amount / cur.rate).toFixed(2);
+
+  return (
+    <div>
+      <p className="text-ink font-700 text-base mb-4">Convertisseur</p>
+
+      {/* Currency tabs */}
+      <div className="flex gap-2 mb-4">
+        {Object.entries(CURRENCIES).map(([code, c]) => (
+          <button key={code}
+            onClick={() => setFrom(code)}
+            className={`flex-1 py-2 rounded-2xl text-sm font-600 transition-all
+              ${from === code ? 'bg-ink text-sand-50' : 'bg-sand-200 text-ink-light hover:bg-sand-300'}`}>
+            {c.flag} {code}
+          </button>
+        ))}
+      </div>
+
+      {/* Amount input */}
+      <div className="flex items-center gap-3 bg-sand-100 rounded-2xl px-4 py-3 mb-3">
+        <span className="text-ink-light font-600 text-lg w-8">{cur.symbol}</span>
+        <input
+          type="number"
+          value={rawAmount}
+          onChange={e => setRaw(e.target.value)}
+          className="bg-transparent text-ink font-700 text-2xl flex-1 outline-none w-0"
+          inputMode="decimal"
+        />
+      </div>
+
+      {/* Result */}
+      <div className="bg-ink rounded-2xl px-4 py-3 flex items-center justify-between">
+        <span className="text-sand-300 font-500 text-sm">Équivaut à</span>
+        <span className="text-sand-50 font-800 text-2xl">{eur} €</span>
+      </div>
+      <p className="text-ink-xlight text-xs mt-2 text-right">1 {from} = {(1/cur.rate).toFixed(4)} EUR · BCE</p>
+    </div>
+  );
+};
+
+// ── Train card ─────────────────────────────────────────────────────────────────
+const TrainCard = ({ from, to, departure, arrival, platform }) => {
+  const toMin = t => { const [h,m] = t.split(':'); return +h*60 + +m; };
+  const [nowMin, setNowMin] = React.useState(toMin('14:05'));
+
+  React.useEffect(() => {
+    const id = setInterval(() => setNowMin(p => p + 1), 800);
+    return () => clearInterval(id);
+  }, []);
+
+  const dep = toMin(departure);
+  const arr = toMin(arrival);
+  const totalMin = arr - dep;
+  const elapsed = nowMin - dep;
+  const remaining = dep - nowMin; // minutes before departure
+  const pct = Math.min(100, Math.max(0, elapsed / totalMin * 100));
+  const onTrain = nowMin >= dep && nowMin <= arr;
+  const preDep = nowMin < dep;
+
+  // Urgency levels before departure
+  const urgent  = preDep && remaining <= 30 && remaining > 10;
+  const critical = preDep && remaining <= 10;
+
+  const urgencyBg = critical
+    ? 'linear-gradient(135deg, #ffe8e8 0%, #ffd0d0 100%)'
+    : urgent
+    ? 'linear-gradient(135deg, #fff3e0 0%, #ffe8c0 100%)'
+    : onTrain
+    ? 'linear-gradient(135deg, #e8f2fc 0%, #d4eaf8 100%)'
+    : 'linear-gradient(135deg, #f0f4f8 0%, #e8eef4 100%)';
+
+  const accentColor = critical ? '#e05a5a' : urgent ? '#e8a030' : '#4a90d9';
+
+  const fmtRemaining = m => {
+    if (m <= 0) return null;
+    const h = Math.floor(m / 60), min = m % 60;
+    return h > 0 ? `${h}h ${min}min` : `${min} min`;
+  };
+
+  const countdownLabel = critical
+    ? `⚠️ Départ dans ${fmtRemaining(remaining)} !`
+    : urgent
+    ? `🕐 Départ dans ${fmtRemaining(remaining)}`
+    : onTrain
+    ? `🚄 En route · ${fmtRemaining(arr - nowMin)} restantes`
+    : preDep
+    ? `Départ dans ${fmtRemaining(remaining)}`
+    : `Arrivé à ${arrival}`;
+
+  return (
+    <div className="rounded-3xl p-5 overflow-hidden relative" style={{background: urgencyBg, border: `1.5px solid ${accentColor}22`}}>
+      {/* pulse ring on critical */}
+      {critical && (
+        <div className="absolute inset-0 rounded-3xl animate-ping opacity-20" style={{background: '#e05a5a', animationDuration: '1.2s'}}></div>
+      )}
+
+      {/* Header row */}
+      <div className="flex items-center justify-between mb-3 relative z-10">
+        <p className="font-700 text-base" style={{color: accentColor}}>Train du jour</p>
+        <span className="text-xs font-700 px-3 py-1.5 rounded-full text-white"
+          style={{background: accentColor, boxShadow: `0 2px 8px ${accentColor}55`}}>
+          {critical ? 'URGENT !' : onTrain ? 'EN COURS' : urgent ? 'BIENTÔT' : `Voie ${platform}`}
+        </span>
+      </div>
+
+      {/* Countdown banner */}
+      <div className="rounded-2xl px-4 py-2.5 mb-4 relative z-10"
+        style={{background: `${accentColor}18`, border: `1px solid ${accentColor}33`}}>
+        <p className="font-700 text-sm text-center" style={{color: accentColor}}>{countdownLabel}</p>
+      </div>
+
+      {/* Stations */}
+      <div className="flex items-end justify-between mb-4 relative z-10">
+        <div>
+          <p className="text-ink-light text-xs font-500">Départ</p>
+          <p className="text-ink font-800 text-2xl leading-tight">{departure}</p>
+          <p className="text-ink font-600 text-sm mt-0.5 max-w-[100px] leading-tight">{from}</p>
+        </div>
+        <div className="flex-1 mx-4 flex flex-col items-center gap-1.5">
+          <p className="text-ink-xlight text-xs">4h 23min</p>
+          <div className="w-full h-1.5 bg-white/60 rounded-full relative overflow-hidden">
+            <div className="h-full rounded-full transition-all duration-500" style={{width:`${pct}%`, background: accentColor}}></div>
+            {onTrain && <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-white shadow-md" style={{left:`${pct}%`, marginLeft:'-6px', background: accentColor}}></div>}
+          </div>
+          <p className="text-ink-xlight text-xs">Voie {platform}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-ink-light text-xs font-500">Arrivée</p>
+          <p className="text-ink font-800 text-2xl leading-tight">{arrival}</p>
+          <p className="text-ink font-600 text-sm mt-0.5 max-w-[100px] text-right leading-tight">{to}</p>
+        </div>
+      </div>
+
+      {/* Checklist urgency strip */}
+      {(critical || urgent) && (
+        <div className="rounded-2xl px-3 py-2 flex gap-2 items-center relative z-10"
+          style={{background: `${accentColor}12`}}>
+          <span className="text-xs">🎒</span>
+          <p className="text-xs font-600" style={{color: accentColor}}>Vérifier la checklist de départ avant de partir !</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Timeline ───────────────────────────────────────────────────────────────────
+const TimelineCard = () => {
+  const [items, setItems] = React.useState(TIMELINE);
+
+  const toggle = idx => setItems(prev =>
+    prev.map((it, i) => i === idx ? {...it, done: !it.done} : it)
+  );
+
+  return (
+    <div className="p-5">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-ink font-700 text-base">Programme du jour</p>
+        <span className="text-ink-xlight text-sm font-500">
+          {items.filter(i=>i.done).length}/{items.length}
+        </span>
+      </div>
+
+      <div className="relative">
+        {/* vertical line */}
+        <div className="absolute left-[19px] top-3 bottom-3 w-0.5 bg-sand-200"></div>
+
+        <div className="flex flex-col gap-3">
+          {items.map((it, idx) => {
+            const cat  = CAT_COLORS[it.cat] || CAT_COLORS['visite'];
+            return (
+              <button key={idx} onClick={() => toggle(idx)}
+                className={`flex items-start gap-3 text-left transition-opacity ${it.done ? 'opacity-40' : 'opacity-100'}`}>
+                {/* dot */}
+                <div className={`relative z-10 mt-0.5 w-[38px] h-[38px] rounded-full flex items-center justify-center shrink-0 border-2 transition-all
+                  ${it.done ? 'bg-sand-300 border-sand-300' : 'bg-white border-sand-200 shadow-sm'}`}>
+                  {it.done
+                    ? <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3.5 3.5 6.5-7" stroke="#6b6560" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    : <span className="text-ink-light text-xs font-700">{it.time.split(':')[0]}</span>
+                  }
+                </div>
+
+                {/* content */}
+                <div className="flex-1 bg-white rounded-2xl px-3 py-2.5 shadow-sm border border-sand-100">
+                  <div className="flex items-center justify-between">
+                    <p className={`font-700 text-sm ${it.done ? 'line-through' : 'text-ink'}`}>{it.label}</p>
+                    <span className="text-ink-xlight text-xs font-500">{it.time}</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-ink-light text-xs truncate flex-1">{it.place}</p>
+                    {it.dist && <span className="text-ink-xlight text-xs shrink-0">↗ {it.dist}</span>}
+                  </div>
+                  <div className="flex gap-1.5 mt-1.5">
+                    <span className={`text-xs font-600 px-2 py-0.5 rounded-full ${cat.bg} ${cat.text}`}>{cat.label}</span>
+                    <span className={`text-xs font-500 px-2 py-0.5 rounded-full ${it.indoor ? 'bg-sky-light text-sky-DEFAULT' : 'bg-mint-light text-mint-DEFAULT'}`}>
+                      {it.indoor ? 'Intérieur' : 'Extérieur'}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Floating liquid glass nav ──────────────────────────────────────────────────
+const BottomNav = () => {
+  const [active, setActive] = React.useState(0);
+  const tabs = [
+    { icon: SunIcon,     label: "Aujourd'hui" },
+    { icon: CardIcon,    label: 'Explorer'    },
+    { icon: MapIcon,     label: 'Voyage'      },
+    { icon: LockIcon,    label: 'Coffre'      },
+    { icon: PersonIcon,  label: 'Profil'      },
+  ];
+  return (
+    <div className="absolute bottom-6 left-0 right-0 flex justify-center px-4 z-50">
+      <div className="flex items-center gap-1 px-2 py-2 rounded-full"
+        style={{
+          background: 'rgba(250,249,247,0.72)',
+          backdropFilter: 'blur(28px) saturate(1.8)',
+          WebkitBackdropFilter: 'blur(28px) saturate(1.8)',
+          border: '1px solid rgba(255,255,255,0.6)',
+          boxShadow: '0 8px 32px rgba(26,23,20,0.12), inset 0 1px 0 rgba(255,255,255,0.8)',
+        }}>
+        {tabs.map((t, i) => (
+          <button key={t.label} onClick={() => setActive(i)}
+            className="flex flex-col items-center gap-0.5 transition-all"
+            style={{
+              padding: '6px 12px',
+              borderRadius: 9999,
+              background: active === i ? 'rgba(26,23,20,0.08)' : 'transparent',
+              minWidth: 52,
+            }}>
+            <t.icon size={22} active={active === i} />
+            <span style={{
+              fontSize: 9, fontWeight: 600, letterSpacing: '0.01em',
+              color: active === i ? '#1a1714' : '#b0aaa3',
+              transition: 'color 0.2s',
+            }}>{t.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── Nav icons (SVG, minimal) ───────────────────────────────────────────────────
+const SunIcon = ({ size, active }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="4.5" stroke={active ? '#1a1714' : '#b0aaa3'} strokeWidth="1.8"/>
+    {[0,45,90,135,180,225,270,315].map((deg,i) => (
+      <line key={i} x1={12 + 7*Math.cos(deg*Math.PI/180)} y1={12 + 7*Math.sin(deg*Math.PI/180)}
+        x2={12 + 9.5*Math.cos(deg*Math.PI/180)} y2={12 + 9.5*Math.sin(deg*Math.PI/180)}
+        stroke={active ? '#1a1714' : '#b0aaa3'} strokeWidth="1.8" strokeLinecap="round"/>
+    ))}
+  </svg>
+);
+const CardIcon = ({ size, active }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="4" y="7" width="16" height="11" rx="2.5" stroke={active ? '#1a1714' : '#b0aaa3'} strokeWidth="1.8"/>
+    <path d="M4 11h16" stroke={active ? '#1a1714' : '#b0aaa3'} strokeWidth="1.8"/>
+    <rect x="7" y="14" width="4" height="1.5" rx="0.75" fill={active ? '#1a1714' : '#b0aaa3'}/>
+  </svg>
+);
+const MapIcon = ({ size, active }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <path d="M9 4L3 7v13l6-3 6 3 6-3V4l-6 3-6-3z" stroke={active ? '#1a1714' : '#b0aaa3'} strokeWidth="1.8" strokeLinejoin="round"/>
+    <line x1="9" y1="4" x2="9" y2="17" stroke={active ? '#1a1714' : '#b0aaa3'} strokeWidth="1.8"/>
+    <line x1="15" y1="7" x2="15" y2="20" stroke={active ? '#1a1714' : '#b0aaa3'} strokeWidth="1.8"/>
+  </svg>
+);
+const LockIcon = ({ size, active }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="5" y="11" width="14" height="10" rx="2.5" stroke={active ? '#1a1714' : '#b0aaa3'} strokeWidth="1.8"/>
+    <path d="M8 11V7a4 4 0 018 0v4" stroke={active ? '#1a1714' : '#b0aaa3'} strokeWidth="1.8" strokeLinecap="round"/>
+    <circle cx="12" cy="16" r="1.5" fill={active ? '#1a1714' : '#b0aaa3'}/>
+  </svg>
+);
+const PersonIcon = ({ size, active }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="8" r="3.5" stroke={active ? '#1a1714' : '#b0aaa3'} strokeWidth="1.8"/>
+    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke={active ? '#1a1714' : '#b0aaa3'} strokeWidth="1.8" strokeLinecap="round"/>
+  </svg>
+);
+
+// ── Budget widget ──────────────────────────────────────────────────────────────
+const BUDGET_DATA = [
+  { city:'Bruxelles', color:'#e8a030', spent:186, total:220, status:'done'  },
+  { city:'Amsterdam', color:'#e05a5a', spent:241, total:260, status:'done'  },
+  { city:'Berlin',    color:'#6b6560', spent:195, total:230, status:'done'  },
+  { city:'Prague',    color:'#4a90d9', spent:120, total:280, status:'active'},
+  { city:'Budapest',  color:'#a78bfa', spent:0,   total:250, status:'next'  },
+  { city:'Vienne',    color:'#3baa7a', spent:0,   total:270, status:'upcoming'},
+  { city:'Genève',    color:'#e05a5a', spent:0,   total:420, status:'upcoming'},
+];
+const TOTAL_BUDGET = BUDGET_DATA.reduce((a,c)=>a+c.total,0);
+const TOTAL_SPENT  = BUDGET_DATA.reduce((a,c)=>a+c.spent,0);
+const REMAINING    = TOTAL_BUDGET - TOTAL_SPENT;
+
+const BudgetWidget = () => {
+  const pct = Math.round(TOTAL_SPENT / TOTAL_BUDGET * 100);
+  const activeBudget = BUDGET_DATA.find(c=>c.status==='active');
+  const daySpent = activeBudget ? activeBudget.spent : 0;
+  const dayTotal = activeBudget ? activeBudget.total : 0;
+  const dayPct   = dayTotal > 0 ? Math.round(daySpent / dayTotal * 100) : 0;
+
+  return (
+    <div className="rounded-3xl p-5" style={{
+      background:'rgba(255,255,255,0.62)',
+      backdropFilter:'blur(20px) saturate(1.6)',
+      WebkitBackdropFilter:'blur(20px) saturate(1.6)',
+      border:'1px solid rgba(255,255,255,0.75)',
+      boxShadow:'0 2px 16px rgba(26,23,20,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+    }}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-ink font-700 text-base">Budget</p>
+        <p className="text-ink-xlight text-xs font-500">{pct}% utilisé</p>
+      </div>
+
+      {/* Two cols: trip total + current city */}
+      <div className="flex gap-3 mb-4">
+        <div className="flex-1 rounded-2xl px-4 py-3" style={{background:'rgba(26,23,20,0.04)'}}>
+          <p className="text-ink-xlight text-[10px] font-600 uppercase tracking-wider mb-1">Voyage total</p>
+          <p className="text-ink font-800 text-2xl leading-none">{TOTAL_SPENT} <span className="text-sm font-600 text-ink-light">€</span></p>
+          <p className="text-ink-xlight text-xs mt-1">reste <span className="font-700 text-ink">{REMAINING} €</span></p>
+        </div>
+        {activeBudget && (
+          <div className="flex-1 rounded-2xl px-4 py-3" style={{background:`${activeBudget.color}12`}}>
+            <p className="text-[10px] font-600 uppercase tracking-wider mb-1" style={{color:activeBudget.color}}>Prague · Actuel</p>
+            <p className="text-ink font-800 text-2xl leading-none">{daySpent} <span className="text-sm font-600 text-ink-light">€</span></p>
+            <p className="text-ink-xlight text-xs mt-1">/ {dayTotal} € alloués</p>
+          </div>
+        )}
+      </div>
+
+      {/* Global progress bar */}
+      <div className="h-2 rounded-full overflow-hidden mb-2" style={{background:'rgba(26,23,20,0.07)'}}>
+        <div className="h-full rounded-full transition-all duration-700"
+          style={{width:`${pct}%`, background:'linear-gradient(90deg,#3baa7a,#4a90d9)'}}/>
+      </div>
+
+      {/* Per-city colour strip */}
+      <div className="flex rounded-full overflow-hidden h-1.5 gap-px mb-3">
+        {BUDGET_DATA.filter(c=>c.spent>0).map(c=>(
+          <div key={c.city} style={{
+            width:`${c.spent/TOTAL_SPENT*100}%`,
+            background:c.color, minWidth:4,
+          }}/>
+        ))}
+      </div>
+
+      {/* Legend */}
+      <div className="flex gap-3 flex-wrap">
+        {BUDGET_DATA.filter(c=>c.spent>0||c.status==='active').map(c=>(
+          <div key={c.city} className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full shrink-0" style={{background:c.color}}/>
+            <span className="text-[10px] font-500 text-ink-light">{c.city}{c.spent>0?` ${c.spent}€`:' —'}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── Glass card wrapper ─────────────────────────────────────────────────────────
+const GlassCard = ({ children, className = '' }) => (
+  <div className={`rounded-3xl p-5 ${className}`} style={{
+    background: 'rgba(255,255,255,0.62)',
+    backdropFilter: 'blur(20px) saturate(1.6)',
+    WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
+    border: '1px solid rgba(255,255,255,0.75)',
+    boxShadow: '0 2px 16px rgba(26,23,20,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+  }}>{children}</div>
+);
+
+// ── App shell ──────────────────────────────────────────────────────────────────
+const App = () => {
+  const t = TWEAK_DEFAULTS;
+  const day = new Intl.DateTimeFormat('fr-FR',{weekday:'long',day:'numeric',month:'long'}).format(new Date(2026,4,6));
+
+  return (
+    <IOSDevice statusBarStyle="dark" backgroundColor="#ede8e0">
+      <div className="flex flex-col h-full font-jakarta relative overflow-hidden"
+        style={{background: 'linear-gradient(160deg, #f5f1ea 0%, #ede8df 50%, #e8e2d8 100%)'}}>
+
+        {/* Blurred blobs background */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute w-48 h-48 rounded-full opacity-40" style={{background:'#fde68a', filter:'blur(48px)', top:'-40px', right:'-20px'}}/>
+          <div className="absolute w-56 h-56 rounded-full opacity-25" style={{background:'#93c5fd', filter:'blur(56px)', top:'180px', left:'-40px'}}/>
+          <div className="absolute w-40 h-40 rounded-full opacity-20" style={{background:'#86efac', filter:'blur(40px)', bottom:'200px', right:'10px'}}/>
+        </div>
+
+        {/* Header */}
+        <div className="px-5 pt-4 pb-3 flex items-start justify-between relative z-10">
+          <div>
+            <p className="text-ink-xlight text-xs font-500 capitalize">{day}</p>
+            <h1 className="text-ink font-800 text-2xl leading-tight mt-0.5">Bonjour, Lucas 👋</h1>
+            <p className="text-ink-light text-sm mt-0.5">Jour 12 · Prague · J-10 avant Genève</p>
+          </div>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center font-700 text-sm shrink-0 mt-1 text-white"
+            style={{background:'linear-gradient(135deg,#6b6560,#1a1714)', boxShadow:'0 2px 8px rgba(26,23,20,0.25)'}}>
+            LK
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-4 pb-32 space-y-3 relative z-10">
+          <WeatherCard city={t.city} tempC={t.tempC} condition={t.condition} conditionKey={t.conditionKey} />
+          <BudgetWidget />
+          <TrainCard from={t.trainFrom} to={t.trainTo} departure={t.departure} arrival={t.arrival} platform={t.platform} />
+          <GlassCard><CurrencyCard defaultCurrency={t.currency} defaultAmount={t.amount} /></GlassCard>
+          <GlassCard className="!p-0"><TimelineCard /></GlassCard>
+        </div>
+
+        {/* Floating nav */}
+        <BottomNav />
+      </div>
+    </IOSDevice>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

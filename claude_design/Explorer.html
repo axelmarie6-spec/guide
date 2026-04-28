@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Travel Hub · Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { jakarta: ['Plus Jakarta Sans', 'sans-serif'] },
+      colors: {
+        sand: { 50:'#faf9f7', 100:'#f3f1ec', 200:'#e8e3d9', 300:'#d4ccc0' },
+        ink:  { DEFAULT:'#1a1714', light:'#6b6560', xlight:'#b0aaa3' },
+        sun:  { DEFAULT:'#e8a030', light:'#fef3dc' },
+        sky:  { DEFAULT:'#4a90d9', light:'#e8f2fc' },
+        mint: { DEFAULT:'#3baa7a', light:'#e4f6ee' },
+        rose: { DEFAULT:'#e05a5a', light:'#fdeaea' },
+      }
+    }
+  }
+}
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<style>
+* { box-sizing:border-box; }
+body { margin:0; background:#e8e3d9; font-family:'Plus Jakarta Sans',sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; }
+::-webkit-scrollbar { display:none; }
+@keyframes slideUp   { from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn    { from{opacity:0}to{opacity:1} }
+@keyframes swipeLeft { to{opacity:0;transform:translateX(-120%) rotate(-18deg)} }
+@keyframes swipeRight{ to{opacity:0;transform:translateX(120%) rotate(18deg)} }
+@keyframes popIn     { 0%{transform:scale(0.8);opacity:0} 60%{transform:scale(1.08)} 100%{transform:scale(1);opacity:1} }
+.slide-up  { animation:slideUp 0.35s cubic-bezier(.22,1,.36,1) both; }
+.fade-in   { animation:fadeIn 0.22s ease both; }
+.pop-in    { animation:popIn 0.4s cubic-bezier(.22,1,.36,1) both; }
+.swipe-left  { animation:swipeLeft 0.38s cubic-bezier(.4,0,.6,1) forwards; }
+.swipe-right { animation:swipeRight 0.38s cubic-bezier(.4,0,.6,1) forwards; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const glass = {
+  background:'rgba(255,255,255,0.62)',
+  backdropFilter:'blur(20px) saturate(1.6)',
+  WebkitBackdropFilter:'blur(20px) saturate(1.6)',
+  border:'1px solid rgba(255,255,255,0.75)',
+  boxShadow:'0 2px 16px rgba(26,23,20,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+};
+
+// ── Nav ────────────────────────────────────────────────────────────────────────
+const SunIcon    = ({ a }) => <svg width={22} height={22} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke={a?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/>{[0,45,90,135,180,225,270,315].map((d,i)=><line key={i} x1={12+7*Math.cos(d*Math.PI/180)} y1={12+7*Math.sin(d*Math.PI/180)} x2={12+9.5*Math.cos(d*Math.PI/180)} y2={12+9.5*Math.sin(d*Math.PI/180)} stroke={a?'#1a1714':'#b0aaa3'} strokeWidth="1.8" strokeLinecap="round"/>)}</svg>;
+const CardIcon   = ({ a }) => <svg width={22} height={22} viewBox="0 0 24 24" fill="none"><rect x="4" y="7" width="16" height="11" rx="2.5" stroke={a?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/><path d="M4 11h16" stroke={a?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/><rect x="7" y="14" width="4" height="1.5" rx="0.75" fill={a?'#1a1714':'#b0aaa3'}/></svg>;
+const MapIcon    = ({ a }) => <svg width={22} height={22} viewBox="0 0 24 24" fill="none"><path d="M9 4L3 7v13l6-3 6 3 6-3V4l-6 3-6-3z" stroke={a?'#1a1714':'#b0aaa3'} strokeWidth="1.8" strokeLinejoin="round"/><line x1="9" y1="4" x2="9" y2="17" stroke={a?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/><line x1="15" y1="7" x2="15" y2="20" stroke={a?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/></svg>;
+const LockIcon   = ({ a }) => <svg width={22} height={22} viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="10" rx="2.5" stroke={a?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/><path d="M8 11V7a4 4 0 018 0v4" stroke={a?'#1a1714':'#b0aaa3'} strokeWidth="1.8" strokeLinecap="round"/><circle cx="12" cy="16" r="1.5" fill={a?'#1a1714':'#b0aaa3'}/></svg>;
+const PersonIcon = ({ a }) => <svg width={22} height={22} viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke={a?'#1a1714':'#b0aaa3'} strokeWidth="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke={a?'#1a1714':'#b0aaa3'} strokeWidth="1.8" strokeLinecap="round"/></svg>;
+
+const BottomNav = () => (
+  <div className="absolute bottom-6 left-0 right-0 flex justify-center px-4 z-50">
+    <div className="flex items-center gap-1 px-2 py-2 rounded-full" style={{
+      background:'rgba(250,249,247,0.72)', backdropFilter:'blur(28px) saturate(1.8)',
+      WebkitBackdropFilter:'blur(28px) saturate(1.8)',
+      border:'1px solid rgba(255,255,255,0.6)',
+      boxShadow:'0 8px 32px rgba(26,23,20,0.12), inset 0 1px 0 rgba(255,255,255,0.8)',
+    }}>
+      {[
+        { Icon:SunIcon,    label:"Aujourd'hui", a:false },
+        { Icon:CardIcon,   label:'Explorer',    a:true  },
+        { Icon:MapIcon,    label:'Voyage',      a:false },
+        { Icon:LockIcon,   label:'Coffre',      a:false },
+        { Icon:PersonIcon, label:'Profil',      a:false },
+      ].map(({ Icon, label, a }) => (
+        <div key={label} className="flex flex-col items-center gap-0.5"
+          style={{padding:'6px 12px',borderRadius:9999,background:a?'rgba(26,23,20,0.08)':'transparent',minWidth:52}}>
+          <Icon a={a} />
+          <span style={{fontSize:9,fontWeight:600,color:a?'#1a1714':'#b0aaa3'}}>{label}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+// ── Data ───────────────────────────────────────────────────────────────────────
+const MEMBERS = [
+  { id:'LK', name:'Lucas',  color:'#6b6560' },
+  { id:'ML', name:'Mael',   color:'#4a90d9' },
+  { id:'SA', name:'Sarah',  color:'#3baa7a' },
+  { id:'TR', name:'Thomas', color:'#e8a030' },
+  { id:'CN', name:'Clara',  color:'#a78bfa' },
+];
+
+const CATEGORIES = [
+  { id:'all',    label:'Tout'       },
+  { id:'restau', label:'Restos'     },
+  { id:'visite', label:'Visites'    },
+  { id:'bar',    label:'Bars'       },
+  { id:'sortie', label:'Sorties'    },
+];
+
+const CAT_META = {
+  restau: { color:'#e05a5a', bg:'rgba(224,90,90,0.10)' },
+  visite: { color:'#4a90d9', bg:'rgba(74,144,217,0.10)' },
+  bar:    { color:'#e8a030', bg:'rgba(232,160,48,0.10)'  },
+  sortie: { color:'#3baa7a', bg:'rgba(59,170,122,0.10)'  },
+};
+
+// Swipe cards for Prague
+const CARDS = [
+  { id:1,  cat:'visite', name:'Château de Prague',     sub:'Hradčany · 1.2 km',     price:'€€',   duration:'3h',   rating:4.8, votes:{LK:1,ML:1,SA:1,TR:1,CN:1}, color:'#4a90d9',
+    tags:['Incontournable','Vue panoramique'], desc:'La plus grande forteresse médiévale au monde, dominant la Vltava.' },
+  { id:2,  cat:'restau', name:'Lokál Dlouhá',           sub:'Dlouhá 33 · 900 m',     price:'€€',   duration:'1.5h', rating:4.6, votes:{LK:1,ML:1,SA:-1,TR:1,CN:1}, color:'#e05a5a',
+    tags:['Cuisine tchèque','Bière pression'], desc:'Le meilleur pilsner non-filtré de Prague, servi à la pression Tankovné.' },
+  { id:3,  cat:'bar',    name:'Hemingway Bar',          sub:'Karolíny Světlé 26 · 1 km', price:'€€€', duration:'2h', rating:4.7, votes:{LK:1,ML:-1,SA:1,TR:0,CN:1}, color:'#e8a030',
+    tags:['Cocktails vintage','Art Déco'], desc:'Cocktails d\'époque dans un cadre Art Déco immaculé. Réservation recommandée.' },
+  { id:4,  cat:'visite', name:'Musée Kafka',            sub:'Cihelná 2b · 350 m',    price:'€€',   duration:'1.5h', rating:4.3, votes:{LK:0,ML:1,SA:1,TR:-1,CN:0}, color:'#4a90d9',
+    tags:['Littérature','Insolite'], desc:'Exposition permanente dédiée à Franz Kafka, dans un bâtiment industriel reconverti.' },
+  { id:5,  cat:'sortie', name:'Boat Bar sur la Vltava', sub:'Rašínovo nábřeží · 800 m','price':'€€', duration:'3h', rating:4.5, votes:{LK:1,ML:1,SA:1,TR:1,CN:-1}, color:'#3baa7a',
+    tags:['Sunset','Terrasse eau'], desc:'Bar flottant avec vue sur le pont Charles au coucher de soleil. DJ le weekend.' },
+  { id:6,  cat:'restau', name:'Nase Maso',              sub:'Dlouhá 39 · 950 m',     price:'€',    duration:'45min',rating:4.4, votes:{LK:1,ML:0,SA:1,TR:1,CN:1}, color:'#e05a5a',
+    tags:['Street food','Tartare'], desc:'Boucher-traiteur de renom. Tartare de bœuf préparé à la minute, à manger debout.' },
+  { id:7,  cat:'visite', name:'Vieux Cimetière Juif',   sub:'U Starého hřbitova · 600 m','price':'€€','duration':'1h',rating:4.5, votes:{LK:0,ML:1,SA:0,TR:1,CN:1}, color:'#4a90d9',
+    tags:['Histoire','Émouvant'], desc:'12 couches de sépultures superposées, l\'un des plus importants sites juifs d\'Europe.' },
+  { id:8,  cat:'bar',    name:'Black Angel\'s Bar',     sub:'Staroměstské nám. 29',   price:'€€€', duration:'2h',  rating:4.6, votes:{LK:1,ML:1,SA:1,TR:1,CN:0}, color:'#e8a030',
+    tags:['Underground','Prohibition'], desc:'Bar clandestin des années 20 caché sous la Place de la Vieille Ville.' },
+  { id:9,  cat:'sortie', name:'Parc Letná au coucher',  sub:'Letenské sady · 2 km',  price:'Gratuit','duration':'2h',rating:4.7, votes:{}, color:'#3baa7a',
+    tags:['Vue','Pique-nique'], desc:'Point de vue ultime sur les toits de Prague avec la grande buvette en plein air.' },
+  { id:10, cat:'restau', name:'Café Savoy',             sub:'Vítězná 5 · 1.1 km',    price:'€€',  duration:'1h',  rating:4.5, votes:{}, color:'#e05a5a',
+    tags:['Brunch','Viennoiseries'], desc:'Grand café fin-de-siècle avec plafond néo-gothique. Les meilleurs croissants de Prague.' },
+];
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+const countVotes = (votes) => {
+  let yes=0, no=0;
+  Object.values(votes).forEach(v=>{ if(v===1) yes++; else if(v===-1) no++; });
+  return { yes, no, total: Object.keys(votes).length };
+};
+
+const AvatarRow = ({ votes, size=22 }) => (
+  <div className="flex gap-1">
+    {MEMBERS.map(m => {
+      const v = votes[m.id];
+      return (
+        <div key={m.id} className="flex flex-col items-center gap-0.5">
+          <div className="rounded-full flex items-center justify-center font-700 text-white relative"
+            style={{width:size,height:size,background:v===1?m.color:v===-1?'rgba(26,23,20,0.12)':'rgba(26,23,20,0.08)',fontSize:size*0.38,opacity:v===undefined?0.3:1}}>
+            {m.id}
+            {v===1  && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-mint-DEFAULT border border-white flex items-center justify-center" style={{fontSize:7}}>✓</div>}
+            {v===-1 && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-rose-DEFAULT border border-white flex items-center justify-center" style={{fontSize:7}}>✕</div>}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+);
+
+// ── Results sheet ──────────────────────────────────────────────────────────────
+const ResultsSheet = ({ onClose }) => {
+  const sorted = [...CARDS].sort((a,b)=>countVotes(b.votes).yes - countVotes(a.votes).yes);
+  return (
+    <div className="absolute inset-0 z-40 flex flex-col slide-up"
+      style={{background:'linear-gradient(160deg,#f5f1ea 0%,#ede8df 50%,#e8e2d8 100%)'}}>
+      <div className="px-5 pt-4 pb-3 flex items-center justify-between relative z-10">
+        <div>
+          <p className="text-ink-xlight text-xs font-500">Prague · Votes du groupe</p>
+          <h2 className="text-ink font-800 text-2xl mt-0.5">Résultats</h2>
+        </div>
+        <button onClick={onClose} className="w-10 h-10 rounded-full flex items-center justify-center"
+          style={{background:'rgba(26,23,20,0.08)'}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6l12 12" stroke="#1a1714" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-2.5">
+        {sorted.map((card, i) => {
+          const { yes, no } = countVotes(card.votes);
+          const cat = CAT_META[card.cat];
+          const isConsensus = yes >= 4;
+          return (
+            <div key={card.id} className="rounded-3xl p-4" style={{
+              ...glass,
+              border: isConsensus ? '1.5px solid rgba(59,170,122,0.35)' : undefined,
+            }}>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center font-800 text-sm shrink-0"
+                  style={{background:'rgba(26,23,20,0.07)', color:'#6b6560'}}>
+                  {i+1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-ink font-700 text-sm">{card.name}</p>
+                    {isConsensus && <span className="text-[10px] font-700 px-2 py-0.5 rounded-full" style={{background:'rgba(59,170,122,0.12)',color:'#3baa7a'}}>Consensus ✓</span>}
+                  </div>
+                  <p className="text-ink-xlight text-xs mt-0.5">{card.sub}</p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <div className="flex items-center gap-1">
+                      <span className="text-mint-DEFAULT font-700 text-sm">{yes}</span>
+                      <span className="text-ink-xlight text-xs">✓</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-rose-DEFAULT font-700 text-sm">{no}</span>
+                      <span className="text-ink-xlight text-xs">✕</span>
+                    </div>
+                    <div className="ml-auto">
+                      <AvatarRow votes={card.votes} size={20} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ── Swipe card ─────────────────────────────────────────────────────────────────
+const SwipeCard = ({ card, onVote, myVote, animDir }) => {
+  const cat = CAT_META[card.cat];
+  const { yes, no } = countVotes(card.votes);
+  const [drag, setDrag]   = React.useState(0);
+  const [dragging, setDragging] = React.useState(false);
+  const startX = React.useRef(null);
+
+  const onTouchStart = e => { startX.current = e.touches[0].clientX; setDragging(true); };
+  const onTouchMove  = e => { if(startX.current!==null) setDrag(e.touches[0].clientX - startX.current); };
+  const onTouchEnd   = () => {
+    setDragging(false);
+    if(drag > 60)       { onVote(1);  }
+    else if(drag < -60) { onVote(-1); }
+    setDrag(0); startX.current = null;
+  };
+
+  const rotation  = Math.min(12, Math.max(-12, drag * 0.06));
+  const opacity   = Math.max(0.7, 1 - Math.abs(drag) / 300);
+  const animClass = animDir === 1 ? 'swipe-right' : animDir === -1 ? 'swipe-left' : '';
+
+  const showYes = drag > 30;
+  const showNo  = drag < -30;
+
+  return (
+    <div
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      className={`absolute inset-0 select-none ${animClass}`}
+      style={{
+        transform: dragging ? `translateX(${drag}px) rotate(${rotation}deg)` : 'none',
+        transition: dragging ? 'none' : 'transform 0.2s ease',
+        opacity,
+        cursor: 'grab',
+        zIndex: 10,
+      }}>
+
+      {/* Card */}
+      <div className="w-full h-full rounded-3xl overflow-hidden flex flex-col" style={{
+        background:'rgba(255,255,255,0.78)',
+        backdropFilter:'blur(24px) saturate(1.8)',
+        WebkitBackdropFilter:'blur(24px) saturate(1.8)',
+        border:'1px solid rgba(255,255,255,0.85)',
+        boxShadow:'0 8px 40px rgba(26,23,20,0.12), inset 0 1px 0 rgba(255,255,255,0.9)',
+      }}>
+        {/* Illustration area */}
+        <div className="relative flex-none h-52 flex items-center justify-center overflow-hidden"
+          style={{background:`linear-gradient(135deg,${card.color}22 0%,${card.color}08 100%)`}}>
+          {/* Decorative blobs */}
+          <div className="absolute w-40 h-40 rounded-full opacity-30" style={{background:card.color,filter:'blur(40px)',top:'-20px',right:'-20px'}}/>
+          <div className="absolute w-32 h-32 rounded-full opacity-15" style={{background:card.color,filter:'blur(30px)',bottom:'-10px',left:'-10px'}}/>
+          {/* Big initial placeholder */}
+          <div className="relative z-10 flex flex-col items-center gap-3">
+            <div className="w-20 h-20 rounded-3xl flex items-center justify-center font-800 text-4xl"
+              style={{background:`${card.color}20`,backdropFilter:'blur(8px)'}}>
+              {card.cat==='restau'?'🍽️':card.cat==='visite'?'🏛️':card.cat==='bar'?'🍸':'🌿'}
+            </div>
+          </div>
+          {/* Category badge */}
+          <div className="absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-700"
+            style={{background:cat.bg,color:cat.color,backdropFilter:'blur(8px)'}}>
+            {card.cat}
+          </div>
+          {/* Price + duration */}
+          <div className="absolute top-3 right-3 flex gap-1.5">
+            <span className="px-2.5 py-1 rounded-full text-xs font-600" style={{background:'rgba(255,255,255,0.7)',color:'#1a1714'}}>{card.price}</span>
+            <span className="px-2.5 py-1 rounded-full text-xs font-600" style={{background:'rgba(255,255,255,0.7)',color:'#1a1714'}}>{card.duration}</span>
+          </div>
+          {/* Rating */}
+          <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full"
+            style={{background:'rgba(255,255,255,0.75)'}}>
+            <span style={{color:'#e8a030',fontSize:11}}>★</span>
+            <span className="text-ink font-700 text-xs">{card.rating}</span>
+          </div>
+
+          {/* Swipe overlay hints */}
+          {showYes && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-3xl fade-in"
+              style={{background:'rgba(59,170,122,0.18)'}}>
+              <div className="w-20 h-20 rounded-full flex items-center justify-center border-4 border-mint-DEFAULT"
+                style={{background:'rgba(59,170,122,0.2)'}}>
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 6L9 17l-5-5" stroke="#3baa7a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
+          )}
+          {showNo && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-3xl fade-in"
+              style={{background:'rgba(224,90,90,0.18)'}}>
+              <div className="w-20 h-20 rounded-full flex items-center justify-center border-4 border-rose-DEFAULT"
+                style={{background:'rgba(224,90,90,0.2)'}}>
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="#e05a5a" strokeWidth="3" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 px-5 pt-4 pb-3 flex flex-col gap-3 overflow-hidden">
+          <div>
+            <h3 className="text-ink font-800 text-xl leading-tight">{card.name}</h3>
+            <p className="text-ink-light text-sm mt-0.5">{card.sub}</p>
+          </div>
+          <p className="text-ink-light text-sm leading-relaxed flex-1 overflow-hidden" style={{display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>
+            {card.desc}
+          </p>
+          <div className="flex gap-1.5 flex-wrap">
+            {card.tags.map(tag => (
+              <span key={tag} className="text-xs font-600 px-2.5 py-1 rounded-full"
+                style={{background:'rgba(26,23,20,0.06)',color:'#6b6560'}}>{tag}</span>
+            ))}
+          </div>
+
+          {/* Votes so far */}
+          <div className="flex items-center justify-between pt-1" style={{borderTop:'1px solid rgba(26,23,20,0.06)'}}>
+            <AvatarRow votes={card.votes} size={26} />
+            <div className="flex items-center gap-3">
+              <span className="text-mint-DEFAULT font-700 text-sm">{yes} ✓</span>
+              <span className="text-rose-DEFAULT font-700 text-sm">{no} ✕</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Main explorer ──────────────────────────────────────────────────────────────
+const ExplorerView = () => {
+  const [cat, setCat]       = React.useState('all');
+  const [myVotes, setMyVotes] = React.useState({});
+  const [idx, setIdx]       = React.useState(0);
+  const [animDir, setAnimDir] = React.useState(0);
+  const [showResults, setShowResults] = React.useState(false);
+  const [lastAction, setLastAction]   = React.useState(null);
+
+  const filtered = cat === 'all' ? CARDS : CARDS.filter(c => c.cat === cat);
+  const card = filtered[idx];
+  const nextCard = filtered[idx+1];
+  const done = idx >= filtered.length;
+
+  const vote = (dir) => {
+    if(!card) return;
+    setAnimDir(dir);
+    setLastAction(dir);
+    setMyVotes(v => ({...v, [card.id]: dir}));
+    setTimeout(() => {
+      setIdx(i => i+1);
+      setAnimDir(0);
+    }, 380);
+  };
+
+  const undoLast = () => {
+    if(idx === 0) return;
+    setIdx(i => i-1);
+    setLastAction(null);
+  };
+
+  const totalVoted = Object.keys(myVotes).length;
+  const pct = filtered.length > 0 ? Math.round(totalVoted / filtered.length * 100) : 0;
+
+  return (
+    <div className="flex flex-col h-full font-jakarta relative overflow-hidden"
+      style={{background:'linear-gradient(160deg,#f5f1ea 0%,#ede8df 50%,#e8e2d8 100%)'}}>
+
+      {/* Blobs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute w-48 h-48 rounded-full opacity-25" style={{background:'#93c5fd',filter:'blur(56px)',top:'-20px',right:'-20px'}}/>
+        <div className="absolute w-40 h-40 rounded-full opacity-20" style={{background:'#fde68a',filter:'blur(44px)',bottom:'220px',left:'-10px'}}/>
+      </div>
+
+      {/* Header */}
+      <div className="px-5 pt-4 pb-3 flex items-start justify-between relative z-10">
+        <div>
+          <p className="text-ink-xlight text-xs font-500">Prague · {filtered.length} suggestions</p>
+          <h1 className="text-ink font-800 text-2xl leading-tight mt-0.5">Explorer</h1>
+        </div>
+        <button onClick={() => setShowResults(true)}
+          className="flex items-center gap-2 px-3 py-2 rounded-2xl font-600 text-sm"
+          style={{background:'rgba(26,23,20,0.08)', color:'#1a1714'}}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <path d="M18 20V10M12 20V4M6 20v-6" stroke="#1a1714" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Résultats
+        </button>
+      </div>
+
+      {/* Category filter */}
+      <div className="flex gap-2 px-5 pb-3 overflow-x-auto relative z-10" style={{scrollbarWidth:'none'}}>
+        {CATEGORIES.map(c => (
+          <button key={c.id} onClick={() => { setCat(c.id); setIdx(0); setMyVotes({}); }}
+            className="shrink-0 px-3.5 py-2 rounded-2xl text-sm font-600 transition-all"
+            style={{
+              background: cat===c.id ? '#1a1714' : 'rgba(255,255,255,0.55)',
+              color: cat===c.id ? '#faf9f7' : '#6b6560',
+              border: cat===c.id ? 'none' : '1px solid rgba(255,255,255,0.75)',
+              boxShadow: cat===c.id ? '0 2px 8px rgba(26,23,20,0.2)' : 'none',
+            }}>
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Progress bar */}
+      <div className="px-5 pb-3 relative z-10">
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-ink-xlight text-xs font-500">{totalVoted}/{filtered.length} vus</p>
+          {totalVoted > 0 && (
+            <button onClick={undoLast} className="text-ink-xlight text-xs font-600 flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M3 10h14a4 4 0 010 8H7" stroke="#b0aaa3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M7 6L3 10l4 4" stroke="#b0aaa3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Annuler
+            </button>
+          )}
+        </div>
+        <div className="h-1 rounded-full overflow-hidden" style={{background:'rgba(26,23,20,0.08)'}}>
+          <div className="h-full rounded-full transition-all duration-300" style={{width:`${pct}%`,background:'#1a1714'}}/>
+        </div>
+      </div>
+
+      {/* Card area */}
+      <div className="flex-1 px-5 pb-2 relative z-10">
+        {done ? (
+          /* Done state */
+          <div className="h-full flex flex-col items-center justify-center gap-5 pop-in">
+            <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl"
+              style={{background:'rgba(59,170,122,0.12)'}}>✅</div>
+            <div className="text-center">
+              <p className="text-ink font-800 text-xl">Tout vu !</p>
+              <p className="text-ink-light text-sm mt-1">Tu as voté sur {totalVoted} suggestion{totalVoted>1?'s':''}.</p>
+            </div>
+            <button onClick={() => setShowResults(true)}
+              className="px-6 py-3.5 rounded-2xl font-700 text-sm"
+              style={{background:'#1a1714',color:'white',boxShadow:'0 4px 16px rgba(26,23,20,0.22)'}}>
+              Voir les résultats du groupe →
+            </button>
+            <button onClick={() => { setIdx(0); setMyVotes({}); }}
+              className="text-ink-xlight text-sm font-500">
+              Recommencer
+            </button>
+          </div>
+        ) : (
+          /* Stack */
+          <div className="h-full relative">
+            {/* Next card shadow underneath */}
+            {nextCard && (
+              <div className="absolute inset-x-3 top-2 bottom-0 rounded-3xl"
+                style={{background:'rgba(255,255,255,0.4)',border:'1px solid rgba(255,255,255,0.6)',zIndex:5}}/>
+            )}
+            {card && (
+              <SwipeCard
+                key={`${cat}-${card.id}`}
+                card={card}
+                onVote={vote}
+                myVote={myVotes[card.id]}
+                animDir={animDir}
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Vote buttons */}
+      {!done && card && (
+        <div className="px-5 pb-28 pt-3 flex items-center justify-center gap-6 relative z-10">
+          <button onClick={() => vote(-1)}
+            className="w-16 h-16 rounded-full flex items-center justify-center transition-transform active:scale-90"
+            style={{...glass, boxShadow:'0 4px 20px rgba(224,90,90,0.18)'}}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6l12 12" stroke="#e05a5a" strokeWidth="2.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+
+          <button onClick={() => vote(0)}
+            className="w-11 h-11 rounded-full flex items-center justify-center transition-transform active:scale-90"
+            style={{...glass}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="1.5" fill="#b0aaa3"/>
+              <circle cx="6" cy="12" r="1.5" fill="#b0aaa3"/>
+              <circle cx="18" cy="12" r="1.5" fill="#b0aaa3"/>
+            </svg>
+          </button>
+
+          <button onClick={() => vote(1)}
+            className="w-16 h-16 rounded-full flex items-center justify-center transition-transform active:scale-90"
+            style={{...glass, boxShadow:'0 4px 20px rgba(59,170,122,0.22)'}}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+              <path d="M20 6L9 17l-5-5" stroke="#3baa7a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      )}
+
+      <BottomNav />
+      {showResults && <ResultsSheet onClose={() => setShowResults(false)} />}
+    </div>
+  );
+};
+
+const App = () => (
+  <IOSDevice statusBarStyle="dark" backgroundColor="#ede8e0">
+    <ExplorerView />
+  </IOSDevice>
+);
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
