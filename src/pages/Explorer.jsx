@@ -4,23 +4,26 @@ import { useAuth } from '../context/AuthContext'
 
 // ── Constantes ─────────────────────────────────────────────────
 
-const GROUP_SIZE = 5
-const MATCH_THRESHOLD = Math.ceil(GROUP_SIZE / 2) // 3
-
 const CATEGORY_META = {
-  culture:   { emoji: '🏛️', gradient: 'linear-gradient(135deg,#667eea,#764ba2)' },
-  nature:    { emoji: '🌿', gradient: 'linear-gradient(135deg,#56ab2f,#a8e063)' },
-  food:      { emoji: '🍽️', gradient: 'linear-gradient(135deg,#f093fb,#f5576c)' },
-  nightlife: { emoji: '🎶', gradient: 'linear-gradient(135deg,#1a1a2e,#16213e)' },
-  shopping:  { emoji: '🛍️', gradient: 'linear-gradient(135deg,#f7971e,#ffd200)' },
-  sport:     { emoji: '⚡', gradient: 'linear-gradient(135deg,#0f2027,#2c5364)' },
-  other:     { emoji: '✨', gradient: 'linear-gradient(135deg,#8e9eab,#eef2f3)' },
+  culture:   { label: 'Culture',      emoji: '🏛️', gradient: 'linear-gradient(135deg,#667eea,#764ba2)' },
+  nature:    { label: 'Nature',       emoji: '🌿', gradient: 'linear-gradient(135deg,#56ab2f,#a8e063)' },
+  food:      { label: 'Resto & Bar',  emoji: '🍽️', gradient: 'linear-gradient(135deg,#f093fb,#f5576c)' },
+  nightlife: { label: 'Soirée',       emoji: '🎶', gradient: 'linear-gradient(135deg,#1a1a2e,#16213e)' },
+  shopping:  { label: 'Shopping',     emoji: '🛍️', gradient: 'linear-gradient(135deg,#f7971e,#ffd200)' },
+  sport:     { label: 'Sport',        emoji: '⚡', gradient: 'linear-gradient(135deg,#0f2027,#2c5364)' },
+  other:     { label: 'Autre',        emoji: '✨', gradient: 'linear-gradient(135deg,#8e9eab,#eef2f3)' },
 }
+
+const CUSTOM_KEY = '__custom__'
 
 const CITY_ORDER = ['bruxelles','amsterdam','berlin','prague','budapest','vienne','geneve']
 const CITY_LABELS = {
   bruxelles: '🇧🇪 Bruxelles', amsterdam: '🇳🇱 Amsterdam', berlin: '🇩🇪 Berlin',
   prague: '🇨🇿 Prague', budapest: '🇭🇺 Budapest', vienne: '🇦🇹 Vienne', geneve: '🇨🇭 Genève',
+}
+
+function getCategoryMeta(cat) {
+  return CATEGORY_META[cat] ?? { label: cat, emoji: '✨', gradient: 'linear-gradient(135deg,#8e9eab,#eef2f3)' }
 }
 
 // ── Hook swipe ─────────────────────────────────────────────────
@@ -100,7 +103,7 @@ function useSwipe({ onLeft, onRight, onDown, disabled }) {
 
 function ActivityCard({ activity, onMatch, onSnooze, onTrash }) {
   const [trashConfirm, setTrashConfirm] = useState(false)
-  const meta = CATEGORY_META[activity.category] ?? CATEGORY_META.other
+  const meta = getCategoryMeta(activity.category)
 
   const swipeRef = useSwipe({
     onRight: onMatch,
@@ -134,14 +137,14 @@ function ActivityCard({ activity, onMatch, onSnooze, onTrash }) {
         )}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
-          background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)',
-          padding: '24px 18px 18px',
+          background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, transparent 100%)',
+          padding: '28px 18px 18px',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ color: 'white', fontWeight: 700, fontSize: '1.2rem', lineHeight: 1.2 }}>{activity.name}</p>
+              <p style={{ color: 'white', fontWeight: 700, fontSize: '1.2rem', lineHeight: 1.2, margin: 0 }}>{activity.name}</p>
               {activity.description && (
-                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.78rem', marginTop: 4, lineHeight: 1.4 }}>
+                <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: '0.78rem', marginTop: 4, lineHeight: 1.4, margin: '4px 0 0' }}>
                   {activity.description.length > 90 ? activity.description.slice(0, 90) + '…' : activity.description}
                 </p>
               )}
@@ -151,7 +154,7 @@ function ActivityCard({ activity, onMatch, onSnooze, onTrash }) {
                 backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)',
                 borderRadius: '12px', padding: '4px 10px', flexShrink: 0,
               }}>
-                <p style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
+                <p style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', margin: 0 }}>
                   {activity.price_eur === 0 ? 'Gratuit' : `${activity.price_eur}€`}
                 </p>
               </div>
@@ -164,7 +167,7 @@ function ActivityCard({ activity, onMatch, onSnooze, onTrash }) {
               color: 'white', fontSize: '0.72rem', fontWeight: 600,
               textTransform: 'uppercase', letterSpacing: '0.05em',
             }}>
-              {meta.emoji} {activity.category}
+              {meta.emoji} {meta.label}
             </span>
           </div>
         </div>
@@ -177,10 +180,10 @@ function ActivityCard({ activity, onMatch, onSnooze, onTrash }) {
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', gap: 12, padding: '0 20px',
         }}>
-          <p style={{ color: 'white', fontWeight: 700, fontSize: '1.05rem', textAlign: 'center' }}>
+          <p style={{ color: 'white', fontWeight: 700, fontSize: '1.05rem', textAlign: 'center', margin: 0 }}>
             Trash "{activity.name}" ?
           </p>
-          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.8rem', textAlign: 'center' }}>
+          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.8rem', textAlign: 'center', margin: 0 }}>
             Tu ne la reverras plus.
           </p>
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
@@ -204,16 +207,19 @@ function ActivityCard({ activity, onMatch, onSnooze, onTrash }) {
 // ── AddActivityModal ───────────────────────────────────────────
 
 function AddActivityModal({ city, userId, onClose, onAdded }) {
-  const [form, setForm] = useState({ name: '', description: '', category: 'other', price_eur: '' })
+  const [form, setForm] = useState({ name: '', description: '', category: 'culture', price_eur: '' })
+  const [customCategory, setCustomCategory] = useState('')
   const [photoFile, setPhotoFile] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef(null)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const isCustom = form.category === CUSTOM_KEY
 
   async function submit() {
     if (!form.name.trim()) { setError('Le nom est requis.'); return }
+    const finalCategory = isCustom ? (customCategory.trim() || 'other') : form.category
     setLoading(true); setError('')
     let photo_url = null
     if (photoFile) {
@@ -228,7 +234,7 @@ function AddActivityModal({ city, userId, onClose, onAdded }) {
     const { error: dbErr } = await supabase.from('activities').insert({
       city, name: form.name.trim(),
       description: form.description.trim() || null,
-      category: form.category, price_eur: price,
+      category: finalCategory, price_eur: price,
       photo_url, added_by: userId,
     })
     if (dbErr) { setError('Erreur base de données.'); setLoading(false); return }
@@ -239,36 +245,66 @@ function AddActivityModal({ city, userId, onClose, onAdded }) {
     padding: '10px 14px', fontSize: '0.875rem', width: '100%',
     borderRadius: '14px', border: '1.5px solid rgba(0,0,0,0.08)',
     background: 'rgba(0,0,0,0.04)', color: 'var(--text-primary)',
-    fontFamily: 'inherit', outline: 'none',
+    fontFamily: 'inherit', outline: 'none', appearance: 'auto',
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 50, backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex', alignItems: 'flex-end',
-    }} onClick={e => e.target === e.currentTarget && onClose()}>
+    <div
+      onClick={e => e.target === e.currentTarget && onClose()}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 100,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        display: 'flex', alignItems: 'flex-end',
+      }}
+    >
       <div style={{
         background: 'var(--bg-base)', borderRadius: '24px 24px 0 0',
-        padding: '20px 16px 40px', width: '100%', maxHeight: '90dvh', overflowY: 'auto',
+        width: '100%', maxHeight: '88dvh', overflowY: 'auto',
+        padding: '20px 16px',
+        paddingBottom: 'calc(100px + env(safe-area-inset-bottom, 0px))',
       }}>
+        {/* Drag handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,0,0,0.12)' }} />
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <p style={{ fontWeight: 700, fontSize: '1.1rem', margin: 0 }}>Proposer une activité</p>
-          <button onClick={onClose} style={{ fontSize: '1.4rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
+          <button onClick={onClose} style={{
+            width: 28, height: 28, borderRadius: '50%',
+            background: 'rgba(0,0,0,0.07)', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1rem', color: 'var(--text-secondary)',
+          }}>×</button>
         </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Nom de l'activité" />
+          <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Nom de l'activité *" />
+
           <textarea value={form.description} onChange={e => set('description', e.target.value)}
-            placeholder="Description (optionnel)" rows={3} style={{ resize: 'none' }} />
+            placeholder="Description (optionnel)" rows={2} style={{ resize: 'none' }} />
+
           <div>
-            <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Catégorie</p>
+            <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Catégorie</p>
             <select value={form.category} onChange={e => set('category', e.target.value)} style={selectStyle}>
               {Object.entries(CATEGORY_META).map(([k, v]) => (
-                <option key={k} value={k}>{v.emoji} {k}</option>
+                <option key={k} value={k}>{v.emoji} {v.label}</option>
               ))}
+              <option value={CUSTOM_KEY}>✏️ Nouvelle catégorie…</option>
             </select>
+            {isCustom && (
+              <input
+                value={customCategory}
+                onChange={e => setCustomCategory(e.target.value)}
+                placeholder="Nom de la catégorie"
+                style={{ marginTop: 8 }}
+              />
+            )}
           </div>
+
           <input value={form.price_eur} onChange={e => set('price_eur', e.target.value)}
-            placeholder="Prix en € (laisser vide si gratuit)" type="number" min="0" />
+            placeholder="Prix en € (laisser vide = gratuit)" type="number" min="0" step="0.5" />
+
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
             onChange={e => setPhotoFile(e.target.files?.[0] ?? null)} />
           <button onClick={() => fileRef.current?.click()} style={{
@@ -276,11 +312,13 @@ function AddActivityModal({ city, userId, onClose, onAdded }) {
             borderRadius: '14px', padding: '12px', fontSize: '0.875rem',
             color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit',
           }}>
-            {photoFile ? `📷 ${photoFile.name}` : '+ Photo (optionnel)'}
+            {photoFile ? `📷 ${photoFile.name}` : '📷 Ajouter une photo (optionnel)'}
           </button>
+
           {error && <p style={{ color: 'var(--trash)', fontSize: '0.8rem', margin: 0 }}>{error}</p>}
-          <button onClick={submit} disabled={loading} className="btn-primary" style={{ marginTop: 4 }}>
-            {loading ? 'Envoi…' : 'Proposer'}
+
+          <button onClick={submit} disabled={loading} className="btn-primary">
+            {loading ? 'Envoi…' : 'Proposer l\'activité'}
           </button>
         </div>
       </div>
@@ -322,7 +360,7 @@ function ClosedView({ isAdmin, city, onOpen }) {
           Activités à valider
         </p>
         <input value={maxAct} onChange={e => setMaxAct(e.target.value)} type="number" min="1" max="10"
-          style={{ textAlign: 'center', maxWidth: 100 }} />
+          style={{ textAlign: 'center', maxWidth: 120 }} />
       </div>
       <button onClick={openVotes} disabled={loading} className="btn-primary">
         {loading ? 'Ouverture…' : '🗳️ Ouvrir les votes'}
@@ -331,13 +369,16 @@ function ClosedView({ isAdmin, city, onOpen }) {
   )
 }
 
-function DoneView({ matchCount }) {
+function DoneView({ matchCount, doneCount, groupSize }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 24px', gap: 12, textAlign: 'center' }}>
       <p style={{ fontSize: '3rem', margin: 0 }}>🎉</p>
       <p style={{ fontWeight: 700, fontSize: '1.05rem', margin: 0 }}>Deck terminé !</p>
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
-        {matchCount} match{matchCount > 1 ? 's' : ''} de ta part · attends les autres
+        {matchCount} match{matchCount > 1 ? 's' : ''} de ta part
+      </p>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+        En attente des autres… {doneCount}/{groupSize} ont terminé
       </p>
     </div>
   )
@@ -368,7 +409,7 @@ function ResultsView({ validated, maxActivities, isAdmin, onSecondTour, onClose 
       )}
 
       {validated.map(a => {
-        const meta = CATEGORY_META[a.category] ?? CATEGORY_META.other
+        const meta = getCategoryMeta(a.category)
         return (
           <div key={a.id} className="card" style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
@@ -390,9 +431,9 @@ function ResultsView({ validated, maxActivities, isAdmin, onSecondTour, onClose 
         )
       })}
 
-      {!needSecondTour && validated.length === 0 && (
+      {validated.length === 0 && (
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'center', padding: '20px 0' }}>
-          Aucune activité n'a atteint le seuil de {MATCH_THRESHOLD} matches.
+          Aucune activité n'a atteint la majorité.
         </p>
       )}
 
@@ -423,7 +464,7 @@ function SecondTourView({ candidates, maxActivities, onDone }) {
         </p>
       </div>
       {candidates.map(a => {
-        const meta = CATEGORY_META[a.category] ?? CATEGORY_META.other
+        const meta = getCategoryMeta(a.category)
         const sel = selected.includes(a.id)
         return (
           <div key={a.id} onClick={() => toggle(a.id)} className="card" style={{
@@ -460,45 +501,53 @@ export default function Explorer() {
   const [city, setCity] = useState('bruxelles')
   const [activities, setActivities] = useState([])
   const [dayConfig, setDayConfig] = useState(null)
-  const [myVotes, setMyVotes] = useState([])   // { activity_id, vote }[]
-  const [allVotes, setAllVotes] = useState([]) // tous les votes du groupe
+  const [myVotes, setMyVotes] = useState([])
+  const [allVotes, setAllVotes] = useState([])
+  const [groupSize, setGroupSize] = useState(1)   // nombre réel d'inscrits
   const [doneCount, setDoneCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [secondTour, setSecondTour] = useState(false)
 
+  const matchThreshold = Math.ceil(groupSize / 2)  // majorité
+
   const fetchAll = useCallback(async () => {
     if (!user) return
     setLoading(true)
     const today = new Date().toISOString().slice(0, 10)
-    const [cfgRes, actRes, votesRes] = await Promise.all([
+    const [cfgRes, actRes, votesRes, countRes] = await Promise.all([
       supabase.from('day_config').select('*').eq('city', city).eq('date', today).maybeSingle(),
       supabase.from('activities').select('*').eq('city', city).eq('is_active', true),
       supabase.from('votes').select('*'),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }),
     ])
     const acts = actRes.data ?? []
     const votes = votesRes.data ?? []
+    const gSize = countRes.count ?? 1
+
     setDayConfig(cfgRes.data ?? null)
     setActivities(acts)
     setAllVotes(votes)
+    setGroupSize(gSize)
+
     const actIds = new Set(acts.map(a => a.id))
-    const mine = votes.filter(v => v.user_id === user.id && actIds.has(v.activity_id))
-    setMyVotes(mine)
-    // Compteur terminé
-    const usersWithVotes = [...new Set(votes.filter(v => actIds.has(v.activity_id)).map(v => v.user_id))]
-    const done = usersWithVotes.filter(uid => {
-      const uVotedIds = new Set(votes.filter(v => v.user_id === uid && actIds.has(v.activity_id)).map(v => v.activity_id))
-      return uVotedIds.size >= acts.length
+    setMyVotes(votes.filter(v => v.user_id === user.id && actIds.has(v.activity_id)))
+
+    // Compteur : membres ayant voté sur toutes les activités
+    const uids = [...new Set(votes.filter(v => actIds.has(v.activity_id)).map(v => v.user_id))]
+    const done = uids.filter(uid => {
+      const s = new Set(votes.filter(v => v.user_id === uid && actIds.has(v.activity_id)).map(v => v.activity_id))
+      return s.size >= acts.length
     }).length
     setDoneCount(done)
+
     setLoading(false)
   }, [city, user])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  // Realtime
   useEffect(() => {
-    const channel = supabase.channel(`explorer-votes-${city}`)
+    const channel = supabase.channel(`explorer-${city}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, fetchAll)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'day_config' }, fetchAll)
       .subscribe()
@@ -506,24 +555,23 @@ export default function Explorer() {
   }, [city, fetchAll])
 
   async function vote(activity, voteType) {
-    // Optimistic: retire du deck immédiatement
     setMyVotes(v => [...v.filter(x => x.activity_id !== activity.id), { activity_id: activity.id, vote: voteType, user_id: user.id }])
     await supabase.from('votes').upsert(
-      { activity_id: activity.id, user_id: user.id, vote: voteType,
-        snooze_date: voteType === 'snooze' ? new Date(Date.now() + 86400000).toISOString().slice(0, 10) : null },
+      {
+        activity_id: activity.id, user_id: user.id, vote: voteType,
+        snooze_date: voteType === 'snooze' ? new Date(Date.now() + 86400000).toISOString().slice(0, 10) : null,
+      },
       { onConflict: 'activity_id,user_id' }
     )
-    // Refresh votes globaux pour le compteur
     const { data } = await supabase.from('votes').select('*')
     if (data) {
       setAllVotes(data)
       const actIds = new Set(activities.map(a => a.id))
-      const usersWithVotes = [...new Set(data.filter(v => actIds.has(v.activity_id)).map(v => v.user_id))]
-      const done = usersWithVotes.filter(uid => {
+      const uids = [...new Set(data.filter(v => actIds.has(v.activity_id)).map(v => v.user_id))]
+      setDoneCount(uids.filter(uid => {
         const s = new Set(data.filter(v => v.user_id === uid && actIds.has(v.activity_id)).map(v => v.activity_id))
         return s.size >= activities.length
-      }).length
-      setDoneCount(done)
+      }).length)
     }
   }
 
@@ -533,25 +581,22 @@ export default function Explorer() {
     fetchAll()
   }
 
-  // Deck = activités sans vote de ma part
   const myVotedIds = new Set(myVotes.map(v => v.activity_id))
   const deck = activities.filter(a => !myVotedIds.has(a.id))
 
-  // Résultats
   const matchCounts = {}
   for (const v of allVotes) {
     if (v.vote === 'match') matchCounts[v.activity_id] = (matchCounts[v.activity_id] ?? 0) + 1
   }
   const maxActivities = dayConfig?.max_activities ?? 3
   const validated = activities
-    .filter(a => (matchCounts[a.id] ?? 0) >= MATCH_THRESHOLD)
+    .filter(a => (matchCounts[a.id] ?? 0) >= matchThreshold)
     .map(a => ({ ...a, _matchCount: matchCounts[a.id] ?? 0 }))
     .sort((a, b) => b._matchCount - a._matchCount)
 
   const myMatchCount = myVotes.filter(v => v.vote === 'match').length
   const votesOpen = dayConfig?.votes_open === true
 
-  // View logic
   let view = 'closed'
   if (votesOpen && deck.length > 0) view = 'voting'
   else if (votesOpen && deck.length === 0) view = 'done'
@@ -594,17 +639,17 @@ export default function Explorer() {
         ))}
       </div>
 
-      {/* Compteur terminé */}
-      {votesOpen && (
+      {/* Compteur "ont terminé" */}
+      {votesOpen && groupSize > 0 && (
         <div style={{ padding: '10px 16px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {Array.from({ length: GROUP_SIZE }).map((_, i) => (
+          {Array.from({ length: groupSize }).map((_, i) => (
             <div key={i} style={{
               width: 8, height: 8, borderRadius: '50%',
               backgroundColor: i < doneCount ? 'var(--match)' : 'rgba(0,0,0,0.12)',
             }} />
           ))}
           <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
-            {doneCount}/{GROUP_SIZE} ont terminé
+            {doneCount}/{groupSize} ont terminé
           </p>
         </div>
       )}
@@ -623,7 +668,6 @@ export default function Explorer() {
           <ClosedView isAdmin={isAdmin} city={city} onOpen={fetchAll} />
         ) : view === 'voting' ? (
           <div>
-            {/* Stack de cartes */}
             <div style={{ position: 'relative', marginBottom: 20 }}>
               {deck.slice(1, 3).map((a, i) => (
                 <div key={a.id} style={{
@@ -649,37 +693,30 @@ export default function Explorer() {
               {deck.length} restante{deck.length > 1 ? 's' : ''}
             </p>
 
-            {/* Boutons action */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 20 }}>
               {[
-                { type: 'trash', emoji: '🗑️', color: 'var(--trash)', bg: 'rgba(220,38,38,0.1)' },
-                { type: 'snooze', emoji: '⏱️', color: 'var(--snooze)', bg: 'rgba(217,119,6,0.1)' },
-                { type: 'match', emoji: '✅', color: 'var(--match)', bg: 'rgba(22,163,74,0.1)' },
+                { type: 'trash',  emoji: '🗑️', bg: 'rgba(220,38,38,0.10)' },
+                { type: 'snooze', emoji: '⏱️', bg: 'rgba(217,119,6,0.10)' },
+                { type: 'match',  emoji: '✅', bg: 'rgba(22,163,74,0.10)' },
               ].map(({ type, emoji, bg }) => (
                 <button key={type} onClick={() => vote(deck[0], type)} style={{
-                  width: 60, height: 60, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                  width: 62, height: 62, borderRadius: '50%', border: 'none', cursor: 'pointer',
                   backgroundColor: bg, fontSize: '1.5rem',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
                 }}>{emoji}</button>
               ))}
             </div>
           </div>
         ) : view === 'done' ? (
-          <DoneView matchCount={myMatchCount} />
+          <DoneView matchCount={myMatchCount} doneCount={doneCount} groupSize={groupSize} />
         ) : view === 'results' ? (
           secondTour ? (
-            <SecondTourView
-              candidates={validated}
-              maxActivities={maxActivities}
-              onDone={() => setSecondTour(false)}
-            />
+            <SecondTourView candidates={validated} maxActivities={maxActivities} onDone={() => setSecondTour(false)} />
           ) : (
             <ResultsView
-              validated={validated}
-              maxActivities={maxActivities}
-              isAdmin={isAdmin}
-              onSecondTour={() => setSecondTour(true)}
-              onClose={closeVotes}
+              validated={validated} maxActivities={maxActivities}
+              isAdmin={isAdmin} onSecondTour={() => setSecondTour(true)} onClose={closeVotes}
             />
           )
         ) : null}
@@ -687,8 +724,7 @@ export default function Explorer() {
 
       {showAdd && (
         <AddActivityModal
-          city={city}
-          userId={user?.id}
+          city={city} userId={user?.id}
           onClose={() => setShowAdd(false)}
           onAdded={() => { setShowAdd(false); fetchAll() }}
         />
