@@ -37,14 +37,24 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }
 
-  // Un profil est "complet" quand tous les champs obligatoires sont remplis
   const isProfileComplete = !!(
     profile &&
+    profile.first_name &&
+    profile.last_name &&
     profile.emergency_name &&
     profile.emergency_phone &&
     profile.passport_number &&
     profile.ceam_number
   )
+
+  // Nom d'affichage : "Prénom Nom" ou pseudo en fallback
+  const displayName = profile
+    ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.pseudo || ''
+    : ''
+
+  const initials = profile
+    ? `${(profile.first_name || profile.pseudo || '?')[0]}${(profile.last_name || '')[0] || ''}`.toUpperCase()
+    : '?'
 
   async function signIn(email, password) {
     return supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
@@ -55,7 +65,11 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isProfileComplete, fetchProfile, signIn, signOut }}>
+    <AuthContext.Provider value={{
+      user, profile, loading, isProfileComplete,
+      displayName, initials,
+      fetchProfile, signIn, signOut,
+    }}>
       {children}
     </AuthContext.Provider>
   )

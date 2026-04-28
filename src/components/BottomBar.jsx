@@ -1,10 +1,11 @@
-import { NavLink } from 'react-router-dom'
+import { useState } from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-const baseTabs = [
+const TABS = [
   {
     path: '/',
-    label: "Auj.",
+    label: 'Auj.',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-[22px] h-[22px]">
         <path strokeLinecap="round" strokeLinejoin="round"
@@ -42,43 +43,110 @@ const baseTabs = [
       </svg>
     ),
   },
-  {
-    path: '/profil',
-    label: 'Profil',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-[22px] h-[22px]">
-        <path strokeLinecap="round" strokeLinejoin="round"
-          d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-      </svg>
-    ),
-  },
 ]
 
-const adminTab = {
-  path: '/admin',
-  label: 'Admin',
-  icon: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-[22px] h-[22px]">
-      <path strokeLinecap="round" strokeLinejoin="round"
-        d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-    </svg>
-  ),
+function AdminPopup({ initials, displayName, onClose }) {
+  const navigate = useNavigate()
+
+  function go(path) {
+    onClose()
+    navigate(path)
+  }
+
+  return (
+    <>
+      <div onClick={onClose} style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        backgroundColor: 'rgba(26,23,20,0.38)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+      }} />
+      <div style={{
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 500, zIndex: 201,
+        background: 'rgba(250,249,247,0.97)',
+        backdropFilter: 'blur(40px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+        borderRadius: '28px 28px 0 0',
+        border: '1px solid rgba(255,255,255,0.85)',
+        borderBottom: 'none',
+        boxShadow: '0 -4px 32px rgba(26,23,20,0.10)',
+        padding: '16px 20px',
+        paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+      }}>
+        <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,0,0,0.14)', margin: '0 auto 20px' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: '50%',
+            background: 'var(--ink)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--sand-50)', fontWeight: 700, fontSize: '1.05rem',
+            letterSpacing: '-0.01em', flexShrink: 0,
+          }}>{initials}</div>
+          <div>
+            <p style={{ fontWeight: 700, fontSize: '1.05rem', margin: 0 }}>{displayName}</p>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Administrateur</p>
+          </div>
+        </div>
+
+        <p style={{
+          fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em',
+          textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 8,
+        }}>Administration</p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+          {[
+            { label: '👥 Utilisateurs', tab: 'users' },
+            { label: '🗂️ Activités', tab: 'activities' },
+            { label: '🗳️ Votes', tab: 'votes' },
+          ].map(({ label, tab }) => (
+            <button key={tab} onClick={() => go(`/admin?tab=${tab}`)} style={{
+              width: '100%', textAlign: 'left', padding: '13px 16px', borderRadius: '16px',
+              background: 'rgba(26,23,20,0.04)', border: 'none', cursor: 'pointer',
+              fontSize: '0.925rem', fontWeight: 500, color: 'var(--text-primary)',
+              fontFamily: 'inherit',
+            }}>{label}</button>
+          ))}
+        </div>
+
+        <div style={{ height: '1px', backgroundColor: 'rgba(0,0,0,0.07)', margin: '4px 0 12px' }} />
+
+        <button onClick={() => go('/profil')} style={{
+          width: '100%', textAlign: 'left', padding: '13px 16px', borderRadius: '16px',
+          background: 'rgba(26,23,20,0.04)', border: 'none', cursor: 'pointer',
+          fontSize: '0.925rem', fontWeight: 500, color: 'var(--text-primary)',
+          fontFamily: 'inherit',
+        }}>👤 Mon profil</button>
+      </div>
+    </>
+  )
 }
 
 export default function BottomBar() {
-  const { profile } = useAuth()
+  const { profile, initials, displayName } = useAuth()
+  const navigate = useNavigate()
   const isAdmin = profile?.role === 'admin'
-  const tabs = isAdmin ? [...baseTabs, adminTab] : baseTabs
+  const [adminOpen, setAdminOpen] = useState(false)
+
+  function handleAvatar() {
+    if (isAdmin) setAdminOpen(true)
+    else navigate('/profil')
+  }
 
   return (
-    <nav
-      style={{
-        position: 'fixed',
-        bottom: '16px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: 'calc(100% - 32px)',
-        maxWidth: '480px',
+    <>
+      {adminOpen && (
+        <AdminPopup
+          initials={initials}
+          displayName={displayName}
+          onClose={() => setAdminOpen(false)}
+        />
+      )}
+
+      <nav style={{
+        position: 'fixed', bottom: '16px', left: '50%', transform: 'translateX(-50%)',
+        width: 'calc(100% - 32px)', maxWidth: '480px',
         background: 'var(--glass-bar)',
         backdropFilter: 'blur(32px) saturate(180%)',
         WebkitBackdropFilter: 'blur(32px) saturate(180%)',
@@ -88,35 +156,46 @@ export default function BottomBar() {
         display: 'flex',
         padding: '6px',
         zIndex: 50,
-      }}
-    >
-      {tabs.map(({ path, label, icon }) => (
-        <NavLink
-          key={path}
-          to={path}
-          end={path === '/'}
-          style={({ isActive }) => ({
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flex: 1,
-            padding: '8px 2px',
-            gap: '3px',
-            fontSize: '9px',
-            fontWeight: isActive ? 600 : 400,
-            fontFamily: 'inherit',
-            color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-            borderRadius: '20px',
-            background: isActive ? 'var(--accent-light)' : 'transparent',
-            transition: 'all 0.18s',
-            textDecoration: 'none',
-          })}
-        >
-          {icon}
-          <span>{label}</span>
-        </NavLink>
-      ))}
-    </nav>
+      }}>
+        {TABS.map(({ path, label, icon }) => (
+          <NavLink
+            key={path}
+            to={path}
+            end={path === '/'}
+            style={({ isActive }) => ({
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', flex: 1, padding: '8px 2px', gap: '3px',
+              fontSize: '9px', fontWeight: isActive ? 600 : 400,
+              fontFamily: 'inherit',
+              color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+              borderRadius: '20px',
+              background: isActive ? 'var(--accent-light)' : 'transparent',
+              transition: 'all 0.18s', textDecoration: 'none',
+            })}
+          >
+            {icon}
+            <span>{label}</span>
+          </NavLink>
+        ))}
+
+        <button onClick={handleAvatar} style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', flex: 1, padding: '8px 2px', gap: '4px',
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          fontFamily: 'inherit',
+        }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: '50%',
+            background: 'var(--ink)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--sand-50)', fontWeight: 700, fontSize: '0.65rem',
+            letterSpacing: '-0.01em',
+          }}>{initials}</div>
+          <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 400 }}>
+            {isAdmin ? 'Admin' : 'Moi'}
+          </span>
+        </button>
+      </nav>
+    </>
   )
 }

@@ -181,7 +181,7 @@ export default function CoffreFort() {
   const isEmpty = pdfsByLeg.length === 0 && generalPdfs.length === 0
 
   return (
-    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-base)' }}>
+    <div style={{ minHeight: '100dvh' }}>
       <div className="px-4 pt-6 pb-2 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Coffre-Fort</h1>

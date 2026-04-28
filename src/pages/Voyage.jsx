@@ -555,7 +555,7 @@ export default function Voyage() {
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1) }
 
   return (
-    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-base)' }}>
+    <div style={{ minHeight: '100dvh' }}>
       <div className="px-4 pt-6 pb-2">
         <h1 className="text-2xl font-semibold">Voyage</h1>
         <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>

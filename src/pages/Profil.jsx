@@ -2,8 +2,6 @@ import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
-// ── Composants partagés ───────────────────────────────────────
-
 function Field({ label, required, hint, children }) {
   return (
     <div>
@@ -53,6 +51,8 @@ function Row({ label, value, blur }) {
 function ProfileForm({ profile, onSuccess, onCancel, isOnboarding }) {
   const { user } = useAuth()
   const [form, setForm] = useState({
+    first_name: profile?.first_name || '',
+    last_name: profile?.last_name || '',
     emergency_name: profile?.emergency_name || '',
     emergency_phone: profile?.emergency_phone || '',
     allergies: profile?.allergies || '',
@@ -66,6 +66,10 @@ function ProfileForm({ profile, onSuccess, onCancel, isOnboarding }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (!form.first_name.trim() || !form.last_name.trim()) {
+      setError('Prénom et nom sont requis.')
+      return
+    }
     if (!form.emergency_name || !form.emergency_phone || !form.passport_number || !form.ceam_number) {
       setError('Tous les champs marqués * sont obligatoires.')
       return
@@ -73,6 +77,8 @@ function ProfileForm({ profile, onSuccess, onCancel, isOnboarding }) {
     setLoading(true)
     try {
       const { error } = await supabase.from('profiles').update({
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
         emergency_name: form.emergency_name.trim(),
         emergency_phone: form.emergency_phone.trim(),
         allergies: form.allergies.trim() || null,
@@ -82,15 +88,14 @@ function ProfileForm({ profile, onSuccess, onCancel, isOnboarding }) {
 
       if (error) setError('Erreur lors de la sauvegarde. Réessaie.')
       else onSuccess()
-    } catch (e) {
+    } catch {
       setError('Erreur inattendue. Réessaie.')
     }
     setLoading(false)
   }
 
   return (
-    <div className={isOnboarding ? 'min-h-screen flex flex-col px-6 py-10' : 'px-4 pb-20'}
-      style={{ backgroundColor: 'var(--bg-base)' }}>
+    <div className={isOnboarding ? 'min-h-screen flex flex-col px-6 py-10' : 'px-4 pb-20'}>
 
       {isOnboarding && (
         <>
@@ -106,6 +111,21 @@ function ProfileForm({ profile, onSuccess, onCancel, isOnboarding }) {
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <Field label="Prénom" required>
+              <input value={form.first_name} onChange={e => set('first_name', e.target.value)}
+                placeholder="Axel" autoComplete="given-name" />
+            </Field>
+          </div>
+          <div style={{ flex: 1 }}>
+            <Field label="Nom" required>
+              <input value={form.last_name} onChange={e => set('last_name', e.target.value)}
+                placeholder="Marie" autoComplete="family-name" />
+            </Field>
+          </div>
+        </div>
+
         <Field label="Contact d'urgence — Nom" required>
           <input value={form.emergency_name} onChange={e => set('emergency_name', e.target.value)}
             placeholder="ex : Marie Dupont" />
@@ -157,6 +177,8 @@ function ProfileView({ profile, isAdmin, onEdit, onSignOut }) {
   const [generating, setGenerating] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.pseudo
+
   async function generateInvite() {
     setGenerating(true)
     setGeneratedLink('')
@@ -175,18 +197,29 @@ function ProfileView({ profile, isAdmin, onEdit, onSignOut }) {
   return (
     <div className="p-4 pb-20">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">Profil</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: '50%',
+            background: 'var(--ink)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--sand-50)', fontWeight: 700, fontSize: '1.1rem',
+            letterSpacing: '-0.01em', flexShrink: 0,
+          }}>
+            {`${(profile.first_name || profile.pseudo || '?')[0]}${(profile.last_name || '')[0] || ''}`.toUpperCase()}
+          </div>
+          <div>
+            <h1 className="text-xl font-bold" style={{ margin: 0 }}>{fullName}</h1>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+              {isAdmin ? '👑 Admin' : '👤 Membre'}
+            </p>
+          </div>
+        </div>
         <button onClick={onEdit}
           className="text-sm font-medium px-4 py-1.5 rounded-full"
           style={{ backgroundColor: 'var(--accent-light)', color: 'var(--accent)' }}>
           Modifier
         </button>
       </div>
-
-      <Section title="Identité">
-        <Row label="Pseudo" value={profile.pseudo} />
-        <Row label="Rôle" value={profile.role === 'admin' ? '👑 Admin' : 'Membre'} />
-      </Section>
 
       <Section title="Urgences">
         <Row label="Contact" value={profile.emergency_name} />
@@ -212,7 +245,7 @@ function ProfileView({ profile, isAdmin, onEdit, onSignOut }) {
             </button>
 
             {generatedLink && (
-              <div className="p-3 rounded-xl" style={{ backgroundColor: 'var(--bg-base)', border: '1.5px solid var(--border)' }}>
+              <div className="p-3 rounded-xl" style={{ backgroundColor: 'rgba(26,23,20,0.04)', border: '1.5px solid rgba(26,23,20,0.08)' }}>
                 <p className="text-xs break-all mb-2" style={{ color: 'var(--text-primary)' }}>
                   {generatedLink}
                 </p>
@@ -227,7 +260,7 @@ function ProfileView({ profile, isAdmin, onEdit, onSignOut }) {
       )}
 
       <button onClick={onSignOut} className="btn-secondary mt-2"
-        style={{ color: 'var(--trash)', borderColor: 'var(--border)' }}>
+        style={{ color: 'var(--trash)' }}>
         Se déconnecter
       </button>
     </div>

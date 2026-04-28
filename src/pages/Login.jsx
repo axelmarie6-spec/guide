@@ -32,8 +32,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6"
-      style={{ backgroundColor: 'var(--bg-base)' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
 
         <h1 className="text-3xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>

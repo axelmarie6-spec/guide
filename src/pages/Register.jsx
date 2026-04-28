@@ -39,7 +39,8 @@ export default function Register() {
   const [tokenError, setTokenError] = useState('')
   const [tokenLoading, setTokenLoading] = useState(true)
 
-  const [pseudo, setPseudo] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -62,14 +63,14 @@ export default function Register() {
     e.preventDefault()
     setError('')
 
+    if (!firstName.trim() || !lastName.trim()) { setError('Prénom et nom sont requis.'); return }
     if (password !== confirm) { setError('Les mots de passe ne correspondent pas.'); return }
     if (password.length < 6) { setError('Le mot de passe doit faire au moins 6 caractères.'); return }
 
     setLoading(true)
 
-    const { data: existing } = await supabase
-      .from('profiles').select('id').eq('pseudo', pseudo.trim()).single()
-    if (existing) { setError('Ce pseudo est déjà pris.'); setLoading(false); return }
+    // Génère un pseudo unique interne
+    const slug = `${firstName.trim().toLowerCase()}.${lastName.trim().toLowerCase()}.${Math.random().toString(36).slice(2, 6)}`
 
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(), password
@@ -81,7 +82,12 @@ export default function Register() {
     }
 
     const { error: profileError } = await supabase
-      .from('profiles').insert({ id: authData.user.id, pseudo: pseudo.trim() })
+      .from('profiles').insert({
+        id: authData.user.id,
+        pseudo: slug,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+      })
     if (profileError) {
       setError("Erreur lors de la création du profil. Contacte l'admin.")
       setLoading(false)
@@ -96,17 +102,16 @@ export default function Register() {
 
   if (tokenLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-base)' }}>
+      <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-          style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
+          style={{ borderColor: 'var(--sky)', borderTopColor: 'transparent' }} />
       </div>
     )
   }
 
   if (tokenError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center"
-        style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
         <p className="text-5xl mb-4">🔒</p>
         <h2 className="text-xl font-semibold mb-2">Lien invalide</h2>
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{tokenError}</p>
@@ -115,24 +120,29 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6"
-      style={{ backgroundColor: 'var(--bg-base)' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
-
-        <h1 className="text-3xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-          Rejoindre le groupe
-        </h1>
-        <p className="mb-10 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          {invitation?.label ? `Invitation : ${invitation.label}` : "Crée ton compte pour accéder à l'app."}
+        <h1 className="text-3xl font-bold mb-1">Rejoindre le groupe</h1>
+        <p className="mb-8 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          {invitation?.label ? `Invitation : ${invitation.label}` : "Crée ton compte."}
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-xs mb-1.5 font-medium" style={{ color: 'var(--text-secondary)' }}>
-              Choisis un pseudo
-            </label>
-            <input type="text" value={pseudo} onChange={e => setPseudo(e.target.value)}
-              placeholder="ton pseudo" autoComplete="username" required />
+          <div style={{ display: 'flex', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <label className="block text-xs mb-1.5 font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Prénom
+              </label>
+              <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)}
+                placeholder="Axel" autoComplete="given-name" required />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label className="block text-xs mb-1.5 font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Nom
+              </label>
+              <input type="text" value={lastName} onChange={e => setLastName(e.target.value)}
+                placeholder="Marie" autoComplete="family-name" required />
+            </div>
           </div>
 
           <div>

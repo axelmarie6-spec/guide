@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -48,7 +49,7 @@ function UsersTab({ currentUserId }) {
   const [loading, setLoading] = useState(true)
 
   async function fetchUsers() {
-    const { data } = await supabase.from('profiles').select('*').order('created_at')
+    const { data } = await supabase.from('profiles').select('id, first_name, last_name, pseudo, role, created_at').order('created_at')
     if (data) setUsers(data)
     setLoading(false)
   }
@@ -83,16 +84,17 @@ function UsersTab({ currentUserId }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 700, fontSize: '1rem', color: 'var(--accent)',
           }}>
-            {(u.pseudo || '?')[0].toUpperCase()}
+            {(u.first_name || u.pseudo || '?')[0].toUpperCase()}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontWeight: 600, fontSize: '0.9rem', margin: 0 }}>
-              {u.pseudo} {u.id === currentUserId && <span style={{ color: 'var(--text-secondary)', fontWeight: 400, fontSize: '0.75rem' }}>(toi)</span>}
+              {[u.first_name, u.last_name].filter(Boolean).join(' ') || u.pseudo}
+              {u.id === currentUserId && <span style={{ color: 'var(--text-secondary)', fontWeight: 400, fontSize: '0.75rem' }}> (toi)</span>}
             </p>
             <button onClick={() => toggleRole(u)} style={{
               fontSize: '0.7rem', padding: '2px 8px', borderRadius: '10px', border: 'none',
               cursor: u.id === currentUserId ? 'default' : 'pointer',
-              backgroundColor: u.role === 'admin' ? 'rgba(80,70,229,0.1)' : 'rgba(0,0,0,0.06)',
+              backgroundColor: u.role === 'admin' ? 'var(--accent-light)' : 'rgba(0,0,0,0.06)',
               color: u.role === 'admin' ? 'var(--accent)' : 'var(--text-secondary)',
               fontWeight: 600, marginTop: 3,
             }}>
@@ -204,7 +206,7 @@ function VotesTab() {
     setLoading(true)
     const [votesRes, profilesRes, activitiesRes] = await Promise.all([
       supabase.from('votes').select('*'),
-      supabase.from('profiles').select('id, pseudo'),
+      supabase.from('profiles').select('id, first_name, last_name, pseudo'),
       supabase.from('activities').select('id, name, city').eq('city', city),
     ])
     setVotes(votesRes.data ?? [])
@@ -222,7 +224,10 @@ function VotesTab() {
     fetchAll()
   }
 
-  const profileMap = Object.fromEntries(profiles.map(p => [p.id, p.pseudo]))
+  const profileMap = Object.fromEntries(profiles.map(p => [
+    p.id,
+    [p.first_name, p.last_name].filter(Boolean).join(' ') || p.pseudo,
+  ]))
   const actMap = Object.fromEntries(activities.map(a => [a.id, a.name]))
   const cityVotes = votes.filter(v => activities.some(a => a.id === v.activity_id))
 
@@ -313,10 +318,13 @@ const TABS = [
 
 export default function Admin() {
   const { user } = useAuth()
-  const [tab, setTab] = useState('users')
+  const [searchParams] = useSearchParams()
+  const initialTab = ['users', 'activities', 'votes'].includes(searchParams.get('tab'))
+    ? searchParams.get('tab') : 'users'
+  const [tab, setTab] = useState(initialTab)
 
   return (
-    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-base)' }}>
+    <div style={{ minHeight: '100dvh' }}>
       <div style={{ padding: '24px 16px 0' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Administration</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: 2, marginBottom: 16 }}>
