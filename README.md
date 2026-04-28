@@ -1,7 +1,7 @@
 # Travel Hub & Oracle
 
 > **Passeport Numérique de Groupe** pour 5 amis · 22 jours · 7 villes européennes.
-> Bruxelles → Amsterdam → Berlin → Prague → Budapest → Vienne → Genève.
+> Bruxelles → Amsterdam → Berlin → Prague → Budapest → Vienne → Genève · Août 2026.
 
 L'app ne te demande pas ce que tu veux faire. Elle le décide pour toi.
 
@@ -9,7 +9,7 @@ L'app ne te demande pas ce que tu veux faire. Elle le décide pour toi.
 
 ## Développeur
 
-Projet solo développé par un étudiant en **2e année de classe préparatoire aux grandes écoles d'ingénieurs**. Bonnes bases en informatique, mais pas de formation web professionnelle — ce projet est aussi un apprentissage. La stack a été choisie en conséquence : des outils bien documentés, une communauté large, et une complexité adaptée à un développeur solo autodidacte.
+Projet solo développé par un étudiant en **2e année de classe préparatoire aux grandes écoles d'ingénieurs**. Bonnes bases en informatique, pas de formation web professionnelle — ce projet est aussi un apprentissage. Stack choisie pour sa documentation, sa communauté et sa complexité adaptée à un développeur solo.
 
 ---
 
@@ -17,176 +17,184 @@ Projet solo développé par un étudiant en **2e année de classe préparatoire 
 
 Cinq amis. Vingt-deux jours de train. Un budget serré à 1 200 €/personne. Des correspondances de 5 minutes à Renens. La fatigue qui s'accumule, les débats interminables "on fait quoi aujourd'hui ?", et le risque que la promiscuité tue l'amitié avant Budapest.
 
-**Travel Hub & Oracle** est un pare-chocs relationnel : il absorbe la charge mentale, impose les décisions, et centralise tout ce qui est critique pour avancer — même sans internet.
-
----
-
-## Concept
-
-Deux idées simples soudées ensemble :
-
-1. **Passeport Numérique de Groupe** — un coffre-fort offline qui centralise tout ce dont le groupe a besoin pour survivre : adresses Airbnb, codes d'entrée, billets de train, plans de gare, numéros d'urgence.
-
-2. **Oracle de Décision** — un moteur de vote par swipe qui impose les choix à la majorité (3/5), génère un itinéraire géographiquement logique, et empêche les allers-retours inutiles dans la ville.
+**Travel Hub & Oracle** est un pare-chocs relationnel : il absorbe la charge mentale, impose les décisions par vote, et centralise tout ce qui est critique — même sans internet.
 
 ---
 
 ## Stack Technique
 
-| Domaine | Outil | Pourquoi ce choix |
+| Domaine | Outil | Pourquoi |
 |---|---|---|
-| Frontend | **React 18 + Vite** | Optimal pour une PWA offline-first, plus simple que Next.js pour un projet solo |
-| Style | **Tailwind CSS** | Mobile-first par défaut, prototypage rapide |
-| PWA & Offline | **vite-plugin-pwa + Workbox** | Service Workers préconfigurés, cache agressif automatique |
-| Backend & Auth | **Supabase** | Auth, base de données, stockage PDF — tout en gratuit |
+| Frontend | **React 18 + Vite** | Optimal pour PWA offline-first, plus simple que Next.js pour un projet solo |
+| Style | **Tailwind CSS v4 + CSS variables** | Mobile-first, design system "Liquid Glass" cohérent |
+| PWA & Offline | **vite-plugin-pwa + Workbox** | Service Workers préconfigurés, CacheFirst sur Storage Supabase |
+| Backend & Auth | **Supabase** | Auth, BDD PostgreSQL, Storage fichiers, Realtime |
 | Hébergement | **Vercel** | Déploiement automatique depuis GitHub, HTTPS, CDN mondial |
-| Météo | **OpenWeatherMap API** (free tier) | 1 000 appels/jour, largement suffisant pour 5 utilisateurs |
-| Taux de change | **Frankfurter API** | 100 % gratuit, sans clé API, données Banque Centrale Européenne |
-| Cartographie | **Leaflet + OpenStreetMap** | Gratuit, open-source, tuiles cachables offline |
 
 **Coût total d'infrastructure : 0 €.**
 
 ---
 
-## Architecture — Les 4 Onglets
+## Architecture — Les Onglets
 
-### Onglet 1 · "Aujourd'hui" — Le Dashboard
+### Onglet 1 · "Aujourd'hui" — Le Dashboard *(Phase 5, à venir)*
 
 Ce que le groupe voit en ouvrant l'app le matin :
 
-- **Météo locale** en temps réel (OpenWeatherMap, avec fallback sur la valeur cachée si offline)
-- **Convertisseur de devises** automatique (CZK, HUF, CHF → EUR via Frankfurter API)
-- **Trajet en cours** : ville de départ, gare d'arrivée, heure d'arrivée
-- **Timeline de la journée** : l'itinéraire généré par l'onglet Explorer, dans l'ordre géographique
+- Météo locale en temps réel (avec fallback offline sur la valeur cachée)
+- Convertisseur de devises automatique (CZK, HUF, CHF → EUR)
+- Trajet du jour si c'est un jour de train
+- Activités validées par le vote de la veille, dans l'ordre géographique
 
-### Onglet 2 · "Explorer" — L'Oracle de Décision
+### Onglet 2 · "Explorer" — L'Oracle de Décision ✅
 
-Le moteur anti-friction du groupe.
+Le moteur anti-friction du groupe. Fonctionne ville par ville.
 
 **Fonctionnement :**
 
-1. L'admin (et les membres si souhaité) alimentent une base d'activités dans Supabase avant et pendant le voyage. Chaque activité contient : ville, nom, description, prix en devise locale, catégorie, tag météo (intérieur/extérieur), coordonnées GPS, horaires d'ouverture.
+1. L'admin ouvre les votes du jour et fixe le plafond (max. activités à valider)
+2. Chaque membre swipe les activités de la ville en cours, une par une :
+   - **→ Match** — "On le fait"
+   - **↓ Snooze** — Revient demain
+   - **← Trash** — Masqué définitivement (confirmation en 2 étapes)
+3. Quand tous les membres ont voté, les résultats s'affichent automatiquement
+4. **Seuil de validation = majorité** (`ceil(n_membres / 2)`) — s'adapte dynamiquement au nombre d'inscrits
+5. Si les validées dépassent le plafond → **Deuxième Tour** : sélection manuelle des meilleures
+6. Tout le monde peut proposer une activité (nom, description, catégorie, prix, photo optionnelle)
+7. Catégories prédéfinies en français + possibilité d'en créer de nouvelles
 
-2. Chaque membre swipe les activités de la ville en cours, **un par un**, avec 3 choix :
-   - **Match** — "On le fait"
-   - **Poubelle** — Masqué définitivement pour tout le monde
-   - **Snooze** — Masqué jusqu'à minuit heure locale, puis revient dans le deck
+**Compteur temps réel** : points colorés indiquant combien de membres ont terminé leur deck (Supabase Realtime).
 
-3. Les votes sont **révélés seulement quand les 5 membres ont voté** sur une activité (évite les biais d'influence). Le vote se fait uniquement en ligne.
+**Rappel journalier** : 1 vote par jour par ville, le nombre de nuits prévues est affiché dans le sélecteur de ville.
 
-4. **Consensus automatique à 3 Match sur 5** → l'activité passe dans le planning.
+### Onglet 3 · "Voyage" — Logistique Complète ✅
 
-5. **Égalité** (ex : 2 Match, 2 Poubelle, 1 Snooze) → l'admin tranche après discussion de groupe.
+Toutes les infos de déplacement et d'hébergement, accessibles offline.
 
-6. **Plafond journalier** : l'admin définit le nombre max d'activités par jour (réduit à 1-2 les jours de train). Si les activités validées dépassent ce plafond → **Deuxième Tour** : vote par cases à cocher pour sélectionner les meilleures.
+- **Trains** : liste de tous les tronçons (numéro de leg, date, départ/arrivée, heure, voie, notes), avec lien vers le plan de la gare
+- **Billets** : PDFs uploadés par l'admin, accessibles hors-ligne via blob URL (le Service Worker les met en cache au chargement)
+- **Airbnbs** : adresse, code d'entrée, instructions, heure de check-in/check-out, lien Maps
+- **Urgences** : numéros locaux par pays (police, SAMU, pompiers), numéros des ambassades françaises
 
-7. **Algorithme de timeline** : le code trie les activités validées en minimisant les distances (point de départ = adresse Airbnb, point d'arrivée = gare de départ). Tient compte des horaires d'ouverture.
+### Onglet 4 · "Coffre-Fort" — Documents Sensibles ✅
 
-### Onglet 3 · "Coffre-Fort" — La Survie Logistique
+Coffre dédié aux PDFs : billets de train, assurances, documents de groupe. Upload par l'admin, organisé par tronçon ou en "Document général". 100% accessible offline.
 
-Le seul onglet qui doit fonctionner **même avec 0 octet de connexion** (roaming Suisse, zones blanches en gare).
+### Onglet 5 · "Profil" — Onboarding Bloquant ✅
 
-Contenu :
-- **Airbnb** : adresse complète, code de la boîte à clés, instructions d'arrivée
-- **Billets de train** : PDFs uploadés par l'admin, stockés dans Supabase Storage et mis en cache offline
-- **Plans de gare** : cartes interactives (Leaflet/OSM) des gares à correspondances critiques, tuiles précachées
-- **Urgences** : numéros d'urgence locaux par pays, géolocalisation des ambassades françaises
-
-### Onglet 4 · "Profil" — L'Onboarding Bloquant
-
-À la première connexion, l'accès à l'app est **verrouillé** jusqu'à ce que l'utilisateur complète :
-
-- Contacts d'urgence familiaux (nom + téléphone)
-- Allergies et restrictions alimentaires
+À la première connexion, l'accès est verrouillé jusqu'à ce que le membre complète :
+- Contact d'urgence familial (nom + téléphone)
 - Numéro de passeport / carte d'identité
 - Numéro de Carte Européenne d'Assurance Maladie (CEAM)
 
-Optionnel après l'onboarding :
-- **Checklist de départ** interactive (cocher les affaires avant de quitter l'Airbnb)
+### Onglet Admin · "Administration" ✅ *(visible uniquement pour l'admin)*
+
+- **Utilisateurs** : liste des membres, supprimer un compte, basculer le rôle admin/membre
+- **Activités** : par ville — masquer/réactiver/supprimer une activité
+- **Votes** : visualiser tous les votes par ville, reset complet si besoin
 
 ---
 
-## Modèle de Données (Supabase)
+## Modèle de Données Réel (Supabase)
 
-### `users`
+### `profiles`
 ```
-id              uuid        PK, géré par Supabase Auth
-pseudo          text        UNIQUE, affiché dans l'app
-role            text        'admin' | 'user'
-invited_at      timestamp
--- Profil obligatoire (bloquant si null)
-emergency_name  text
-emergency_phone text
-allergies       text        nullable
-passport_number text
-ceam_number     text
+id              uuid        PK — lié à auth.users
+pseudo          text        UNIQUE
+role            text        'admin' | 'member'
+emergency_name  text        obligatoire (bloquant)
+emergency_phone text        obligatoire (bloquant)
+passport_number text        obligatoire (bloquant)
+ceam_number     text        obligatoire (bloquant)
+created_at      timestamptz
+```
+
+### `trains`
+```
+id              uuid        PK
+leg_order       integer     UNIQUE — ordre du tronçon (1 à 10)
+date            date
+from_station    text
+to_station      text
+departure_time  text
+arrival_time    text
+platform        text        nullable
+notes           text        nullable
+```
+
+### `airbnbs`
+```
+id              uuid        PK
+city            text        UNIQUE
+address         text        nullable
+entry_code      text        nullable
+instructions    text        nullable  -- markdown
+checkin_time    text
+checkout_time   text
+```
+
+### `ticket_pdfs`
+```
+id              uuid        PK
+leg_order       integer     0 = document général, 1-10 = tronçon spécifique
+label           text
+storage_path    text        -- chemin dans le bucket Supabase "tickets"
+created_at      timestamptz
 ```
 
 ### `activities`
 ```
 id              uuid        PK
-created_by      uuid        FK → users.id
 city            text        'bruxelles' | 'amsterdam' | 'berlin' | 'prague' | 'budapest' | 'vienne' | 'geneve'
 name            text
 description     text        nullable
-address         text
-gps_lat         float
-gps_lng         float
-price_local     decimal
-currency        text        'EUR' | 'CZK' | 'HUF' | 'CHF'
-category        text        'musée' | 'resto' | 'bar' | 'parc' | 'marché' | 'visite' | ...
-weather_tag     text        'indoor' | 'outdoor' | 'both'
-opening_hours   jsonb       nullable  -- { "lun": "10:00-18:00", ... }
+category        text        libre (culture, nature, food, nightlife, shopping, sport, other, ou custom)
+price_eur       numeric     nullable
+photo_url       text        nullable  -- URL publique bucket Supabase "activities"
+added_by        uuid        FK → profiles.id
 is_active       boolean     default true
-created_at      timestamp
+created_at      timestamptz
 ```
 
 ### `votes`
 ```
 id              uuid        PK
-user_id         uuid        FK → users.id
-activity_id     uuid        FK → activities.id
-vote            text        'match' | 'poubelle' | 'snooze'
-voted_at        timestamp
-snooze_until    date        nullable  -- minuit heure locale, rempli si vote = 'snooze'
-```
-
-### `logistics`
-```
-id              uuid        PK
-city            text
-type            text        'airbnb' | 'train' | 'station_plan' | 'emergency'
-title           text
-content         text        nullable  -- texte libre, markdown
-file_url        text        nullable  -- URL Supabase Storage (PDF, image)
-city_from       text        nullable  -- pour les trajets
-city_to         text        nullable
-departure_at    timestamp   nullable
-arrival_at      timestamp   nullable
+activity_id     uuid        FK → activities.id ON DELETE CASCADE
+user_id         uuid        FK → profiles.id
+vote            text        'match' | 'snooze' | 'trash'
+snooze_date     date        nullable  -- date de réapparition (snooze)
+voted_at        timestamptz
+UNIQUE (activity_id, user_id)
 ```
 
 ### `day_config`
 ```
-city            text        PK
-date            date        PK
-max_activities  integer     défini par l'admin
-airbnb_lat      float
-airbnb_lng      float
-departure_station text
-departure_at    timestamp
+id              uuid        PK
+city            text
+date            date
+max_activities  integer     -- plafond journalier défini par l'admin
+votes_open      boolean     -- l'admin ouvre/ferme le deck
+created_by      uuid        FK → profiles.id
+created_at      timestamptz
+UNIQUE (city, date)
 ```
+
+---
+
+## Storage Supabase
+
+| Bucket | Visibilité | Usage |
+|---|---|---|
+| `tickets` | Privé (auth requis) | PDFs des billets de train |
+| `activities` | Public | Photos des activités |
 
 ---
 
 ## Variables d'Environnement
 
-Copie `.env.example` → `.env.local` et remplis :
-
 ```env
 VITE_SUPABASE_URL=https://xxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGci...
-VITE_OPENWEATHER_API_KEY=xxxxxxxxxxxx
-# Frankfurter API ne nécessite pas de clé
 ```
 
 ---
@@ -194,18 +202,11 @@ VITE_OPENWEATHER_API_KEY=xxxxxxxxxxxx
 ## Installation locale
 
 ```bash
-# 1. Cloner le repo
-git clone https://github.com/TON_PSEUDO/travel-hub.git
+git clone https://github.com/axelmarie6-spec/guide.git
 cd travel-hub
-
-# 2. Installer les dépendances
 npm install
-
-# 3. Configurer les variables d'environnement
 cp .env.example .env.local
-# (remplir les clés)
-
-# 4. Lancer en développement
+# Remplir les clés Supabase
 npm run dev
 ```
 
@@ -213,29 +214,27 @@ npm run dev
 
 ## Déploiement (Vercel)
 
-1. Importer le repo GitHub dans [vercel.com](https://vercel.com)
-2. Ajouter les variables d'environnement dans les settings Vercel
-3. Chaque `git push` sur `main` déclenche un déploiement automatique
+Chaque `git push` sur `main` déclenche un déploiement automatique. Variables d'environnement à configurer dans les settings Vercel.
 
 ---
 
 ## Accès pour les membres du groupe
 
 1. L'admin génère un lien d'invitation depuis son profil
-2. Chaque membre clique sur le lien, choisit un pseudo et un mot de passe
+2. Chaque membre clique sur le lien, choisit un pseudo + mot de passe
 3. L'onboarding bloquant (Profil) s'affiche avant toute autre chose
-4. Une fois le profil complété, accès complet à l'app
+4. Une fois le profil complété, accès complet à tous les onglets
 
 ---
 
-## Contraintes Offline — Ce qui fonctionne sans internet
+## Contraintes Offline
 
 | Fonctionnalité | Online | Offline |
 |---|---|---|
-| Coffre-Fort complet | ✅ | ✅ (cache agressif) |
-| Plans de gare | ✅ | ✅ (tuiles précachées) |
-| PDFs des billets | ✅ | ✅ (mis en cache au téléchargement) |
-| Timeline de la journée | ✅ | ✅ (dernière version cachée) |
-| Météo | ✅ | ⚠️ (dernière valeur connue) |
-| Taux de change | ✅ | ⚠️ (dernier taux connu) |
-| Votes / Explorer | ✅ | ❌ (online uniquement) |
+| Coffre-Fort — PDFs billets | ✅ | ✅ (blob URL via SW, précaché au chargement) |
+| Voyage — trains & airbnbs | ✅ | ✅ (données Supabase en cache) |
+| Plans de gare (liens externes) | ✅ | ❌ |
+| Météo | ✅ | ⚠️ Phase 5 — fallback valeur cachée |
+| Taux de change | ✅ | ⚠️ Phase 5 — fallback valeur cachée |
+| Explorer / Votes | ✅ | ❌ (online uniquement) |
+| Admin | ✅ | ❌ (online uniquement) |

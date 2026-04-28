@@ -1,220 +1,191 @@
 # Roadmap — Travel Hub & Oracle
 
-Développement solo. Stack : React 18 + Vite + Tailwind + Supabase + Vercel.
+Développement solo. Stack : React 18 + Vite + Tailwind CSS v4 + Supabase + Vercel.
 
-Chaque phase est indépendante et livrable. L'ordre est volontaire : les bases d'abord, le plus complexe après.
-
----
-
-## Phase 0 — Setup & Infrastructure
-**Durée estimée : 1-2 jours**
-
-Objectif : avoir un projet qui tourne localement et se déploie sur Vercel en 5 minutes.
-
-- [ ] Créer le projet avec `npm create vite@latest` (template React)
-- [ ] Installer et configurer Tailwind CSS
-- [ ] Installer `vite-plugin-pwa` (base du Service Worker, config minimale)
-- [ ] Créer le projet Supabase (dashboard web) et noter les clés
-- [ ] Créer le fichier `.env.local` et `.env.example`
-- [ ] Créer le repo GitHub et connecter à Vercel (déploiement automatique)
-- [ ] Vérifier que `npm run dev` et `npm run build` passent sans erreur
-- [ ] **Livrable** : URL Vercel fonctionnelle avec une page "Hello World"
+Légende : ✅ Terminé · 🔄 Partiel · ⬜ À faire
 
 ---
 
-## Phase 1 — Authentification & Onboarding
-**Durée estimée : 3-4 jours**
+## Phase 0 — Setup & Infrastructure ✅
+**Terminé**
 
-Objectif : les 5 membres peuvent rejoindre l'app et remplir leur profil.
-
-- [ ] Créer les tables Supabase : `users` (avec les champs profil)
-- [ ] Configurer Supabase Auth (email désactivé, auth par pseudo/mdp via `signUp`)
-- [ ] Page de connexion : formulaire pseudo + mot de passe
-- [ ] Système d'invitation :
-  - [ ] L'admin génère un token d'invitation unique (stocké en BDD)
-  - [ ] URL d'invitation `/invite/:token` → redirige vers la page d'inscription
-  - [ ] Le token est invalidé après utilisation
-- [ ] Questionnaire Profil bloquant :
-  - [ ] Page dédiée affichée si un champ obligatoire est vide
-  - [ ] Formulaire : contacts urgence, allergies, numéro passeport, CEAM
-  - [ ] Redirection automatique vers Profil si incomplet (protéger les routes)
-- [ ] Bottom Bar de navigation (4 onglets) — visible seulement après onboarding
-- [ ] **Livrable** : 5 comptes créés, profils remplis, navigation fonctionnelle
+- ✅ Projet Vite + React 18
+- ✅ Tailwind CSS v4
+- ✅ vite-plugin-pwa + Workbox (Service Worker, précache, CacheFirst Storage)
+- ✅ Supabase (Auth, BDD, Storage)
+- ✅ Repo GitHub + déploiement Vercel automatique
+- ✅ Variables d'environnement `.env.local` / `.env.example`
 
 ---
 
-## Phase 2 — Coffre-Fort (Offline First)
-**Durée estimée : 3-4 jours**
+## Phase 1 — Authentification & Onboarding ✅
+**Terminé**
 
-Objectif : le Coffre-Fort fonctionne à 100% sans internet.
-
-- [ ] Créer la table `logistics` dans Supabase
-- [ ] Insérer manuellement les données via le dashboard Supabase :
-  - Infos Airbnb des 7 villes (adresse, code boîte à clés, instructions)
-  - Informations des trajets (7 trains)
-  - Numéros d'urgence par pays (BE, NL, DE, CZ, HU, AT, CH) + ambassades françaises
-- [ ] UI Coffre-Fort : liste des sections par type, affichage détail
-- [ ] Upload des PDFs billets de train (Supabase Storage)
-  - [ ] Interface admin pour uploader depuis l'app ou le dashboard
-  - [ ] Affichage/téléchargement des PDFs dans l'app
-- [ ] Plans de gare : intégrer Leaflet + OpenStreetMap
-  - [ ] Carte centrée sur chaque gare à correspondance critique
-  - [ ] Bouton "Télécharger pour offline" qui pré-cache les tuiles OSM
-- [ ] Configurer Workbox pour cacher agressivement tout l'onglet Coffre-Fort
-- [ ] Tester en mode avion (DevTools → Network → Offline)
-- [ ] **Livrable** : Coffre-Fort 100% offline, PDFs accessibles, plans de gare
+- ✅ Table `profiles` (pseudo, rôle, champs profil obligatoires)
+- ✅ Auth Supabase email/mot de passe
+- ✅ Page Login
+- ✅ Système d'invitation par token (`/invite/:token`) — token usage unique
+- ✅ Page Register depuis lien d'invitation
+- ✅ Onboarding bloquant : Profil verrouille l'app si champs obligatoires manquants
+  - Contact d'urgence, numéro de passeport, CEAM
+- ✅ Routes protégées (`ProtectedRoute`, `AuthRoute`, `GuestRoute`, `AdminRoute`)
+- ✅ Bottom Bar 5 onglets + onglet Admin conditionnel (admin seulement)
 
 ---
 
-## Phase 3 — Explorer : Activités & Votes
-**Durée estimée : 5-6 jours**
+## Phase 2 — Voyage & Coffre-Fort ✅
+**Terminé — architecture scindée en deux onglets**
 
-Objectif : le système de vote fonctionne de A à Z.
+### Onglet "Voyage" (trains + airbnbs + urgences)
+- ✅ Table `trains` : 10 tronçons (leg_order, date, gare départ/arrivée, horaires, quai, notes)
+- ✅ Table `airbnbs` : adresse, code entrée, instructions, horaires
+- ✅ TrainCards avec upload PDF inline (billets par tronçon)
+- ✅ Liens vers plans de gare (STATION_MAP)
+- ✅ Section Airbnb avec mode édition admin (toutes les propriétés éditables in-app)
+- ✅ Section Urgences : numéros locaux BE/NL/DE/CZ/HU/AT/CH + ambassades françaises
+- ✅ PDFs accessibles offline via fetch → blob URL (intercepté par le Service Worker)
+- ✅ Précachage automatique de tous les PDFs au chargement de la page
 
-### 3a — Base de données des activités
-- [ ] Créer la table `activities` et `votes` dans Supabase
-- [ ] Définir les Row Level Security (RLS) Supabase :
-  - Tout le monde peut lire les activités de sa ville
-  - Tout le monde peut insérer une activité
-  - Seul l'admin peut supprimer/désactiver une activité
-  - Chaque user peut insérer/lire ses propres votes uniquement
-- [ ] Alimenter la base avec ~10-15 activités par ville (admin via dashboard)
-
-### 3b — Interface de swipe
-- [ ] Afficher les activités non-votées de la ville en cours, une par une
-- [ ] Carte d'activité : nom, catégorie, prix en € et devise locale, tag météo, description
-- [ ] 3 boutons d'action : Match (vert), Snooze (orange), Poubelle (rouge)
-- [ ] Swipe tactile (bibliothèque `react-swipeable` ou CSS transform)
-- [ ] Cacher les activités marquées "Poubelle" (définitivement) ou "Snooze" (jusqu'à minuit)
-- [ ] Formulaire "Ajouter une activité" accessible à tous les membres
-
-### 3c — Logique de consensus
-- [ ] Calculer le nombre de votes par activité côté serveur (Supabase function ou côté client)
-- [ ] Afficher le résultat seulement quand les 5 membres ont voté
-- [ ] **3 Match → activité validée** : passe dans le planning de la ville
-- [ ] **Égalité** → notification à l'admin (badge ou message)
-- [ ] **Snooze** : requête filtrée par `snooze_until < now()` pour réafficher le lendemain
-- [ ] **Deuxième Tour** : si activités validées > plafond journalier (défini dans `day_config`) → interface de vote à cases à cocher pour sélectionner les meilleures
-
-- [ ] **Livrable** : cycle complet vote → consensus → planning pour une ville test
+### Onglet "Coffre-Fort" (documents PDF uniquement)
+- ✅ Table `ticket_pdfs` (leg_order, label, storage_path)
+- ✅ Bucket Supabase Storage `tickets` (privé, RLS auth)
+- ✅ Upload admin par tronçon ou "Document général" (leg_order = 0)
+- ✅ Suppression admin avec confirmation
+- ✅ Ouverture offline via fetch → blob URL
 
 ---
 
-## Phase 4 — Algorithme de Timeline
-**Durée estimée : 3-4 jours**
+## Phase 3 — Explorer : Activités & Votes ✅
+**Terminé**
 
-Objectif : les activités validées sont triées en un itinéraire logique.
+### Base de données
+- ✅ Tables `activities`, `votes`, `day_config` avec RLS complet
+- ✅ ~40 activités seed sur les 7 villes
+- ✅ Bucket Supabase Storage `activities` (public, photos optionnelles)
+- ✅ Contrainte CHECK sur `category` supprimée → catégories libres
 
-- [ ] Créer la table `day_config` (admin y définit max_activities, coords Airbnb, gare de départ)
-- [ ] Algorithme de tri géographique :
-  - Point de départ fixe = coordonnées GPS de l'Airbnb
-  - Point d'arrivée fixe = coordonnées GPS de la gare de départ (si jour de train)
-  - Algorithme du "plus proche voisin" : à chaque étape, aller à l'activité non visitée la plus proche
-  - Filtrer les activités selon leurs horaires d'ouverture (ne pas programmer un musée fermé)
-- [ ] Stocker l'itinéraire généré (ordre des activités) dans Supabase ou en cache local
-- [ ] Interface d'affichage de la timeline : liste ordonnée avec heures estimées
-- [ ] Interface admin pour modifier manuellement l'ordre si besoin
-- [ ] **Livrable** : timeline générée automatiquement pour une journée test à Prague
+### Interface de vote
+- ✅ Deck de cartes swipeable (touch + boutons)
+  - → droite = Match, ↓ bas = Snooze, ← gauche = Trash
+  - Tint visuel coloré pendant le swipe (vert/orange/rouge)
+  - Stack de cartes animé (aperçu des 2 cartes suivantes)
+- ✅ Confirmation 2 étapes pour Trash
+- ✅ 3 boutons d'action sous la carte (🗑️ ⏱️ ✅)
+- ✅ Sélecteur de ville avec nuits prévues (`Bruxelles · 2n`)
+- ✅ Rappel "1 vote par jour · X nuits prévues"
+
+### Logique de consensus
+- ✅ Seuil dynamique : `ceil(n_inscrits / 2)` — fetché depuis `profiles`
+- ✅ Résultats affichés automatiquement quand tous les membres ont voté
+- ✅ Vue "Résultats" avec activités validées triées par score
+- ✅ Deuxième Tour si validées > plafond (sélection manuelle des X meilleures)
+- ✅ Admin : ouvrir les votes + fixer le plafond journalier
+- ✅ Admin : fermer les votes manuellement
+
+### Temps réel
+- ✅ Supabase Realtime sur `votes` et `day_config`
+- ✅ Compteur "X/N ont terminé" avec points colorés (mise à jour live)
+
+### Ajout d'activité
+- ✅ Modal bottom-sheet z-index 100 (au-dessus de la nav bar)
+- ✅ Champs : nom, description, catégorie, prix, photo optionnelle
+- ✅ Catégories en français (Culture, Resto & Bar, Soirée…)
+- ✅ Option "Nouvelle catégorie…" → champ texte libre
+
+### Panel Admin
+- ✅ Page `/admin` protégée par AdminRoute
+- ✅ Onglet Admin dans la nav bar (visible admin seulement)
+- ✅ Gestion utilisateurs : supprimer, basculer rôle admin/membre
+- ✅ Gestion activités par ville : masquer/réactiver/supprimer
+- ✅ Gestion votes par ville : visualisation + reset
 
 ---
 
-## Phase 5 — Dashboard "Aujourd'hui"
-**Durée estimée : 2-3 jours**
+## Phase 4 — Dashboard "Aujourd'hui" ⬜
+**À faire**
 
 Objectif : la page d'accueil donne toutes les infos critiques du jour en un coup d'œil.
 
-- [ ] **Météo** :
-  - [ ] Intégrer OpenWeatherMap API (clé gratuite)
-  - [ ] Appel API sur la ville en cours (coordonnées GPS depuis `day_config`)
-  - [ ] Afficher : température, icône météo, conditions
-  - [ ] Cacher la dernière réponse (fallback offline)
-- [ ] **Convertisseur de devises** :
-  - [ ] Intégrer Frankfurter API (aucune clé requise)
-  - [ ] Afficher les taux EUR→CZK, EUR→HUF, EUR→CHF selon la ville en cours
-  - [ ] Mise à jour automatique au chargement, valeur cachée si offline
-- [ ] **Trajet en cours** :
-  - [ ] Lire depuis `logistics` le train de la journée
-  - [ ] Afficher : départ, arrivée, durée, heure d'arrivée
-- [ ] **Timeline du jour** :
-  - [ ] Afficher la liste générée par la Phase 4
-  - [ ] Lien rapide vers chaque activité (détail + GPS)
-- [ ] **Livrable** : dashboard complet et fonctionnel pour une journée test
+- ⬜ Détecter la ville en cours (à partir de la date et du calendrier des trains)
+- ⬜ **Météo locale** :
+  - Intégrer OpenWeatherMap API (clé gratuite, 1 000 appels/jour)
+  - Température, icône météo, conditions
+  - Fallback offline sur la valeur cachée
+- ⬜ **Convertisseur de devises** :
+  - Intégrer Frankfurter API (sans clé, données BCE)
+  - EUR → CZK, HUF, CHF selon la ville en cours
+  - Valeur cachée si offline
+- ⬜ **Trajet du jour** : afficher le train de la journée si applicable
+- ⬜ **Activités validées** : liste des activités du jour issues du vote Explorer
 
 ---
 
-## Phase 6 — PWA & Offline Hardening
-**Durée estimée : 2-3 jours**
+## Phase 5 — Algorithme de Timeline ⬜
+**À faire (optionnel pour le voyage)**
 
-Objectif : l'app est installable sur mobile et fonctionne en mode avion pour tout ce qui est critique.
+Objectif : les activités validées sont triées en un itinéraire géographiquement logique.
 
-- [ ] Configurer `vite-plugin-pwa` complètement :
-  - [ ] `manifest.json` : nom, icône, couleur, `display: standalone`
-  - [ ] Stratégie Workbox `CacheFirst` pour le Coffre-Fort et les assets statiques
-  - [ ] Stratégie `NetworkFirst` avec fallback pour les données dynamiques (météo, votes)
-  - [ ] Précaching des routes critiques au moment de l'installation
-- [ ] Tester l'installation sur Android (Chrome → "Ajouter à l'écran d'accueil")
-- [ ] Tester l'installation sur iOS (Safari → "Sur l'écran d'accueil")
-- [ ] Audit offline complet (mode avion) :
-  - [ ] Coffre-Fort ✅ accessible
-  - [ ] PDFs billets ✅ accessibles
-  - [ ] Plans de gare ✅ accessibles
-  - [ ] Timeline de la journée ✅ (version cachée)
-  - [ ] Météo ⚠️ (affiche "dernière donnée connue" + timestamp)
-- [ ] **Livrable** : app installable sur les 5 téléphones, Coffre-Fort offline validé
+- ⬜ Ajouter coordonnées GPS aux activités
+- ⬜ Algorithme du "plus proche voisin" :
+  - Point de départ = adresse Airbnb
+  - Point d'arrivée = gare de départ (si jour de train)
+- ⬜ Afficher la timeline ordonnée dans "Aujourd'hui"
+- ⬜ Interface admin pour ajuster l'ordre manuellement
 
 ---
 
-## Phase 7 — Polish & Déploiement Final
-**Durée estimée : 2-3 jours**
+## Phase 6 — PWA & Offline Hardening 🔄
+**Partiellement terminé**
 
-Objectif : l'app est prête à partir en voyage.
-
-- [ ] Design final — vérifier la cohérence visuelle sur tous les onglets
-- [ ] Tester sur différentes tailles d'écran (petits Android, iPhone SE, grands Android)
-- [ ] Vérifier les cas limites :
-  - [ ] Que se passe-t-il si un membre n'a pas encore voté ? (affichage "en attente")
-  - [ ] Que se passe-t-il si l'admin ne définit pas `day_config` pour une ville ?
-  - [ ] Que se passe-t-il si 0 activité est validée ? (affichage gracieux)
-- [ ] Alimenter toute la base de données (activités, logistics, day_config pour les 22 jours)
-- [ ] Générer les 4 liens d'invitation, les envoyer aux membres
-- [ ] S'assurer que les 5 membres complètent leur profil avant le départ
-- [ ] **Livrable : app en production sur Vercel, prête pour le voyage**
+- ✅ Service Worker actif (vite-plugin-pwa + Workbox)
+- ✅ CacheFirst sur Supabase Storage (PDFs accessibles offline)
+- ✅ Précachage des assets statiques
+- ✅ App installable sur Android/iOS
+- ⬜ Tester mode avion complet sur les 5 téléphones
+- ⬜ Audit Lighthouse PWA (score cible > 90)
+- ⬜ Fallback UI explicite quand offline (bannière ou indicateur)
 
 ---
 
-## Récapitulatif des durées
+## Phase 7 — Contenu & Déploiement Final ⬜
+**À faire avant le départ (août 2026)**
 
-| Phase | Description | Durée estimée |
+- ⬜ Compléter les adresses Airbnb manquantes (Amsterdam en attente de confirmation)
+- ⬜ Uploader tous les billets de train en PDF
+- ⬜ Alimenter les activités des 7 villes (compléter les 40 seeds)
+- ⬜ Tester l'app sur les 5 téléphones (iOS + Android)
+- ⬜ Générer les 4 liens d'invitation, les envoyer aux membres
+- ⬜ S'assurer que les 5 membres complètent leur profil avant le départ
+- ⬜ **Livrable : app en production, prête pour le voyage**
+
+---
+
+## Récapitulatif
+
+| Phase | Description | Statut |
 |---|---|---|
-| 0 | Setup & Infrastructure | 1-2 j |
-| 1 | Authentification & Onboarding | 3-4 j |
-| 2 | Coffre-Fort (offline) | 3-4 j |
-| 3 | Explorer : Votes & Consensus | 5-6 j |
-| 4 | Algorithme de Timeline | 3-4 j |
-| 5 | Dashboard "Aujourd'hui" | 2-3 j |
-| 6 | PWA & Offline Hardening | 2-3 j |
-| 7 | Polish & Déploiement | 2-3 j |
-| **Total** | | **21-29 jours de travail** |
+| 0 | Setup & Infrastructure | ✅ Terminé |
+| 1 | Authentification & Onboarding | ✅ Terminé |
+| 2 | Voyage & Coffre-Fort (offline) | ✅ Terminé |
+| 3 | Explorer : Votes & Oracle | ✅ Terminé |
+| 4 | Dashboard "Aujourd'hui" | ⬜ À faire |
+| 5 | Algorithme de Timeline | ⬜ À faire (optionnel) |
+| 6 | PWA & Offline Hardening | 🔄 Partiel |
+| 7 | Contenu & Déploiement Final | ⬜ À faire avant août 2026 |
 
 ---
 
-## Ordre de priorité si le temps manque
+## Décisions techniques prises
 
-1. **Indispensable avant le départ** : Phases 0, 1, 2 (auth + coffre-fort offline = survie logistique)
-2. **Très utile** : Phase 3 sans le Deuxième Tour, Phase 5 sans la météo
-3. **Confort** : Phase 4 (timeline automatique), Phase 6 (installation PWA)
-4. **Nice-to-have** : Phase 3 Deuxième Tour, Phase 7 polish complet
-
----
-
-## Décisions techniques à retenir
-
-| Sujet | Décision |
-|---|---|
-| Framework | React 18 + Vite (pas Next.js — trop complexe pour une PWA one-shot) |
-| Votes | Révélés seulement quand les 5 ont voté, online uniquement |
-| Égalité | L'admin tranche après discussion |
-| Snooze | Reset à minuit heure locale de la ville en cours |
-| PDFs | Uploadés par l'admin, accessibles offline via cache |
-| Coût | 0 € (Supabase free, Vercel free, APIs gratuites) |
-| Langue | Français uniquement |
+| Sujet | Décision | Raison |
+|---|---|---|
+| Architecture | 5 onglets + Admin conditionnel | Voyage et Coffre-Fort séparés pour clarté |
+| Votes | Révélés automatiquement quand tout le monde a voté | Évite de bloquer sur la fermeture manuelle |
+| Seuil consensus | `ceil(n_inscrits / 2)` dynamique | S'adapte si un ami ne rejoint pas |
+| Catégories | Texte libre (contrainte CHECK supprimée) | Flexibilité pour ajouter des catégories custom |
+| PDFs offline | fetch → blob URL (pas window.open) | window.open est une navigation, pas interceptée par le SW |
+| Snooze | Personnel uniquement, revient le lendemain | Ne pollue pas le deck des autres |
+| Trash | 2 étapes de confirmation | Irréversible — évite les erreurs de swipe |
+| Admin | Page dédiée + onglet nav conditionnel | Séparation claire admin/membre |
+| Votes multiples | 1 deck par jour par ville, X nuits = X votes possibles | Adapté au rythme du voyage |
+| Coût | 0 € | Supabase free, Vercel free |
