@@ -101,8 +101,8 @@ Légende : ✅ Terminé · 🔄 Partiel · ⬜ À faire
 
 ---
 
-## Phase 3.5 — Refonte UI/UX (en cours) 🔄
-**Intermédiaire — aligner toutes les pages sur la DA Claude Design**
+## Phase 3.5 — Refonte UI/UX ✅
+**Terminé — toutes les pages alignées sur la DA Claude Design**
 
 Objectif : cohérence visuelle totale entre toutes les pages, basée sur le système warm sand/ink défini dans /claude_design/.
 
@@ -114,21 +114,21 @@ Objectif : cohérence visuelle totale entre toutes les pages, basée sur le syst
 - ✅ Page Profil : avatar initiales en header, prénom + nom
 - ✅ Page Register : champs Prénom + Nom, suppression pseudo côté UI
 
-### À faire ⬜
-- ⬜ **Page Coffre-Fort** : refonte complète inspirée claude_design
+### Fait ✅ (suite)
+- ✅ **Page Coffre-Fort** : refonte complète inspirée claude_design
   - SOS button plein écran → modal sombre avec fiches d'urgence par membre
   - Sections collapsibles glass (Billets de train, Numéros d'urgence)
   - Status PDF par tronçon (PDF ✓ ou À venir), tap pour ouvrir
-- ⬜ **Page Voyage** : refonte inspirée claude_design
-  - Cards minimalistes avec les infos essentielles en un coup d'œil
-  - Tap sur la card → détail complet + PDF associé
-  - Conserver les correspondances séparées
-  - Avatar/initiales en haut à droite dans le header
-- ⬜ **Page Explorer** : refonte cards de vote
-  - Boutons d'action Match/Snooze/Trash plus visibles et grands
-  - Sélecteur de villes en haut (déjà présent, à retravailler visuellement)
-  - Cards avec gradient coloré par catégorie (fidèle claude_design)
-- ⬜ **Avatar initiales dans les headers** : logo en haut à droite sur chaque page (lien vers profil / popup admin)
+- ✅ **Page Voyage** : refonte inspirée claude_design
+  - Cards status-based (past/next/upcoming/active) avec infos essentielles
+  - Tap sur la card → TrainDetailSheet / HotelDetailSheet plein écran
+  - Correspondances séparées conservées, Urgences déplacées vers Coffre-Fort
+- ✅ **Page Explorer** : refonte cards de vote
+  - Boutons d'action Match (64px, vert) / Snooze (46px) / Trash (64px, rouge) — SVG
+  - Filtre catégories en pills (Tout / Culture / Restos / Soirée / Nature…)
+  - Cards avec gradient coloré + blobs par catégorie, badge prix, swipe tint
+  - ResultsView en glass cards avec classement numéroté
+- ✅ **Avatar initiales dans les headers** : cercle 34px en haut à droite sur chaque page (lien vers /profil)
 
 ---
 
@@ -199,7 +199,7 @@ Objectif : les activités validées sont triées en un itinéraire géographique
 | 1 | Authentification & Onboarding | ✅ Terminé |
 | 2 | Voyage & Coffre-Fort (offline) | ✅ Terminé |
 | 3 | Explorer : Votes & Oracle | ✅ Terminé |
-| 3.5 | Refonte UI/UX (Claude Design) | 🔄 En cours |
+| 3.5 | Refonte UI/UX (Claude Design) | ✅ Terminé |
 | 4 | Dashboard "Aujourd'hui" | 🔄 Structure en place |
 | 5 | Algorithme de Timeline | ⬜ À faire (optionnel) |
 | 6 | PWA & Offline Hardening | 🔄 Partiel |
