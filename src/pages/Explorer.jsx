@@ -2,16 +2,14 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
-// ── Constantes ─────────────────────────────────────────────────
-
 const CATEGORY_META = {
-  culture:   { label: 'Culture',      emoji: '🏛️', gradient: 'linear-gradient(135deg,#667eea,#764ba2)' },
-  nature:    { label: 'Nature',       emoji: '🌿', gradient: 'linear-gradient(135deg,#56ab2f,#a8e063)' },
-  food:      { label: 'Resto & Bar',  emoji: '🍽️', gradient: 'linear-gradient(135deg,#f093fb,#f5576c)' },
-  nightlife: { label: 'Soirée',       emoji: '🎶', gradient: 'linear-gradient(135deg,#1a1a2e,#16213e)' },
-  shopping:  { label: 'Shopping',     emoji: '🛍️', gradient: 'linear-gradient(135deg,#f7971e,#ffd200)' },
-  sport:     { label: 'Sport',        emoji: '⚡', gradient: 'linear-gradient(135deg,#0f2027,#2c5364)' },
-  other:     { label: 'Autre',        emoji: '✨', gradient: 'linear-gradient(135deg,#8e9eab,#eef2f3)' },
+  culture:   { label: 'Culture',     emoji: '🏛️', color: '#4a90d9', bg: 'rgba(74,144,217,0.12)'  },
+  nature:    { label: 'Nature',      emoji: '🌿', color: '#3baa7a', bg: 'rgba(59,170,122,0.12)'  },
+  food:      { label: 'Resto & Bar', emoji: '🍽️', color: '#e05a5a', bg: 'rgba(224,90,90,0.12)'  },
+  nightlife: { label: 'Soirée',      emoji: '🎶', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
+  shopping:  { label: 'Shopping',    emoji: '🛍️', color: '#e8a030', bg: 'rgba(232,160,48,0.12)'  },
+  sport:     { label: 'Sport',       emoji: '⚡',  color: '#6b6560', bg: 'rgba(107,101,96,0.12)'  },
+  other:     { label: 'Autre',       emoji: '✨', color: '#b0aaa3', bg: 'rgba(176,170,163,0.12)' },
 }
 
 const CUSTOM_KEY = '__custom__'
@@ -21,17 +19,33 @@ const CITY_LABELS = {
   bruxelles: '🇧🇪 Bruxelles', amsterdam: '🇳🇱 Amsterdam', berlin: '🇩🇪 Berlin',
   prague: '🇨🇿 Prague', budapest: '🇭🇺 Budapest', vienne: '🇦🇹 Vienne', geneve: '🇨🇭 Genève',
 }
-// Nuits prévues par ville (sert à rappeler qu'on vote 1x/jour)
 const CITY_NIGHTS = {
   bruxelles: 2, amsterdam: 3, berlin: 4,
   prague: 3, budapest: 4, vienne: 3, geneve: 3,
 }
 
+const CAT_PILLS = [
+  { id: 'all', label: 'Tout' },
+  { id: 'culture', label: 'Culture' },
+  { id: 'food', label: 'Restos' },
+  { id: 'nightlife', label: 'Soirée' },
+  { id: 'nature', label: 'Nature' },
+  { id: 'shopping', label: 'Shopping' },
+]
+
 function getCategoryMeta(cat) {
-  return CATEGORY_META[cat] ?? { label: cat, emoji: '✨', gradient: 'linear-gradient(135deg,#8e9eab,#eef2f3)' }
+  return CATEGORY_META[cat] ?? { label: cat, emoji: '✨', color: '#b0aaa3', bg: 'rgba(176,170,163,0.12)' }
 }
 
-// ── Hook swipe ─────────────────────────────────────────────────
+const glass = {
+  background: 'rgba(255,255,255,0.68)',
+  backdropFilter: 'blur(20px) saturate(1.6)',
+  WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
+  border: '1px solid rgba(255,255,255,0.82)',
+  boxShadow: '0 2px 16px rgba(26,23,20,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+}
+
+// ── Swipe hook ─────────────────────────────────────────────────
 
 function useSwipe({ onLeft, onRight, onDown, disabled }) {
   const ref = useRef(null)
@@ -58,10 +72,10 @@ function useSwipe({ onLeft, onRight, onDown, disabled }) {
         el.style.transition = 'none'
         const tint = el.querySelector('[data-tint]')
         if (tint) {
-          if (dx > 40)       { tint.style.background = 'rgba(22,163,74,0.35)';  tint.textContent = '✓ MATCH' }
-          else if (dx < -40) { tint.style.background = 'rgba(220,38,38,0.35)';  tint.textContent = '✕ TRASH' }
-          else if (dy > 40)  { tint.style.background = 'rgba(217,119,6,0.35)';  tint.textContent = '⏱ SNOOZE' }
-          else               { tint.style.background = 'transparent'; tint.textContent = '' }
+          if (dx > 40)       tint.style.background = 'rgba(59,170,122,0.22)'
+          else if (dx < -40) tint.style.background = 'rgba(224,90,90,0.22)'
+          else if (dy > 40)  tint.style.background = 'rgba(232,160,48,0.22)'
+          else               tint.style.background = 'transparent'
         }
       }
     }
@@ -76,7 +90,7 @@ function useSwipe({ onLeft, onRight, onDown, disabled }) {
       el.style.transition = 'transform 0.3s ease'
       el.style.transform = ''
       const tint = el.querySelector('[data-tint]')
-      if (tint) { tint.style.background = 'transparent'; tint.textContent = '' }
+      if (tint) tint.style.background = 'transparent'
     }
     const THRESHOLD = 80
     if (Math.abs(dx) > Math.abs(dy)) {
@@ -106,7 +120,7 @@ function useSwipe({ onLeft, onRight, onDown, disabled }) {
 
 // ── ActivityCard ───────────────────────────────────────────────
 
-function ActivityCard({ activity, onMatch, onSnooze, onTrash }) {
+function ActivityCard({ activity, onMatch, onSnooze, onTrash, matchCount, trashCount }) {
   const [trashConfirm, setTrashConfirm] = useState(false)
   const meta = getCategoryMeta(activity.category)
 
@@ -118,90 +132,129 @@ function ActivityCard({ activity, onMatch, onSnooze, onTrash }) {
   })
 
   return (
-    <div ref={swipeRef} style={{ touchAction: 'pan-y', position: 'relative', userSelect: 'none' }}>
+    <div ref={swipeRef} style={{ touchAction: 'pan-y', userSelect: 'none', height: '100%', position: 'relative' }}>
       <div style={{
-        borderRadius: '24px', overflow: 'hidden',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-        position: 'relative', aspectRatio: '3/4',
-        background: activity.photo_url ? `url(${activity.photo_url}) center/cover` : meta.gradient,
+        height: '100%', borderRadius: 28, overflow: 'hidden', display: 'flex', flexDirection: 'column',
+        background: 'rgba(255,255,255,0.82)',
+        backdropFilter: 'blur(24px) saturate(1.8)',
+        WebkitBackdropFilter: 'blur(24px) saturate(1.8)',
+        border: '1px solid rgba(255,255,255,0.90)',
+        boxShadow: '0 8px 40px rgba(26,23,20,0.12), inset 0 1px 0 rgba(255,255,255,0.95)',
       }}>
-        <div data-tint style={{
-          position: 'absolute', inset: 0, zIndex: 10,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '2rem', fontWeight: 700, color: 'white',
-          borderRadius: '24px', pointerEvents: 'none',
-        }} />
-        {!activity.photo_url && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '5rem', pointerEvents: 'none',
-          }}>
-            {meta.emoji}
-          </div>
-        )}
+        {/* Illustration area */}
         <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, transparent 100%)',
-          padding: '28px 18px 18px',
+          position: 'relative', height: '52%', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+          background: activity.photo_url
+            ? `url(${activity.photo_url}) center/cover`
+            : `linear-gradient(135deg, ${meta.color}22 0%, ${meta.color}08 100%)`,
         }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ color: 'white', fontWeight: 700, fontSize: '1.2rem', lineHeight: 1.2, margin: 0 }}>{activity.name}</p>
-              {activity.description && (
-                <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: '0.78rem', marginTop: 4, lineHeight: 1.4, margin: '4px 0 0' }}>
-                  {activity.description.length > 90 ? activity.description.slice(0, 90) + '…' : activity.description}
-                </p>
-              )}
-            </div>
-            {activity.price_eur !== null && activity.price_eur !== undefined && (
+          {!activity.photo_url && (
+            <>
               <div style={{
-                backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)',
-                borderRadius: '12px', padding: '4px 10px', flexShrink: 0,
+                position: 'absolute', width: 160, height: 160, borderRadius: '50%', opacity: 0.28,
+                background: meta.color, filter: 'blur(40px)', top: -20, right: -20, pointerEvents: 'none',
+              }} />
+              <div style={{
+                position: 'absolute', width: 120, height: 120, borderRadius: '50%', opacity: 0.14,
+                background: meta.color, filter: 'blur(30px)', bottom: -10, left: -10, pointerEvents: 'none',
+              }} />
+              <div style={{
+                position: 'relative', zIndex: 2,
+                width: 80, height: 80, borderRadius: 24, fontSize: '3rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: `${meta.color}18`,
               }}>
-                <p style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', margin: 0 }}>
-                  {activity.price_eur === 0 ? 'Gratuit' : `${activity.price_eur}€`}
-                </p>
+                {meta.emoji}
               </div>
+            </>
+          )}
+
+          {/* Category badge */}
+          <div style={{
+            position: 'absolute', top: 12, left: 12, zIndex: 5,
+            padding: '5px 12px', borderRadius: 9999,
+            fontSize: '0.70rem', fontWeight: 700, letterSpacing: '0.01em',
+            background: activity.photo_url ? 'rgba(0,0,0,0.42)' : meta.bg,
+            color: activity.photo_url ? 'white' : meta.color,
+            backdropFilter: 'blur(8px)',
+          }}>
+            {meta.emoji} {meta.label !== 'Autre' ? meta.label : activity.category}
+          </div>
+
+          {/* Price */}
+          {activity.price_eur !== null && activity.price_eur !== undefined && (
+            <div style={{
+              position: 'absolute', top: 12, right: 12, zIndex: 5,
+              padding: '5px 10px', borderRadius: 9999,
+              fontSize: '0.70rem', fontWeight: 600,
+              background: 'rgba(255,255,255,0.82)', color: '#1a1714',
+              backdropFilter: 'blur(8px)',
+            }}>
+              {activity.price_eur === 0 ? 'Gratuit' : `${activity.price_eur} €`}
+            </div>
+          )}
+
+          {/* Swipe tint */}
+          <div data-tint style={{
+            position: 'absolute', inset: 0, zIndex: 10,
+            pointerEvents: 'none', transition: 'background 0.1s',
+          }} />
+        </div>
+
+        {/* Info */}
+        <div style={{ flex: 1, padding: '16px 20px 14px', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <h3 style={{ fontSize: '1.18rem', fontWeight: 800, color: '#1a1714', lineHeight: 1.25, margin: 0 }}>
+              {activity.name}
+            </h3>
+            {activity.description && (
+              <p style={{
+                color: '#6b6560', fontSize: '0.82rem', margin: '5px 0 0', lineHeight: 1.5,
+                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+              }}>
+                {activity.description}
+              </p>
             )}
           </div>
-          <div style={{ marginTop: 8 }}>
-            <span style={{
-              backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)',
-              borderRadius: '20px', padding: '3px 10px',
-              color: 'white', fontSize: '0.72rem', fontWeight: 600,
-              textTransform: 'uppercase', letterSpacing: '0.05em',
-            }}>
-              {meta.emoji} {meta.label}
-            </span>
+          <div style={{
+            paddingTop: 10, borderTop: '1px solid rgba(26,23,20,0.07)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <p style={{ fontSize: '0.70rem', color: '#b0aaa3', margin: 0 }}>← Trash · ↓ Snooze · → Match</p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <span style={{ color: '#3baa7a', fontWeight: 700, fontSize: '0.82rem' }}>{matchCount} ✓</span>
+              <span style={{ color: '#e05a5a', fontWeight: 700, fontSize: '0.82rem' }}>{trashCount} ✕</span>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Trash confirm overlay */}
       {trashConfirm && (
         <div style={{
           position: 'absolute', inset: 0, zIndex: 20,
-          backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: '24px',
+          background: 'rgba(14,8,8,0.72)', borderRadius: 28,
           display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: 12, padding: '0 20px',
+          alignItems: 'center', justifyContent: 'center', gap: 12, padding: '0 24px',
         }}>
           <p style={{ color: 'white', fontWeight: 700, fontSize: '1.05rem', textAlign: 'center', margin: 0 }}>
-            Trash "{activity.name}" ?
+            Masquer "{activity.name}" ?
           </p>
-          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.8rem', textAlign: 'center', margin: 0 }}>
-            Tu ne la reverras plus.
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', textAlign: 'center', margin: 0 }}>
+            Cette activité disparaîtra de ton deck.
           </p>
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
             <button onClick={() => setTrashConfirm(false)} style={{
-              backgroundColor: 'rgba(255,255,255,0.15)', color: 'white',
-              borderRadius: '14px', padding: '10px 20px', fontSize: '0.875rem', fontWeight: 600,
-              border: 'none', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.12)', color: 'white', borderRadius: 14,
+              padding: '10px 22px', fontSize: '0.875rem', fontWeight: 600,
+              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
             }}>Annuler</button>
             <button onClick={() => { setTrashConfirm(false); onTrash() }} style={{
-              backgroundColor: 'var(--trash)', color: 'white',
-              borderRadius: '14px', padding: '10px 20px', fontSize: '0.875rem', fontWeight: 600,
-              border: 'none', cursor: 'pointer',
-            }}>🗑️ Oui</button>
+              background: '#e05a5a', color: 'white', borderRadius: 14,
+              padding: '10px 22px', fontSize: '0.875rem', fontWeight: 600,
+              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            }}>Masquer</button>
           </div>
         </div>
       )}
@@ -254,25 +307,20 @@ function AddActivityModal({ city, userId, onClose, onAdded }) {
   }
 
   return (
-    <div
-      onClick={e => e.target === e.currentTarget && onClose()}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 100,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        display: 'flex', alignItems: 'flex-end',
-      }}
-    >
+    <div onClick={e => e.target === e.currentTarget && onClose()} style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'flex-end',
+    }}>
       <div style={{
         background: 'var(--bg-base)', borderRadius: '24px 24px 0 0',
         width: '100%', maxHeight: '88dvh', overflowY: 'auto',
         padding: '20px 16px',
         paddingBottom: 'calc(100px + env(safe-area-inset-bottom, 0px))',
       }}>
-        {/* Drag handle */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
           <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,0,0,0.12)' }} />
         </div>
-
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <p style={{ fontWeight: 700, fontSize: '1.1rem', margin: 0 }}>Proposer une activité</p>
           <button onClick={onClose} style={{
@@ -282,13 +330,10 @@ function AddActivityModal({ city, userId, onClose, onAdded }) {
             fontSize: '1rem', color: 'var(--text-secondary)',
           }}>×</button>
         </div>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Nom de l'activité *" />
-
           <textarea value={form.description} onChange={e => set('description', e.target.value)}
             placeholder="Description (optionnel)" rows={2} style={{ resize: 'none' }} />
-
           <div>
             <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>Catégorie</p>
             <select value={form.category} onChange={e => set('category', e.target.value)} style={selectStyle}>
@@ -298,18 +343,12 @@ function AddActivityModal({ city, userId, onClose, onAdded }) {
               <option value={CUSTOM_KEY}>✏️ Nouvelle catégorie…</option>
             </select>
             {isCustom && (
-              <input
-                value={customCategory}
-                onChange={e => setCustomCategory(e.target.value)}
-                placeholder="Nom de la catégorie"
-                style={{ marginTop: 8 }}
-              />
+              <input value={customCategory} onChange={e => setCustomCategory(e.target.value)}
+                placeholder="Nom de la catégorie" style={{ marginTop: 8 }} />
             )}
           </div>
-
           <input value={form.price_eur} onChange={e => set('price_eur', e.target.value)}
             placeholder="Prix en € (laisser vide = gratuit)" type="number" min="0" step="0.5" />
-
           <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
             onChange={e => setPhotoFile(e.target.files?.[0] ?? null)} />
           <button onClick={() => fileRef.current?.click()} style={{
@@ -319,11 +358,9 @@ function AddActivityModal({ city, userId, onClose, onAdded }) {
           }}>
             {photoFile ? `📷 ${photoFile.name}` : '📷 Ajouter une photo (optionnel)'}
           </button>
-
           {error && <p style={{ color: 'var(--trash)', fontSize: '0.8rem', margin: 0 }}>{error}</p>}
-
           <button onClick={submit} disabled={loading} className="btn-primary">
-            {loading ? 'Envoi…' : 'Proposer l\'activité'}
+            {loading ? 'Envoi…' : "Proposer l'activité"}
           </button>
         </div>
       </div>
@@ -331,7 +368,7 @@ function AddActivityModal({ city, userId, onClose, onAdded }) {
   )
 }
 
-// ── Vues ───────────────────────────────────────────────────────
+// ── Sub-views ──────────────────────────────────────────────────
 
 function ClosedView({ isAdmin, city, onOpen }) {
   const [maxAct, setMaxAct] = useState('3')
@@ -395,49 +432,68 @@ function ResultsView({ validated, maxActivities, isAdmin, onSecondTour, onClose 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <p style={{ fontWeight: 700, fontSize: '1.05rem', margin: 0 }}>Résultats</p>
+        <h2 style={{ fontWeight: 800, fontSize: '1.3rem', margin: 0, color: '#1a1714' }}>Résultats</h2>
         {isAdmin && (
           <button onClick={onClose} style={{
-            fontSize: '0.78rem', padding: '5px 12px', borderRadius: '20px',
-            backgroundColor: 'rgba(0,0,0,0.06)', color: 'var(--text-secondary)',
-            border: 'none', cursor: 'pointer',
+            fontSize: '0.78rem', padding: '6px 14px', borderRadius: 20,
+            background: 'rgba(26,23,20,0.07)', color: '#6b6560',
+            border: '1px solid rgba(26,23,20,0.08)', cursor: 'pointer', fontFamily: 'inherit',
           }}>Fermer les votes</button>
         )}
       </div>
 
       {needSecondTour && (
-        <div style={{ backgroundColor: 'rgba(217,119,6,0.1)', borderRadius: '14px', padding: '12px 14px' }}>
-          <p style={{ color: 'var(--snooze)', fontWeight: 600, fontSize: '0.85rem', margin: 0 }}>
+        <div style={{ ...glass, borderRadius: 16, padding: '12px 14px', borderColor: 'rgba(232,160,48,0.3)' }}>
+          <p style={{ color: '#e8a030', fontWeight: 600, fontSize: '0.85rem', margin: 0 }}>
             {validated.length} validées pour {maxActivities} places — 2e tour requis !
           </p>
         </div>
       )}
 
-      {validated.map(a => {
+      {validated.map((a, i) => {
         const meta = getCategoryMeta(a.category)
+        const validated_slot = i < maxActivities
         return (
-          <div key={a.id} className="card" style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div key={a.id} style={{
+            ...glass, borderRadius: 20, padding: '14px 16px',
+            display: 'flex', alignItems: 'center', gap: 12,
+            border: validated_slot ? '1.5px solid rgba(59,170,122,0.28)' : undefined,
+          }}>
             <div style={{
-              width: 44, height: 44, borderRadius: '12px', flexShrink: 0,
-              background: a.photo_url ? `url(${a.photo_url}) center/cover` : meta.gradient,
+              width: 34, height: 34, borderRadius: 12, flexShrink: 0,
+              background: 'rgba(26,23,20,0.07)', color: '#6b6560',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 800, fontSize: '0.88rem',
+            }}>{i + 1}</div>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+              background: a.photo_url ? `url(${a.photo_url}) center/cover` : meta.bg,
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem',
             }}>
               {!a.photo_url && meta.emoji}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontWeight: 600, fontSize: '0.9rem', margin: 0 }}>{a.name}</p>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', margin: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <p style={{ fontWeight: 700, fontSize: '0.9rem', margin: 0, color: '#1a1714' }}>{a.name}</p>
+                {validated_slot && (
+                  <span style={{
+                    fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: 9999,
+                    background: 'rgba(59,170,122,0.12)', color: '#3baa7a',
+                  }}>Validé ✓</span>
+                )}
+              </div>
+              <p style={{ color: '#b0aaa3', fontSize: '0.78rem', margin: '2px 0 0' }}>
                 {a._matchCount} match{a._matchCount > 1 ? 's' : ''}
                 {a.price_eur === 0 ? ' · Gratuit' : a.price_eur ? ` · ${a.price_eur}€` : ''}
               </p>
             </div>
-            <span style={{ color: 'var(--match)', fontSize: '1.1rem' }}>✓</span>
+            {validated_slot && <span style={{ color: '#3baa7a', fontSize: '1.1rem', flexShrink: 0 }}>✓</span>}
           </div>
         )
       })}
 
       {validated.length === 0 && (
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'center', padding: '20px 0' }}>
+        <p style={{ color: '#b0aaa3', fontSize: '0.85rem', textAlign: 'center', padding: '32px 0' }}>
           Aucune activité n'a atteint la majorité.
         </p>
       )}
@@ -472,21 +528,20 @@ function SecondTourView({ candidates, maxActivities, onDone }) {
         const meta = getCategoryMeta(a.category)
         const sel = selected.includes(a.id)
         return (
-          <div key={a.id} onClick={() => toggle(a.id)} className="card" style={{
-            padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
-            cursor: 'pointer',
-            outline: sel ? '2px solid var(--match)' : 'none',
-            outlineOffset: '-2px',
+          <div key={a.id} onClick={() => toggle(a.id)} style={{
+            ...glass, borderRadius: 20, padding: '14px 16px',
+            display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
+            outline: sel ? '2px solid #3baa7a' : 'none', outlineOffset: -2,
           }}>
             <div style={{
-              width: 44, height: 44, borderRadius: '12px', flexShrink: 0,
-              background: a.photo_url ? `url(${a.photo_url}) center/cover` : meta.gradient,
+              width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+              background: a.photo_url ? `url(${a.photo_url}) center/cover` : meta.bg,
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem',
             }}>
               {!a.photo_url && meta.emoji}
             </div>
             <p style={{ flex: 1, fontWeight: 600, fontSize: '0.9rem', margin: 0 }}>{a.name}</p>
-            {sel && <span style={{ color: 'var(--match)', fontWeight: 700, fontSize: '1.1rem' }}>✓</span>}
+            {sel && <span style={{ color: '#3baa7a', fontWeight: 700, fontSize: '1.1rem' }}>✓</span>}
           </div>
         )
       })}
@@ -504,17 +559,16 @@ export default function Explorer() {
   const isAdmin = profile?.role === 'admin'
 
   const [city, setCity] = useState('bruxelles')
+  const [catFilter, setCatFilter] = useState('all')
   const [activities, setActivities] = useState([])
   const [dayConfig, setDayConfig] = useState(null)
   const [myVotes, setMyVotes] = useState([])
   const [allVotes, setAllVotes] = useState([])
-  const [groupSize, setGroupSize] = useState(1)   // nombre réel d'inscrits
+  const [groupSize, setGroupSize] = useState(1)
   const [doneCount, setDoneCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [secondTour, setSecondTour] = useState(false)
-
-  const matchThreshold = Math.ceil(groupSize / 2)  // majorité
 
   const fetchAll = useCallback(async () => {
     if (!user) return
@@ -538,14 +592,12 @@ export default function Explorer() {
     const actIds = new Set(acts.map(a => a.id))
     setMyVotes(votes.filter(v => v.user_id === user.id && actIds.has(v.activity_id)))
 
-    // Compteur : membres ayant voté sur toutes les activités
     const uids = [...new Set(votes.filter(v => actIds.has(v.activity_id)).map(v => v.user_id))]
     const done = uids.filter(uid => {
       const s = new Set(votes.filter(v => v.user_id === uid && actIds.has(v.activity_id)).map(v => v.activity_id))
       return s.size >= acts.length
     }).length
     setDoneCount(done)
-
     setLoading(false)
   }, [city, user])
 
@@ -586,145 +638,233 @@ export default function Explorer() {
     fetchAll()
   }
 
+  // Derived state
   const myVotedIds = new Set(myVotes.map(v => v.activity_id))
-  const deck = activities.filter(a => !myVotedIds.has(a.id))
+  const globalDeck = activities.filter(a => !myVotedIds.has(a.id))
+  const displayDeck = catFilter === 'all'
+    ? globalDeck
+    : globalDeck.filter(a => a.category === catFilter)
+  const currentCard = displayDeck[0]
+  const nextCard = displayDeck[1]
 
-  const matchCounts = {}
+  const voteCounts = {}
   for (const v of allVotes) {
-    if (v.vote === 'match') matchCounts[v.activity_id] = (matchCounts[v.activity_id] ?? 0) + 1
+    if (!voteCounts[v.activity_id]) voteCounts[v.activity_id] = { match: 0, trash: 0 }
+    if (v.vote === 'match') voteCounts[v.activity_id].match++
+    else if (v.vote === 'trash') voteCounts[v.activity_id].trash++
   }
+
   const maxActivities = dayConfig?.max_activities ?? 3
+  const matchThreshold = Math.ceil(groupSize / 2)
   const validated = activities
-    .filter(a => (matchCounts[a.id] ?? 0) >= matchThreshold)
-    .map(a => ({ ...a, _matchCount: matchCounts[a.id] ?? 0 }))
+    .filter(a => (voteCounts[a.id]?.match ?? 0) >= matchThreshold)
+    .map(a => ({ ...a, _matchCount: voteCounts[a.id]?.match ?? 0 }))
     .sort((a, b) => b._matchCount - a._matchCount)
 
   const myMatchCount = myVotes.filter(v => v.vote === 'match').length
+  const totalVoted = myVotes.length
+  const pct = activities.length > 0 ? Math.round(totalVoted / activities.length * 100) : 0
   const votesOpen = dayConfig?.votes_open === true
   const allDone = groupSize > 0 && doneCount >= groupSize
 
-  // Quand tout le monde a voté, on passe directement aux résultats
   let view = 'closed'
-  if (votesOpen && deck.length > 0 && !allDone) view = 'voting'
-  else if (votesOpen && deck.length > 0 && allDone) view = 'results'
-  else if (votesOpen && deck.length === 0 && !allDone) view = 'done'
+  if (votesOpen && globalDeck.length > 0 && !allDone) view = 'voting'
+  else if (votesOpen && globalDeck.length > 0 && allDone) view = 'results'
+  else if (votesOpen && globalDeck.length === 0 && !allDone) view = 'done'
   else if ((votesOpen && allDone) || (dayConfig && !votesOpen && activities.length > 0)) view = 'results'
 
   return (
-    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-base)' }}>
+    <div style={{ minHeight: '100dvh' }}>
       {/* Header */}
-      <div style={{ padding: '24px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ padding: '20px 20px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Explorer</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginTop: 2, marginBottom: 0 }}>
-            Oracle de décision
+          <p style={{ fontSize: '0.72rem', fontWeight: 500, color: '#b0aaa3', margin: 0 }}>
+            {CITY_LABELS[city]} · {activities.length} activités
           </p>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1a1714', margin: '2px 0 0', letterSpacing: '-0.02em' }}>
+            Explorer
+          </h1>
         </div>
         <button onClick={() => setShowAdd(true)} style={{
-          backgroundColor: 'var(--accent-light)', color: 'var(--accent)',
-          borderRadius: '20px', padding: '6px 14px', fontWeight: 600, fontSize: '0.82rem',
-          border: 'none', cursor: 'pointer', flexShrink: 0,
+          ...glass, borderRadius: 20, padding: '7px 14px',
+          fontWeight: 600, fontSize: '0.8rem', border: 'none',
+          cursor: 'pointer', color: '#1a1714', fontFamily: 'inherit', marginTop: 4,
         }}>
           + Activité
         </button>
       </div>
 
-      {/* City picker */}
-      <div style={{
-        overflowX: 'auto', padding: '12px 16px 0',
-        display: 'flex', gap: 8, scrollbarWidth: 'none',
-      }}>
+      {/* City pills */}
+      <div style={{ overflowX: 'auto', padding: '12px 20px 0', display: 'flex', gap: 8, scrollbarWidth: 'none' }}>
         {CITY_ORDER.map(c => (
-          <button key={c} onClick={() => { setCity(c); setSecondTour(false) }} style={{
-            flexShrink: 0, borderRadius: '20px', padding: '5px 12px',
-            fontSize: '0.78rem', fontWeight: 600, border: 'none', cursor: 'pointer',
-            backgroundColor: city === c ? 'var(--accent)' : 'rgba(0,0,0,0.05)',
-            color: city === c ? 'white' : 'var(--text-secondary)',
+          <button key={c} onClick={() => { setCity(c); setSecondTour(false); setCatFilter('all') }} style={{
+            flexShrink: 0, borderRadius: 20, padding: '6px 14px',
+            fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+            border: city === c ? 'none' : '1px solid rgba(255,255,255,0.75)',
+            background: city === c ? '#1a1714' : 'rgba(255,255,255,0.55)',
+            color: city === c ? '#faf9f7' : '#6b6560',
+            boxShadow: city === c ? '0 2px 8px rgba(26,23,20,0.2)' : 'none',
             transition: 'all 0.15s',
           }}>
             {CITY_LABELS[c]}
             {city === c && CITY_NIGHTS[c] && (
-              <span style={{ fontWeight: 400, opacity: 0.8 }}> · {CITY_NIGHTS[c]}n</span>
+              <span style={{ fontWeight: 400, opacity: 0.75 }}> · {CITY_NIGHTS[c]}n</span>
             )}
           </button>
         ))}
       </div>
 
-      {/* Rappel vote/jour pour la ville active */}
-      {dayConfig === null && !loading && (
-        <p style={{ padding: '8px 16px 0', fontSize: '0.72rem', color: 'var(--text-secondary)', margin: 0 }}>
-          1 vote par jour · {CITY_NIGHTS[city] ?? '?'} nuits prévues à {CITY_LABELS[city]?.split(' ')[1]}
-        </p>
+      {/* Category filter pills — only in voting state */}
+      {view === 'voting' && (
+        <div style={{ overflowX: 'auto', padding: '8px 20px 0', display: 'flex', gap: 7, scrollbarWidth: 'none' }}>
+          {CAT_PILLS.map(p => (
+            <button key={p.id} onClick={() => setCatFilter(p.id)} style={{
+              flexShrink: 0, borderRadius: 20, padding: '5px 12px',
+              fontSize: '0.73rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              border: catFilter === p.id ? 'none' : '1px solid rgba(26,23,20,0.08)',
+              background: catFilter === p.id ? 'rgba(26,23,20,0.10)' : 'rgba(255,255,255,0.48)',
+              color: catFilter === p.id ? '#1a1714' : '#6b6560',
+              transition: 'all 0.15s',
+            }}>
+              {p.label}
+            </button>
+          ))}
+        </div>
       )}
 
-      {/* Compteur "ont terminé" */}
+      {/* Progress bar */}
+      {view === 'voting' && activities.length > 0 && (
+        <div style={{ padding: '10px 20px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+            <p style={{ fontSize: '0.72rem', color: '#b0aaa3', margin: 0 }}>{totalVoted}/{activities.length} vus</p>
+            <p style={{ fontSize: '0.72rem', color: '#b0aaa3', margin: 0 }}>{globalDeck.length} restant{globalDeck.length > 1 ? 's' : ''}</p>
+          </div>
+          <div style={{ height: 3, borderRadius: 2, background: 'rgba(26,23,20,0.08)', overflow: 'hidden' }}>
+            <div style={{ height: '100%', borderRadius: 2, background: '#1a1714', width: `${pct}%`, transition: 'width 0.3s' }} />
+          </div>
+        </div>
+      )}
+
+      {/* Realtime "ont terminé" counter */}
       {votesOpen && groupSize > 0 && (
-        <div style={{ padding: '10px 16px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ padding: '8px 20px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
           {Array.from({ length: groupSize }).map((_, i) => (
             <div key={i} style={{
-              width: 8, height: 8, borderRadius: '50%',
-              backgroundColor: i < doneCount ? 'var(--match)' : 'rgba(0,0,0,0.12)',
+              width: 7, height: 7, borderRadius: '50%',
+              background: i < doneCount ? '#3baa7a' : 'rgba(26,23,20,0.12)',
             }} />
           ))}
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+          <p style={{ fontSize: '0.72rem', color: '#b0aaa3', margin: 0 }}>
             {doneCount}/{groupSize} ont terminé
           </p>
         </div>
       )}
 
-      {/* Contenu */}
-      <div style={{ padding: '16px' }}>
+      {/* Rappel (votes fermés) */}
+      {dayConfig === null && !loading && (
+        <p style={{ padding: '6px 20px 0', fontSize: '0.72rem', color: '#b0aaa3', margin: 0 }}>
+          1 vote par jour · {CITY_NIGHTS[city] ?? '?'} nuits prévues
+        </p>
+      )}
+
+      {/* Main content */}
+      <div style={{ padding: '12px 20px 120px' }}>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
             <div style={{
               width: 28, height: 28, borderRadius: '50%',
-              border: '2.5px solid var(--accent)', borderTopColor: 'transparent',
+              border: '2.5px solid #1a1714', borderTopColor: 'transparent',
               animation: 'spin 0.7s linear infinite',
             }} />
           </div>
         ) : view === 'closed' ? (
           <ClosedView isAdmin={isAdmin} city={city} onOpen={fetchAll} />
         ) : view === 'voting' ? (
-          <div>
-            <div style={{ position: 'relative', marginBottom: 20 }}>
-              {deck.slice(1, 3).map((a, i) => (
-                <div key={a.id} style={{
-                  position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 - i,
-                  transform: `scale(${1 - (i + 1) * 0.04}) translateY(${-(i + 1) * 8}px)`,
-                  transformOrigin: 'top center', pointerEvents: 'none',
-                }}>
-                  <ActivityCard activity={a} onMatch={() => {}} onSnooze={() => {}} onTrash={() => {}} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {currentCard ? (
+              <>
+                {/* Card stack */}
+                <div style={{ position: 'relative', height: 420 }}>
+                  {nextCard && (
+                    <div style={{
+                      position: 'absolute', top: 8, left: 12, right: 12, bottom: 0, zIndex: 1,
+                      ...glass, borderRadius: 28,
+                    }} />
+                  )}
+                  <div style={{ position: 'absolute', inset: 0, zIndex: 2 }}>
+                    <ActivityCard
+                      key={currentCard.id}
+                      activity={currentCard}
+                      onMatch={() => vote(currentCard, 'match')}
+                      onSnooze={() => vote(currentCard, 'snooze')}
+                      onTrash={() => vote(currentCard, 'trash')}
+                      matchCount={voteCounts[currentCard.id]?.match ?? 0}
+                      trashCount={voteCounts[currentCard.id]?.trash ?? 0}
+                    />
+                  </div>
                 </div>
-              ))}
-              <div style={{ position: 'relative', zIndex: 10 }}>
-                <ActivityCard
-                  key={deck[0].id}
-                  activity={deck[0]}
-                  onMatch={() => vote(deck[0], 'match')}
-                  onSnooze={() => vote(deck[0], 'snooze')}
-                  onTrash={() => vote(deck[0], 'trash')}
-                />
+
+                {/* Action buttons */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+                  <button
+                    onClick={() => vote(currentCard, 'trash')}
+                    style={{
+                      width: 64, height: 64, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
+                      ...glass,
+                      boxShadow: '0 4px 20px rgba(224,90,90,0.22), inset 0 1px 0 rgba(255,255,255,0.9)',
+                    }}
+                  >
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                      <path d="M18 6L6 18M6 6l12 12" stroke="#e05a5a" strokeWidth="2.5" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => vote(currentCard, 'snooze')}
+                    style={{
+                      width: 46, height: 46, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
+                      ...glass,
+                    }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="9" stroke="#b0aaa3" strokeWidth="1.8"/>
+                      <path d="M12 7v5l3 3" stroke="#b0aaa3" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => vote(currentCard, 'match')}
+                    style={{
+                      width: 64, height: 64, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
+                      ...glass,
+                      boxShadow: '0 4px 20px rgba(59,170,122,0.26), inset 0 1px 0 rgba(255,255,255,0.9)',
+                    }}
+                  >
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                      <path d="M20 6L9 17l-5-5" stroke="#3baa7a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* No cards in this category filter, but global deck still has cards */
+              <div style={{
+                height: 200, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', gap: 10, textAlign: 'center',
+              }}>
+                <p style={{ fontSize: '2rem', margin: 0 }}>🔍</p>
+                <p style={{ fontWeight: 700, fontSize: '0.95rem', margin: 0, color: '#1a1714' }}>
+                  Tout voté dans cette catégorie
+                </p>
+                <button onClick={() => setCatFilter('all')} style={{
+                  ...glass, borderRadius: 16, padding: '8px 18px',
+                  fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+                }}>Voir tout</button>
               </div>
-            </div>
-
-            <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: 16 }}>
-              {deck.length} restante{deck.length > 1 ? 's' : ''}
-            </p>
-
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 20 }}>
-              {[
-                { type: 'trash',  emoji: '🗑️', bg: 'rgba(220,38,38,0.10)' },
-                { type: 'snooze', emoji: '⏱️', bg: 'rgba(217,119,6,0.10)' },
-                { type: 'match',  emoji: '✅', bg: 'rgba(22,163,74,0.10)' },
-              ].map(({ type, emoji, bg }) => (
-                <button key={type} onClick={() => vote(deck[0], type)} style={{
-                  width: 62, height: 62, borderRadius: '50%', border: 'none', cursor: 'pointer',
-                  backgroundColor: bg, fontSize: '1.5rem',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-                }}>{emoji}</button>
-              ))}
-            </div>
+            )}
           </div>
         ) : view === 'done' ? (
           <DoneView matchCount={myMatchCount} doneCount={doneCount} groupSize={groupSize} />
