@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { EMERGENCY, CITY_SCHEDULE } from '../lib/travel'
+import HeaderAvatar from '../components/HeaderAvatar'
 
 const MEMBER_COLORS = ['#6b6560', '#4a90d9', '#3baa7a', '#e8a030', '#a78bfa']
 
@@ -403,6 +404,7 @@ export default function CoffreFort() {
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--mint)' }} />
               <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--mint)', margin: 0 }}>Offline OK</p>
             </div>
+            <HeaderAvatar />
           </div>
         </div>
 

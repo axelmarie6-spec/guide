@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import HeaderAvatar from '../components/HeaderAvatar'
 
 const CATEGORY_META = {
   culture:   { label: 'Culture',     emoji: '🏛️', color: '#4a90d9', bg: 'rgba(74,144,217,0.12)'  },
@@ -685,13 +686,16 @@ export default function Explorer() {
             Explorer
           </h1>
         </div>
-        <button onClick={() => setShowAdd(true)} style={{
-          ...glass, borderRadius: 20, padding: '7px 14px',
-          fontWeight: 600, fontSize: '0.8rem', border: 'none',
-          cursor: 'pointer', color: '#1a1714', fontFamily: 'inherit', marginTop: 4,
-        }}>
-          + Activité
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+          <button onClick={() => setShowAdd(true)} style={{
+            ...glass, borderRadius: 20, padding: '7px 14px',
+            fontWeight: 600, fontSize: '0.8rem', border: 'none',
+            cursor: 'pointer', color: '#1a1714', fontFamily: 'inherit',
+          }}>
+            + Activité
+          </button>
+          <HeaderAvatar />
+        </div>
       </div>
 
       {/* City pills */}

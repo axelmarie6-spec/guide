@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { CITY_SCHEDULE, getStationMapUrl } from '../lib/travel'
 import { useAuth } from '../context/AuthContext'
+import HeaderAvatar from '../components/HeaderAvatar'
 
 // ── Constants ─────────────────────────────────────────────────
 
@@ -772,20 +773,23 @@ export default function Voyage() {
             </p>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Mon Voyage</h1>
           </div>
-          {/* Stacked member avatars */}
-          <div style={{ display: 'flex', marginTop: 4 }}>
-            {members.slice(0, 5).map((m, i) => (
-              <div key={m.id} style={{
-                width: 28, height: 28, borderRadius: '50%',
-                background: MEMBER_COLORS[i % MEMBER_COLORS.length],
-                border: '2px solid var(--sand-50)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 700, fontSize: '0.6rem', color: 'white',
-                marginLeft: i === 0 ? 0 : -8, zIndex: 5 - i,
-              }}>
-                {`${(m.first_name || m.pseudo || '?')[0]}${(m.last_name || '')[0] || ''}`.toUpperCase()}
-              </div>
-            ))}
+          {/* Stacked member avatars + my avatar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+            <div style={{ display: 'flex' }}>
+              {members.slice(0, 5).map((m, i) => (
+                <div key={m.id} style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: MEMBER_COLORS[i % MEMBER_COLORS.length],
+                  border: '2px solid var(--sand-50)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 700, fontSize: '0.6rem', color: 'white',
+                  marginLeft: i === 0 ? 0 : -8, zIndex: 5 - i,
+                }}>
+                  {`${(m.first_name || m.pseudo || '?')[0]}${(m.last_name || '')[0] || ''}`.toUpperCase()}
+                </div>
+              ))}
+            </div>
+            <HeaderAvatar />
           </div>
         </div>
 

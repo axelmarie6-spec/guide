@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import HeaderAvatar from '../components/HeaderAvatar'
 
 const TRIP_START = new Date('2026-08-01T00:00:00')
 const TRIP_DAYS = 22
@@ -240,7 +241,8 @@ export default function AujourdHui() {
     <div style={{ padding: '28px 16px 8px' }}>
 
       {/* Header */}
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
+        <div>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
           Bonjour {firstName} 👋
         </h1>
@@ -255,6 +257,8 @@ export default function AujourdHui() {
             <>Le voyage est terminé — quels souvenirs ! 🎉</>
           )}
         </p>
+        </div>
+        <HeaderAvatar style={{ marginTop: 4 }} />
       </div>
 
       {/* Cards */}
