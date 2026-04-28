@@ -54,7 +54,7 @@ function QuaiDisplay({ label, value }) {
   )
 }
 
-function TrainCard({ train, isAdmin, onSaved, pdfs }) {
+function TrainCard({ train, isAdmin, onSaved, pdfs = [] }) {
   const [editing, setEditing] = useState(false)
   const [depQ, setDepQ] = useState(train.platform_dep || '')
   const [arrQ, setArrQ] = useState(train.platform_arr || '')
@@ -180,52 +180,64 @@ function TrainCard({ train, isAdmin, onSaved, pdfs }) {
         </div>
       )}
 
-      {(myPdfs.length > 0 || isAdmin) && (
-        <div className="border-t px-4 py-3 flex flex-col gap-2"
-          style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
-          {myPdfs.map(pdf => (
-            <button key={pdf.id} onClick={() => openPdf(pdf)}
-              className="flex items-center gap-2 text-sm font-medium w-fit"
-              style={{ color: 'var(--accent)' }}>
-              <span>📄</span>
-              <span>{pdf.label}</span>
-            </button>
-          ))}
-
+      {/* Billets */}
+      <div className="border-t" style={{ borderColor: 'rgba(0,0,0,0.06)' }}>
+        <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wider"
+            style={{ color: 'var(--text-secondary)' }}>Billets</p>
           {isAdmin && !showUpload && (
             <button onClick={() => setShowUpload(true)}
-              className="text-xs font-semibold w-fit"
-              style={{ color: 'var(--accent)' }}>
-              + Ajouter un billet
+              className="text-xs font-semibold px-3 py-1 rounded-full"
+              style={{ backgroundColor: 'var(--accent-light)', color: 'var(--accent)' }}>
+              + Ajouter
             </button>
           )}
-
-          {isAdmin && showUpload && (
-            <div className="flex flex-col gap-2 pt-1">
-              <input
-                value={uploadLabel}
-                onChange={e => setUploadLabel(e.target.value)}
-                placeholder="Label : Groupe, Marin…"
-                style={{ padding: '8px 12px', fontSize: '0.875rem' }}
-              />
-              <input ref={fileRef} type="file" accept="application/pdf" className="hidden"
-                onChange={e => uploadPdf(e.target.files?.[0])} />
-              {uploadError && <p className="text-xs" style={{ color: 'var(--trash)' }}>{uploadError}</p>}
-              <div className="flex gap-2">
-                <button onClick={() => fileRef.current?.click()} disabled={uploading}
-                  className="btn-primary text-sm py-2 flex-1">
-                  {uploading ? 'Envoi…' : 'Choisir PDF'}
-                </button>
-                <button onClick={() => { setShowUpload(false); setUploadLabel(''); setUploadError('') }}
-                  className="text-sm px-3 py-2 rounded-xl"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)' }}>
-                  ✕
-                </button>
-              </div>
-            </div>
-          )}
         </div>
-      )}
+
+        {myPdfs.length === 0 && !showUpload && (
+          <p className="px-4 pb-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            {isAdmin ? 'Aucun billet — tape + Ajouter.' : 'Billets à venir.'}
+          </p>
+        )}
+
+        {myPdfs.length > 0 && (
+          <div className="px-4 pb-3 flex flex-col gap-2">
+            {myPdfs.map(pdf => (
+              <button key={pdf.id} onClick={() => openPdf(pdf)}
+                className="flex items-center gap-2 text-sm font-medium w-fit"
+                style={{ color: 'var(--accent)' }}>
+                <span>📄</span>
+                <span>{pdf.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {isAdmin && showUpload && (
+          <div className="px-4 pb-3 flex flex-col gap-2">
+            <input
+              value={uploadLabel}
+              onChange={e => setUploadLabel(e.target.value)}
+              placeholder="Label : Groupe, Marin…"
+              style={{ padding: '8px 12px', fontSize: '0.875rem' }}
+            />
+            <input ref={fileRef} type="file" accept="application/pdf" className="hidden"
+              onChange={e => uploadPdf(e.target.files?.[0])} />
+            {uploadError && <p className="text-xs" style={{ color: 'var(--trash)' }}>{uploadError}</p>}
+            <div className="flex gap-2">
+              <button onClick={() => fileRef.current?.click()} disabled={uploading}
+                className="btn-primary text-sm py-2 flex-1">
+                {uploading ? 'Envoi…' : 'Choisir le PDF'}
+              </button>
+              <button onClick={() => { setShowUpload(false); setUploadLabel(''); setUploadError('') }}
+                className="text-sm px-3 py-2 rounded-xl"
+                style={{ backgroundColor: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)' }}>
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {stationMapUrl && (
         <div className="border-t px-4 py-2.5 flex items-center justify-between"
