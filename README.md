@@ -26,7 +26,7 @@ Cinq amis. Vingt-deux jours de train. Un budget serré à 1 200 €/personne. De
 | Domaine | Outil | Pourquoi |
 |---|---|---|
 | Frontend | **React 18 + Vite** | Optimal pour PWA offline-first, plus simple que Next.js pour un projet solo |
-| Style | **Tailwind CSS v4 + CSS variables** | Mobile-first, design system "Liquid Glass" cohérent |
+| Style | **Tailwind CSS v4 + CSS variables** | Mobile-first, design system warm sand/ink cohérent (police : Plus Jakarta Sans) |
 | PWA & Offline | **vite-plugin-pwa + Workbox** | Service Workers préconfigurés, CacheFirst sur Storage Supabase |
 | Backend & Auth | **Supabase** | Auth, BDD PostgreSQL, Storage fichiers, Realtime |
 | Hébergement | **Vercel** | Déploiement automatique depuis GitHub, HTTPS, CDN mondial |
@@ -37,14 +37,15 @@ Cinq amis. Vingt-deux jours de train. Un budget serré à 1 200 €/personne. De
 
 ## Architecture — Les Onglets
 
-### Onglet 1 · "Aujourd'hui" — Le Dashboard *(Phase 5, à venir)*
+### Onglet 1 · "Aujourd'hui" — Le Dashboard 🔄
 
 Ce que le groupe voit en ouvrant l'app le matin :
 
-- Météo locale en temps réel (avec fallback offline sur la valeur cachée)
-- Convertisseur de devises automatique (CZK, HUF, CHF → EUR)
-- Trajet du jour si c'est un jour de train
-- Activités validées par le vote de la veille, dans l'ordre géographique
+- Salutation personnalisée "Bonjour [Prénom] 👋" + compteur J-X avant le départ (trip start : 1er août 2026)
+- Prochain train depuis la BDD (gares, horaires, voie)
+- Convertisseur de devises live via Frankfurter API (EUR → CZK, HUF, CHF — fallback offline)
+- Météo locale *(à brancher : OpenWeatherMap API)*
+- Activités validées par le vote de la veille *(à venir : Phase 4 finale)*
 
 ### Onglet 2 · "Explorer" — L'Oracle de Décision ✅
 
@@ -76,20 +77,28 @@ Toutes les infos de déplacement et d'hébergement, accessibles offline.
 - **Airbnbs** : adresse, code d'entrée, instructions, heure de check-in/check-out, lien Maps
 - **Urgences** : numéros locaux par pays (police, SAMU, pompiers), numéros des ambassades françaises
 
-### Onglet 4 · "Coffre-Fort" — Documents Sensibles ✅
+### Onglet 4 · "Coffre-Fort" — Documents & Urgences ✅
 
-Coffre dédié aux PDFs : billets de train, assurances, documents de groupe. Upload par l'admin, organisé par tronçon ou en "Document général". 100% accessible offline.
+- **SOS button** plein-écran rouge → modal sombre avec fiches d'urgence de chaque membre (contact, allergies, CEAM, passeport — données masquées révélables), numéros d'urgence du pays en cours
+- **Billets de train** : liste de tous les tronçons avec statut PDF (PDF ✓ ou À venir), tap pour ouvrir le billet en plein écran (accessible offline via blob URL)
+- **Numéros d'urgence** : par pays, police + SAMU + urgences + ambassade française
+- Upload admin par tronçon ou "Document général"
 
-### Onglet 5 · "Profil" — Onboarding Bloquant ✅
+### Onglet 5 · "Profil / Avatar" — Onboarding Bloquant ✅
+
+Accessible via l'avatar (initiales) dans la bottom bar :
+- **Membres** : tap avatar → /profil
+- **Admin** : tap avatar → popup with links vers les sections admin (pages secrètes)
 
 À la première connexion, l'accès est verrouillé jusqu'à ce que le membre complète :
+- **Prénom + Nom** (affiché dans toute l'app)
 - Contact d'urgence familial (nom + téléphone)
 - Numéro de passeport / carte d'identité
 - Numéro de Carte Européenne d'Assurance Maladie (CEAM)
 
-### Onglet Admin · "Administration" ✅ *(visible uniquement pour l'admin)*
+### Admin · "Administration" ✅ *(accessible via avatar, pages secrètes)*
 
-- **Utilisateurs** : liste des membres, supprimer un compte, basculer le rôle admin/membre
+- **Utilisateurs** : liste des membres (prénom + nom), supprimer un compte, basculer le rôle admin/membre
 - **Activités** : par ville — masquer/réactiver/supprimer une activité
 - **Votes** : visualiser tous les votes par ville, reset complet si besoin
 
@@ -100,12 +109,15 @@ Coffre dédié aux PDFs : billets de train, assurances, documents de groupe. Upl
 ### `profiles`
 ```
 id              uuid        PK — lié à auth.users
-pseudo          text        UNIQUE
+pseudo          text        UNIQUE — slug interne auto-généré
+first_name      text        obligatoire (bloquant)
+last_name       text        obligatoire (bloquant)
 role            text        'admin' | 'member'
 emergency_name  text        obligatoire (bloquant)
 emergency_phone text        obligatoire (bloquant)
 passport_number text        obligatoire (bloquant)
 ceam_number     text        obligatoire (bloquant)
+allergies       text        nullable
 created_at      timestamptz
 ```
 
@@ -221,8 +233,8 @@ Chaque `git push` sur `main` déclenche un déploiement automatique. Variables d
 ## Accès pour les membres du groupe
 
 1. L'admin génère un lien d'invitation depuis son profil
-2. Chaque membre clique sur le lien, choisit un pseudo + mot de passe
-3. L'onboarding bloquant (Profil) s'affiche avant toute autre chose
+2. Chaque membre clique sur le lien, entre son prénom + nom + email + mot de passe
+3. L'onboarding bloquant (Profil) s'affiche avant toute autre chose (contact urgence, passeport, CEAM)
 4. Une fois le profil complété, accès complet à tous les onglets
 
 ---

@@ -101,22 +101,53 @@ Légende : ✅ Terminé · 🔄 Partiel · ⬜ À faire
 
 ---
 
-## Phase 4 — Dashboard "Aujourd'hui" ⬜
-**À faire**
+## Phase 3.5 — Refonte UI/UX (en cours) 🔄
+**Intermédiaire — aligner toutes les pages sur la DA Claude Design**
 
-Objectif : la page d'accueil donne toutes les infos critiques du jour en un coup d'œil.
+Objectif : cohérence visuelle totale entre toutes les pages, basée sur le système warm sand/ink défini dans /claude_design/.
 
-- ⬜ Détecter la ville en cours (à partir de la date et du calendrier des trains)
-- ⬜ **Météo locale** :
+### Fait ✅
+- ✅ Palette warm sand/ink appliquée globalement (CSS variables)
+- ✅ Fond dégradé + 3 blobs ambiants (ambre, bleu, vert) visibles sur toutes les pages
+- ✅ Plus Jakarta Sans partout (font-family déjà en place)
+- ✅ BottomBar : avatar initiales à la place du tab Profil, popup admin
+- ✅ Page Profil : avatar initiales en header, prénom + nom
+- ✅ Page Register : champs Prénom + Nom, suppression pseudo côté UI
+
+### À faire ⬜
+- ⬜ **Page Coffre-Fort** : refonte complète inspirée claude_design
+  - SOS button plein écran → modal sombre avec fiches d'urgence par membre
+  - Sections collapsibles glass (Billets de train, Numéros d'urgence)
+  - Status PDF par tronçon (PDF ✓ ou À venir), tap pour ouvrir
+- ⬜ **Page Voyage** : refonte inspirée claude_design
+  - Cards minimalistes avec les infos essentielles en un coup d'œil
+  - Tap sur la card → détail complet + PDF associé
+  - Conserver les correspondances séparées
+  - Avatar/initiales en haut à droite dans le header
+- ⬜ **Page Explorer** : refonte cards de vote
+  - Boutons d'action Match/Snooze/Trash plus visibles et grands
+  - Sélecteur de villes en haut (déjà présent, à retravailler visuellement)
+  - Cards avec gradient coloré par catégorie (fidèle claude_design)
+- ⬜ **Avatar initiales dans les headers** : logo en haut à droite sur chaque page (lien vers profil / popup admin)
+
+---
+
+## Phase 4 — Dashboard "Aujourd'hui" 🔄
+**Structure en place — contenu à finaliser**
+
+Structure de base déployée : salutation, compteur J-X, prochain train (Supabase), devises (Frankfurter API live), météo placeholder.
+
+- ✅ Salutation "Bonjour [Prénom] 👋" + compteur J-X avant le départ
+- ✅ Prochain train depuis Supabase (date, gares, horaires, voie)
+- ✅ Devises live via Frankfurter API (EUR→CZK, HUF, CHF)
+- ✅ Météo : placeholder (card stylisée)
+- ⬜ **Météo locale réelle** :
   - Intégrer OpenWeatherMap API (clé gratuite, 1 000 appels/jour)
   - Température, icône météo, conditions
   - Fallback offline sur la valeur cachée
-- ⬜ **Convertisseur de devises** :
-  - Intégrer Frankfurter API (sans clé, données BCE)
-  - EUR → CZK, HUF, CHF selon la ville en cours
-  - Valeur cachée si offline
-- ⬜ **Trajet du jour** : afficher le train de la journée si applicable
-- ⬜ **Activités validées** : liste des activités du jour issues du vote Explorer
+- ⬜ Détection automatique de la ville en cours (from CITY_SCHEDULE)
+- ⬜ Devises filtrées selon la ville en cours (pas toujours CZK+HUF+CHF)
+- ⬜ **Activités validées du jour** : issues du vote Explorer
 
 ---
 
@@ -168,7 +199,8 @@ Objectif : les activités validées sont triées en un itinéraire géographique
 | 1 | Authentification & Onboarding | ✅ Terminé |
 | 2 | Voyage & Coffre-Fort (offline) | ✅ Terminé |
 | 3 | Explorer : Votes & Oracle | ✅ Terminé |
-| 4 | Dashboard "Aujourd'hui" | ⬜ À faire |
+| 3.5 | Refonte UI/UX (Claude Design) | 🔄 En cours |
+| 4 | Dashboard "Aujourd'hui" | 🔄 Structure en place |
 | 5 | Algorithme de Timeline | ⬜ À faire (optionnel) |
 | 6 | PWA & Offline Hardening | 🔄 Partiel |
 | 7 | Contenu & Déploiement Final | ⬜ À faire avant août 2026 |
