@@ -298,16 +298,11 @@ export default function CoffreFort() {
         .select('id, first_name, last_name, pseudo, role, emergency_name, emergency_phone, allergies, ceam_number, passport_number')
         .order('created_at'),
     ])
+    if (trainsRes.error) console.error('[CoffreFort] trains fetch:', trainsRes.error)
+    if (pdfsRes.error) console.error('[CoffreFort] pdfs fetch:', pdfsRes.error)
+    if (membersRes.error) console.error('[CoffreFort] members fetch:', membersRes.error)
     if (trainsRes.data) setTrains(trainsRes.data)
-    if (pdfsRes.data) {
-      setPdfs(pdfsRes.data)
-      if (navigator.onLine) {
-        pdfsRes.data.forEach(p => {
-          const { data } = supabase.storage.from('tickets').getPublicUrl(p.storage_path)
-          fetch(data.publicUrl, { mode: 'no-cors' }).catch(() => {})
-        })
-      }
-    }
+    if (pdfsRes.data) setPdfs(pdfsRes.data)
     if (membersRes.data) setMembers(membersRes.data)
     setLoading(false)
   }

@@ -210,9 +210,8 @@ function VotesTab() {
   const [dayConfig, setDayConfig] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const today = new Date().toISOString().split('T')[0]
-
   async function fetchAll() {
+    const today = new Date().toISOString().split('T')[0]
     setLoading(true)
     const [votesRes, profilesRes, activitiesRes, cfgRes] = await Promise.all([
       supabase.from('votes').select('*'),
@@ -243,6 +242,7 @@ function VotesTab() {
   }
 
   async function closeVotes() {
+    const today = new Date().toISOString().split('T')[0]
     await supabase.from('day_config').update({ votes_open: false }).eq('city', city).eq('date', today)
     fetchAll()
   }

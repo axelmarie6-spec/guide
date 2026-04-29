@@ -160,32 +160,42 @@ function useActivities(city) {
 
   useEffect(() => {
     if (!city) return
+    let isMounted = true
+
     async function load() {
-      const [actsRes, votesRes, profilesRes] = await Promise.all([
-        supabase.from('activities').select('*').eq('city', city).eq('is_active', true),
-        supabase.from('votes').select('activity_id, vote'),
-        supabase.from('profiles').select('id'),
-      ])
-      const acts = actsRes.data ?? []
-      const votes = votesRes.data ?? []
-      const groupSize = profilesRes.data?.length ?? 5
-      const threshold = Math.ceil(groupSize / 2)
-      const actIds = new Set(acts.map(a => a.id))
+      try {
+        const [actsRes, votesRes, profilesRes] = await Promise.all([
+          supabase.from('activities').select('*').eq('city', city).eq('is_active', true),
+          supabase.from('votes').select('activity_id, vote'),
+          supabase.from('profiles').select('id'),
+        ])
+        if (!isMounted) return
+        if (actsRes.error) { console.error('[AujourdHui] activities fetch:', actsRes.error); return }
+        const acts = actsRes.data ?? []
+        const votes = votesRes.data ?? []
+        const groupSize = profilesRes.data?.length ?? 5
+        const threshold = Math.ceil(groupSize / 2)
+        const actIds = new Set(acts.map(a => a.id))
 
-      const matchCounts = {}
-      votes.forEach(v => {
-        if (actIds.has(v.activity_id) && v.vote === 'match')
-          matchCounts[v.activity_id] = (matchCounts[v.activity_id] || 0) + 1
-      })
+        const matchCounts = {}
+        votes.forEach(v => {
+          if (actIds.has(v.activity_id) && v.vote === 'match')
+            matchCounts[v.activity_id] = (matchCounts[v.activity_id] || 0) + 1
+        })
 
-      setValidated(
-        acts
-          .map(a => ({ ...a, _matchCount: matchCounts[a.id] || 0 }))
-          .filter(a => a._matchCount >= threshold)
-          .sort((a, b) => b._matchCount - a._matchCount)
-      )
+        setValidated(
+          acts
+            .map(a => ({ ...a, _matchCount: matchCounts[a.id] || 0 }))
+            .filter(a => a._matchCount >= threshold)
+            .sort((a, b) => b._matchCount - a._matchCount)
+        )
+      } catch (err) {
+        if (isMounted) console.error('[AujourdHui] useActivities unexpected:', err)
+      }
     }
+
     load()
+    return () => { isMounted = false }
   }, [city])
 
   return validated

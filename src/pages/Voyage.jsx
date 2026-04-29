@@ -81,9 +81,6 @@ function CopyChip({ label, value, last }) {
   )
 }
 
-// ── PDF Viewer ────────────────────────────────────────────────
-
-
 // ── Route Strip ───────────────────────────────────────────────
 
 function RouteStrip({ cities }) {

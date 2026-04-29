@@ -28,13 +28,19 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function fetchProfile(userId) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    setProfile(data)
-    setLoading(false)
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      if (error) console.error('[AuthContext] fetchProfile:', error)
+      setProfile(data ?? null)
+    } catch (err) {
+      console.error('[AuthContext] fetchProfile unexpected:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const isProfileComplete = !!(

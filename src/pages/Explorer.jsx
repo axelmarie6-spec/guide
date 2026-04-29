@@ -596,6 +596,8 @@ export default function Explorer() {
       supabase.from('votes').select('*'),
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
     ])
+    if (actRes.error) console.error('[Explorer] activities fetch:', actRes.error)
+    if (votesRes.error) console.error('[Explorer] votes fetch:', votesRes.error)
     const acts = actRes.data ?? []
     const votes = votesRes.data ?? []
     const gSize = countRes.count ?? 1
@@ -622,15 +624,16 @@ export default function Explorer() {
   }, [city, fetchAll])
 
   async function vote(activity, voteType) {
-    setMyVotes(v => [...v.filter(x => x.activity_id !== activity.id), { activity_id: activity.id, vote: voteType, user_id: user.id }])
+    const snooze_date = voteType === 'snooze'
+      ? new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+      : null
+    setMyVotes(v => [...v.filter(x => x.activity_id !== activity.id), { activity_id: activity.id, vote: voteType, user_id: user.id, snooze_date }])
     await supabase.from('votes').upsert(
-      {
-        activity_id: activity.id, user_id: user.id, vote: voteType,
-        snooze_date: voteType === 'snooze' ? new Date(Date.now() + 86400000).toISOString().slice(0, 10) : null,
-      },
+      { activity_id: activity.id, user_id: user.id, vote: voteType, snooze_date },
       { onConflict: 'activity_id,user_id' }
     )
-    const { data } = await supabase.from('votes').select('*')
+    const { data, error: vErr } = await supabase.from('votes').select('*')
+    if (vErr) { console.error('[Explorer] vote re-fetch:', vErr); return }
     if (data) {
       setAllVotes(data)
       const actIds = new Set(activities.map(a => a.id))
