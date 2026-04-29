@@ -333,21 +333,19 @@ export default function CoffreFort() {
       <div style={{ minHeight: '100dvh', paddingBottom: 24 }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '24px 20px 14px' }}>
-          <div>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 500, margin: '0 0 3px' }}>
-              Documents hors-ligne
-            </p>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Coffre-Fort</h1>
+        <div style={{ padding: '24px 20px 14px' }}>
+          {/* Row 1: title + avatar */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div>
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 500, margin: '0 0 3px' }}>
+                Documents hors-ligne
+              </p>
+              <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Coffre-Fort</h1>
+            </div>
+            <HeaderAvatar />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 4 }}>
-            {isAdmin && (
-              <button onClick={() => setShowUpload(true)} style={{
-                padding: '7px 14px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 700,
-                background: 'var(--accent-light)', color: 'var(--accent)',
-                border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-              }}>+ Ajouter</button>
-            )}
+          {/* Row 2: offline badge + add button */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: '20px',
               background: 'rgba(59,170,122,0.12)', border: '1px solid rgba(59,170,122,0.25)',
@@ -355,7 +353,11 @@ export default function CoffreFort() {
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--mint)' }} />
               <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--mint)', margin: 0 }}>Offline OK</p>
             </div>
-            <HeaderAvatar />
+            <button onClick={() => setShowUpload(true)} style={{
+              padding: '7px 14px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 700,
+              background: 'var(--accent-light)', color: 'var(--accent)',
+              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            }}>+ Ajouter</button>
           </div>
         </div>
 
