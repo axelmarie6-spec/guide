@@ -61,7 +61,7 @@ function useWeather({ lat, lon, gpsLoading, gpsDenied }) {
     try { return JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY)) } catch { return null }
   })
   const [fetching, setFetching] = useState(true)
-  const [error, setError] = useState(false)
+  const [apiError, setApiError] = useState(null) // null | 401 | 'network'
 
   useEffect(() => {
     if (gpsLoading) return
@@ -78,6 +78,7 @@ function useWeather({ lat, lon, gpsLoading, gpsDenied }) {
       }
       try {
         const res = await globalThis.fetch(url)
+        if (res.status === 401) { setApiError(401); setFetching(false); return }
         if (!res.ok) throw new Error('owm')
         const d = await res.json()
         const w = {
@@ -91,9 +92,9 @@ function useWeather({ lat, lon, gpsLoading, gpsDenied }) {
         }
         setWeather(w)
         localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(w))
-        setError(false)
+        setApiError(null)
       } catch {
-        setError(true)
+        setApiError('network')
       } finally {
         setFetching(false)
       }
@@ -101,9 +102,9 @@ function useWeather({ lat, lon, gpsLoading, gpsDenied }) {
     load()
   }, [lat, lon, gpsLoading, gpsDenied])
 
-  const loading = fetching && !weather  // show spinner only when no cache
-  const offline = error && !!weather    // cached but couldn't refresh
-  return { weather, loading, offline }
+  const loading = fetching && !weather
+  const offline = apiError === 'network' && !!weather
+  return { weather, loading, offline, apiError }
 }
 
 function useCurrencies() {
@@ -205,7 +206,7 @@ function Spinner({ color = 'var(--sky)' }) {
 // ── WeatherCard ────────────────────────────────────────────────
 
 function WeatherCard({ lat, lon, gpsLoading, gpsDenied }) {
-  const { weather, loading, offline } = useWeather({ lat, lon, gpsLoading, gpsDenied })
+  const { weather, loading, offline, apiError } = useWeather({ lat, lon, gpsLoading, gpsDenied })
 
   const bg = 'linear-gradient(135deg, rgba(232,160,48,0.10) 0%, rgba(255,255,255,0.85) 60%)'
 
@@ -222,6 +223,15 @@ function WeatherCard({ lat, lon, gpsLoading, gpsDenied }) {
       <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
         <Spinner color="var(--sun)" />
       </div>
+    </Card>
+  )
+
+  if (apiError === 401) return (
+    <Card style={{ background: bg }}>
+      <CardLabel>Météo locale</CardLabel>
+      <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+        Clé API en cours d'activation — réessaie dans quelques minutes ⏳
+      </p>
     </Card>
   )
 
