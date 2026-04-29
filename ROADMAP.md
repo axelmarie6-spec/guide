@@ -110,7 +110,7 @@ Objectif : cohérence visuelle totale entre toutes les pages, basée sur le syst
 - ✅ Palette warm sand/ink appliquée globalement (CSS variables)
 - ✅ Fond dégradé + 3 blobs ambiants (ambre, bleu, vert) visibles sur toutes les pages
 - ✅ Plus Jakarta Sans partout (font-family déjà en place)
-- ✅ BottomBar : avatar initiales à la place du tab Profil, popup admin
+- ✅ BottomBar simplifiée : 4 onglets seulement (Auj. / Explorer / Voyage / Coffre), avatar supprimé de la nav
 - ✅ Page Profil : avatar initiales en header, prénom + nom
 - ✅ Page Register : champs Prénom + Nom, suppression pseudo côté UI
 
@@ -119,6 +119,8 @@ Objectif : cohérence visuelle totale entre toutes les pages, basée sur le syst
   - SOS button plein écran → modal sombre avec fiches d'urgence par membre
   - Sections collapsibles glass (Billets de train, Numéros d'urgence)
   - Status PDF par tronçon (PDF ✓ ou À venir), tap pour ouvrir
+  - Header 2 lignes : titre + avatar (ligne 1) · badge Offline OK + bouton Ajouter (ligne 2)
+  - Upload PDF ouvert à tous les membres (plus réservé à l'admin)
 - ✅ **Page Voyage** : refonte inspirée claude_design
   - Cards status-based (past/next/upcoming/active) avec infos essentielles
   - Tap sur la card → TrainDetailSheet / HotelDetailSheet plein écran
@@ -128,7 +130,17 @@ Objectif : cohérence visuelle totale entre toutes les pages, basée sur le syst
   - Filtre catégories en pills (Tout / Culture / Restos / Soirée / Nature…)
   - Cards avec gradient coloré + blobs par catégorie, badge prix, swipe tint
   - ResultsView en glass cards avec classement numéroté
-- ✅ **Avatar initiales dans les headers** : cercle 34px en haut à droite sur chaque page (lien vers /profil)
+- ✅ **HeaderAvatar** (composant partagé) : cercle 38px initiales en haut à droite sur chaque page
+  - Admin → ouvre AdminPopup (liens vers /admin tabs + /profil)
+  - Membre → navigue directement vers /profil
+- ✅ **PdfViewer** (composant partagé) : télécharge via `supabase.storage.download()` (auth privée)
+  - Bouton "Plein écran ↗" pour ouvrir le PDF natif sur iOS (contourne la limite iframe 1 page)
+  - Utilisé dans Voyage et Coffre-Fort
+- ✅ **Bugs corrigés** :
+  - Double prénom/nom à l'onboarding (formulaire cachait les champs mais les redemandait)
+  - PDF inaccessible aux non-admins dans Coffre-Fort (mauvaise URL publique → remplacé par download auth)
+  - Viewer PDF mobile n'affichait que la page 1 → lien "Plein écran" vers le viewer natif
+  - Fausse erreur de sauvegarde sur mobile (timeout réseau côté client alors que l'UPDATE était committé)
 
 ---
 
