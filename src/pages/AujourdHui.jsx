@@ -7,7 +7,7 @@ import HeaderAvatar from '../components/HeaderAvatar'
 const TRIP_START = new Date('2026-08-01T00:00:00')
 const TRIP_DAYS = 22
 const OWM_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
-const WEATHER_CACHE_KEY = 'weather_cache_v3'
+const WEATHER_CACHE_KEY = 'weather_cache_v4'
 
 // OWM city query fallback (GPS denied)
 const CITY_OWM_QUERY = {
@@ -87,19 +87,20 @@ function useWeather({ lat, lon, gpsLoading, gpsDenied }) {
         if (wRes.status === 401) { setApiError(401); setFetching(false); return }
         if (!wRes.ok) throw new Error('owm')
         const wd = await wRes.json()
-        // Compute daily min/max from the next 8 forecast slots (= 24h)
-        // Avoids UTC/local timezone mismatch from date-based filtering
-        let min, max
+        // Compute daily min/max for the full calendar day (local timezone)
+        // toLocaleDateString('en-CA') = YYYY-MM-DD in browser's local tz (follows GPS location)
+        const todayLocal = new Date().toLocaleDateString('en-CA')
+        // Seed with current temp so past hours of the day are represented
+        let temps = [wd.main.temp]
         if (fRes.ok) {
           const fd = await fRes.json()
-          const temps = (fd.list ?? []).slice(0, 8).map(e => e.main.temp)
-          if (temps.length) {
-            min = Math.round(Math.min(...temps))
-            max = Math.round(Math.max(...temps))
-          }
+          const todaySlots = (fd.list ?? [])
+            .filter(e => new Date(e.dt * 1000).toLocaleDateString('en-CA') === todayLocal)
+            .map(e => e.main.temp)
+          temps = temps.concat(todaySlots)
         }
-        // Fallback: use current temp for both if forecast unavailable
-        if (min === undefined) { min = Math.round(wd.main.temp); max = min }
+        const min = Math.round(Math.min(...temps))
+        const max = Math.round(Math.max(...temps))
         const w = {
           temp: Math.round(wd.main.temp),
           min,
