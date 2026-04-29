@@ -7,7 +7,7 @@ import HeaderAvatar from '../components/HeaderAvatar'
 const TRIP_START = new Date('2026-08-01T00:00:00')
 const TRIP_DAYS = 22
 const OWM_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
-const WEATHER_CACHE_KEY = 'weather_cache_v1'
+const WEATHER_CACHE_KEY = 'weather_cache_v2'
 
 // OWM city query fallback (GPS denied)
 const CITY_OWM_QUERY = {
@@ -68,26 +68,47 @@ function useWeather({ lat, lon, gpsLoading, gpsDenied }) {
     if (!OWM_KEY) { setFetching(false); return }
 
     async function load() {
-      let url
+      let weatherUrl, forecastUrl
       if (!gpsDenied && lat !== null) {
-        url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OWM_KEY}&units=metric&lang=fr`
+        const coords = `lat=${lat}&lon=${lon}`
+        weatherUrl = `https://api.openweathermap.org/data/2.5/weather?${coords}&appid=${OWM_KEY}&units=metric&lang=fr`
+        forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?${coords}&appid=${OWM_KEY}&units=metric&cnt=16`
       } else {
         const city = getCurrentCity()
-        const q = city ? CITY_OWM_QUERY[city.city] : 'Brussels,BE'
-        url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(q)}&appid=${OWM_KEY}&units=metric&lang=fr`
+        const q = encodeURIComponent(city ? CITY_OWM_QUERY[city.city] : 'Brussels,BE')
+        weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${q}&appid=${OWM_KEY}&units=metric&lang=fr`
+        forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${q}&appid=${OWM_KEY}&units=metric&cnt=16`
       }
       try {
-        const res = await globalThis.fetch(url)
-        if (res.status === 401) { setApiError(401); setFetching(false); return }
-        if (!res.ok) throw new Error('owm')
-        const d = await res.json()
+        const [wRes, fRes] = await Promise.all([
+          globalThis.fetch(weatherUrl),
+          globalThis.fetch(forecastUrl),
+        ])
+        if (wRes.status === 401) { setApiError(401); setFetching(false); return }
+        if (!wRes.ok) throw new Error('owm')
+        const wd = await wRes.json()
+        // Compute daily min/max from forecast 3h slots for today
+        const today = new Date().toISOString().split('T')[0]
+        let min, max
+        if (fRes.ok) {
+          const fd = await fRes.json()
+          const todayTemps = (fd.list ?? [])
+            .filter(e => new Date(e.dt * 1000).toISOString().split('T')[0] === today)
+            .map(e => e.main.temp)
+          if (todayTemps.length) {
+            min = Math.round(Math.min(...todayTemps))
+            max = Math.round(Math.max(...todayTemps))
+          }
+        }
+        // Fallback: use current temp for both if forecast unavailable
+        if (min === undefined) { min = Math.round(wd.main.temp); max = min }
         const w = {
-          temp: Math.round(d.main.temp),
-          min: Math.round(d.main.temp_min),
-          max: Math.round(d.main.temp_max),
-          desc: d.weather[0]?.description ?? '',
-          icon: d.weather[0]?.icon ?? '',
-          city: d.name,
+          temp: Math.round(wd.main.temp),
+          min,
+          max,
+          desc: wd.weather[0]?.description ?? '',
+          icon: wd.weather[0]?.icon ?? '',
+          city: wd.name,
           ts: Date.now(),
         }
         setWeather(w)
