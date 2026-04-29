@@ -144,22 +144,21 @@ Objectif : cohérence visuelle totale entre toutes les pages, basée sur le syst
 
 ---
 
-## Phase 4 — Dashboard "Aujourd'hui" 🔄
-**Structure en place — contenu à finaliser**
-
-Structure de base déployée : salutation, compteur J-X, prochain train (Supabase), devises (Frankfurter API live), météo placeholder.
+## Phase 4 — Dashboard "Aujourd'hui" ✅
+**Terminé**
 
 - ✅ Salutation "Bonjour [Prénom] 👋" + compteur J-X avant le départ
 - ✅ Prochain train depuis Supabase (date, gares, horaires, voie)
-- ✅ Devises live via Frankfurter API (EUR→CZK, HUF, CHF)
-- ✅ Météo : placeholder (card stylisée)
-- ⬜ **Météo locale réelle** :
-  - Intégrer OpenWeatherMap API (clé gratuite, 1 000 appels/jour)
-  - Température, icône météo, conditions
-  - Fallback offline sur la valeur cachée
-- ⬜ Détection automatique de la ville en cours (from CITY_SCHEDULE)
-- ⬜ Devises filtrées selon la ville en cours (pas toujours CZK+HUF+CHF)
-- ⬜ **Activités validées du jour** : issues du vote Explorer
+- ✅ **Météo locale réelle** via OpenWeatherMap (clé gratuite)
+  - GPS d'abord, fallback CITY_SCHEDULE, fallback Bruxelles
+  - Température actuelle + min/max + description
+  - Cache localStorage pour offline
+- ✅ Détection automatique de la ville en cours (CITY_SCHEDULE)
+  - Sous-titre enrichi pendant le voyage : Jour X · 🇨🇿 Prague · N jours restants
+- ✅ Devises live CZK/HUF/CHF toujours affichées + convertisseur monnaie locale → EUR
+- ✅ **Activités validées** de la ville en cours (issues des votes Explorer, triées par score)
+  - Placeholder avant le voyage : "RDV dans X jours"
+- ✅ Ordre des cards : Météo · Train · Devises · Activités
 
 ---
 
@@ -212,7 +211,7 @@ Objectif : les activités validées sont triées en un itinéraire géographique
 | 2 | Voyage & Coffre-Fort (offline) | ✅ Terminé |
 | 3 | Explorer : Votes & Oracle | ✅ Terminé |
 | 3.5 | Refonte UI/UX (Claude Design) | ✅ Terminé |
-| 4 | Dashboard "Aujourd'hui" | 🔄 Structure en place |
+| 4 | Dashboard "Aujourd'hui" | ✅ Terminé |
 | 5 | Algorithme de Timeline | ⬜ À faire (optionnel) |
 | 6 | PWA & Offline Hardening | 🔄 Partiel |
 | 7 | Contenu & Déploiement Final | ⬜ À faire avant août 2026 |
