@@ -112,10 +112,26 @@ function useCurrencies() {
   const [offline, setOffline] = useState(false)
 
   useEffect(() => {
-    globalThis.fetch('https://api.frankfurter.app/latest?from=EUR&to=CZK,HUF,CHF')
-      .then(r => r.json())
-      .then(d => setRates(d.rates))
-      .catch(() => setOffline(true))
+    async function load() {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/EUR')
+        if (!res.ok) throw new Error()
+        const d = await res.json()
+        if (d.result !== 'success') throw new Error()
+        setRates({ CZK: d.rates.CZK, HUF: d.rates.HUF, CHF: d.rates.CHF })
+      } catch {
+        // fallback Frankfurter
+        try {
+          const res = await fetch('https://api.frankfurter.app/latest?from=EUR&to=CZK,HUF,CHF')
+          if (!res.ok) throw new Error()
+          const d = await res.json()
+          setRates(d.rates)
+        } catch {
+          setOffline(true)
+        }
+      }
+    }
+    load()
   }, [])
 
   return { rates, offline }
