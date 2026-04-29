@@ -16,20 +16,22 @@ export default function OfflineBanner() {
   return (
     <div style={{
       position: 'fixed',
-      top: 'env(safe-area-inset-top)',
-      left: 0, right: 0,
+      bottom: 'calc(16px + 62px + 10px)',
+      left: '50%',
+      transform: 'translateX(-50%)',
       zIndex: 9999,
       background: 'rgba(26,23,20,0.88)',
       backdropFilter: 'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
       color: 'white',
-      textAlign: 'center',
-      padding: '10px 16px',
-      fontSize: '0.78rem',
+      padding: '7px 16px',
+      borderRadius: '20px',
+      fontSize: '0.75rem',
       fontWeight: 600,
-      letterSpacing: '0.01em',
+      whiteSpace: 'nowrap',
+      pointerEvents: 'none',
     }}>
-      📵 Hors ligne — données en cache
+      📵 Hors ligne
     </div>
   )
 }
