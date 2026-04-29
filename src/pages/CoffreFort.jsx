@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { EMERGENCY, CITY_SCHEDULE } from '../lib/travel'
 import HeaderAvatar from '../components/HeaderAvatar'
 import PdfViewer from '../components/PdfViewer'
+import { readCache, writeCache } from '../lib/dbCache'
 
 const MEMBER_COLORS = ['#6b6560', '#4a90d9', '#3baa7a', '#e8a030', '#a78bfa']
 
@@ -280,10 +281,10 @@ export default function CoffreFort() {
   const { profile } = useAuth()
   const isAdmin = profile?.role === 'admin'
 
-  const [trains, setTrains] = useState([])
-  const [pdfs, setPdfs] = useState([])
-  const [members, setMembers] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [trains, setTrains] = useState(() => readCache('coffre_trains_v1') ?? [])
+  const [pdfs, setPdfs] = useState(() => readCache('coffre_pdfs_v1') ?? [])
+  const [members, setMembers] = useState(() => readCache('coffre_members_v1') ?? [])
+  const [loading, setLoading] = useState(() => !readCache('coffre_pdfs_v1'))
   const [sosOpen, setSosOpen] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
   const [openPdf, setOpenPdf] = useState(null)
@@ -301,9 +302,9 @@ export default function CoffreFort() {
     if (trainsRes.error) console.error('[CoffreFort] trains fetch:', trainsRes.error)
     if (pdfsRes.error) console.error('[CoffreFort] pdfs fetch:', pdfsRes.error)
     if (membersRes.error) console.error('[CoffreFort] members fetch:', membersRes.error)
-    if (trainsRes.data) setTrains(trainsRes.data)
-    if (pdfsRes.data) setPdfs(pdfsRes.data)
-    if (membersRes.data) setMembers(membersRes.data)
+    if (trainsRes.data) { setTrains(trainsRes.data); writeCache('coffre_trains_v1', trainsRes.data) }
+    if (pdfsRes.data) { setPdfs(pdfsRes.data); writeCache('coffre_pdfs_v1', pdfsRes.data) }
+    if (membersRes.data) { setMembers(membersRes.data); writeCache('coffre_members_v1', membersRes.data) }
     setLoading(false)
   }
 

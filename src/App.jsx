@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute, AuthRoute, GuestRoute } from './components/ProtectedRoute'
 import BottomBar from './components/BottomBar'
+import OfflineBanner from './components/OfflineBanner'
 import AujourdHui from './pages/AujourdHui'
 import Explorer from './pages/Explorer'
 import Voyage from './pages/Voyage'
@@ -10,6 +12,7 @@ import Admin from './pages/Admin'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import { useAuth } from './context/AuthContext'
+import { prefetchAllPdfs } from './lib/pdfCache'
 
 function AdminRoute({ children }) {
   const { profile, loading } = useAuth()
@@ -53,8 +56,15 @@ function BackgroundBlobs() {
 }
 
 export default function App() {
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user) prefetchAllPdfs()
+  }, [user])
+
   return (
     <div style={{ minHeight: '100dvh', color: 'var(--text-primary)', position: 'relative' }}>
+      <OfflineBanner />
       <BackgroundBlobs />
       <div style={{ position: 'relative', zIndex: 1 }}>
         <Routes>

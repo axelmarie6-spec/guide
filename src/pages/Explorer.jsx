@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import HeaderAvatar from '../components/HeaderAvatar'
+import { readCache, writeCache } from '../lib/dbCache'
 
 const CATEGORY_META = {
   culture:   { label: 'Culture',     emoji: '🏛️', color: '#4a90d9', bg: 'rgba(74,144,217,0.12)'  },
@@ -588,8 +589,25 @@ export default function Explorer() {
 
   const fetchAll = useCallback(async () => {
     if (!user) return
-    setLoading(true)
     const today = new Date().toISOString().slice(0, 10)
+
+    // Seed from cache immediately so the UI is usable offline
+    const cacheKey = `explorer_${city}_v1`
+    const cached = readCache(cacheKey)
+    if (cached) {
+      const actIds = new Set(cached.activities.map(a => a.id))
+      setActivities(cached.activities)
+      setAllVotes(cached.votes)
+      setGroupSize(cached.groupSize)
+      setMyVotes(cached.votes.filter(v => v.user_id === user.id && actIds.has(v.activity_id)))
+      setDoneCount(computeDoneCount(cached.votes, actIds, cached.activities.length, today))
+      setLoading(false)
+    } else {
+      setLoading(true)
+    }
+
+    if (!navigator.onLine) return
+
     const [cfgRes, actRes, votesRes, countRes] = await Promise.all([
       supabase.from('day_config').select('*').eq('city', city).eq('date', today).maybeSingle(),
       supabase.from('activities').select('*').eq('city', city).eq('is_active', true),
@@ -601,6 +619,8 @@ export default function Explorer() {
     const acts = actRes.data ?? []
     const votes = votesRes.data ?? []
     const gSize = countRes.count ?? 1
+
+    writeCache(cacheKey, { activities: acts, votes, groupSize: gSize })
 
     setDayConfig(cfgRes.data ?? null)
     setActivities(acts)

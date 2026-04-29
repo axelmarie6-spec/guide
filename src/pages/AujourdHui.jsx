@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { getCurrentCity } from '../lib/travel'
 import HeaderAvatar from '../components/HeaderAvatar'
+import { readCache, writeCache } from '../lib/dbCache'
 
 const TRIP_START = new Date('2026-08-01T00:00:00')
 const TRIP_DAYS = 22
@@ -166,7 +167,8 @@ function useCurrencies() {
 }
 
 function useNextTrain() {
-  const [train, setTrain] = useState(undefined)
+  const cached = readCache('today_train_v1')
+  const [train, setTrain] = useState(cached !== null ? cached.value : undefined)
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0]
@@ -176,8 +178,11 @@ function useNextTrain() {
       .order('date', { ascending: true })
       .order('leg_order', { ascending: true })
       .limit(1).single()
-      .then(({ data }) => setTrain(data ?? null))
-      .catch(() => setTrain(null))
+      .then(({ data }) => {
+        setTrain(data ?? null)
+        writeCache('today_train_v1', { value: data ?? null })
+      })
+      .catch(() => { if (train === undefined) setTrain(null) })
   }, [])
 
   return train

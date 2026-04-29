@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { getCachedPdf, setPdfCache } from '../lib/pdfCache'
 
 export default function PdfViewer({ pdf, onClose, zIndex = 300 }) {
   const [blobUrl, setBlobUrl] = useState(null)
@@ -9,11 +10,18 @@ export default function PdfViewer({ pdf, onClose, zIndex = 300 }) {
   useEffect(() => {
     let url = null
     async function load() {
-      // download() envoie le token d'auth → fonctionne pour tous les membres
-      const { data, error: dlErr } = await supabase.storage
-        .from('tickets')
-        .download(pdf.storage_path)
+      // Cache first — populated by background prefetch at app startup
+      const cached = await getCachedPdf(pdf.storage_path)
+      if (cached) {
+        url = URL.createObjectURL(cached)
+        setBlobUrl(url)
+        setLoading(false)
+        return
+      }
+      // Network fallback
+      const { data, error: dlErr } = await supabase.storage.from('tickets').download(pdf.storage_path)
       if (dlErr || !data) { setError(true); setLoading(false); return }
+      await setPdfCache(pdf.storage_path, data)
       url = URL.createObjectURL(data)
       setBlobUrl(url)
       setLoading(false)

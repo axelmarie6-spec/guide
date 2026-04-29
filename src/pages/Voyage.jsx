@@ -4,6 +4,7 @@ import { CITY_SCHEDULE, getStationMapUrl } from '../lib/travel'
 import { useAuth } from '../context/AuthContext'
 import HeaderAvatar from '../components/HeaderAvatar'
 import PdfViewer from '../components/PdfViewer'
+import { readCache, writeCache } from '../lib/dbCache'
 
 // ── Constants ─────────────────────────────────────────────────
 
@@ -675,11 +676,11 @@ export default function Voyage() {
   const isAdmin = profile?.role === 'admin'
 
   const [tab, setTab] = useState('trains')
-  const [trains, setTrains] = useState([])
-  const [airbnbs, setAirbnbs] = useState([])
-  const [pdfs, setPdfs] = useState([])
-  const [members, setMembers] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [trains, setTrains] = useState(() => readCache('voyage_trains_v1') ?? [])
+  const [airbnbs, setAirbnbs] = useState(() => readCache('voyage_airbnbs_v1') ?? [])
+  const [pdfs, setPdfs] = useState(() => readCache('voyage_pdfs_v1') ?? [])
+  const [members, setMembers] = useState(() => readCache('voyage_members_v1') ?? [])
+  const [loading, setLoading] = useState(() => !readCache('voyage_trains_v1'))
 
   const [openTrain, setOpenTrain] = useState(null)
   const [openCity, setOpenCity] = useState(null)
@@ -691,18 +692,10 @@ export default function Voyage() {
       supabase.from('ticket_pdfs').select('*').order('created_at'),
       supabase.from('profiles').select('id, first_name, last_name, pseudo').order('created_at'),
     ])
-    if (trainsRes.data) setTrains(trainsRes.data)
-    if (airbnbsRes.data) setAirbnbs(airbnbsRes.data)
-    if (pdfsRes.data) {
-      setPdfs(pdfsRes.data)
-      if (navigator.onLine) {
-        pdfsRes.data.forEach(p => {
-          const { data } = supabase.storage.from('tickets').getPublicUrl(p.storage_path)
-          fetch(data.publicUrl, { mode: 'no-cors' }).catch(() => {})
-        })
-      }
-    }
-    if (membersRes.data) setMembers(membersRes.data)
+    if (trainsRes.data) { setTrains(trainsRes.data); writeCache('voyage_trains_v1', trainsRes.data) }
+    if (airbnbsRes.data) { setAirbnbs(airbnbsRes.data); writeCache('voyage_airbnbs_v1', airbnbsRes.data) }
+    if (pdfsRes.data) { setPdfs(pdfsRes.data); writeCache('voyage_pdfs_v1', pdfsRes.data) }
+    if (membersRes.data) { setMembers(membersRes.data); writeCache('voyage_members_v1', membersRes.data) }
     setLoading(false)
   }
 
