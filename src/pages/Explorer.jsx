@@ -553,6 +553,21 @@ function SecondTourView({ candidates, maxActivities, onDone }) {
   )
 }
 
+// ── Helpers voting multi-jours ────────────────────────────────
+// Match et Trash sont permanents pour la ville.
+// Snooze est temporaire : l'activité revient dès que snooze_date <= today.
+// Un user est "done" pour la session quand son deck personnel est vide.
+
+function computeDoneCount(votes, actIds, actsLength, today) {
+  const uids = [...new Set(votes.filter(v => actIds.has(v.activity_id)).map(v => v.user_id))]
+  return uids.filter(uid =>
+    votes.filter(v =>
+      v.user_id === uid && actIds.has(v.activity_id) &&
+      (v.vote === 'match' || v.vote === 'trash' || (v.vote === 'snooze' && v.snooze_date > today))
+    ).length >= actsLength
+  ).length
+}
+
 // ── Page principale ────────────────────────────────────────────
 
 export default function Explorer() {
@@ -592,13 +607,7 @@ export default function Explorer() {
 
     const actIds = new Set(acts.map(a => a.id))
     setMyVotes(votes.filter(v => v.user_id === user.id && actIds.has(v.activity_id)))
-
-    const uids = [...new Set(votes.filter(v => actIds.has(v.activity_id)).map(v => v.user_id))]
-    const done = uids.filter(uid => {
-      const s = new Set(votes.filter(v => v.user_id === uid && actIds.has(v.activity_id)).map(v => v.activity_id))
-      return s.size >= acts.length
-    }).length
-    setDoneCount(done)
+    setDoneCount(computeDoneCount(votes, actIds, acts.length, today))
     setLoading(false)
   }, [city, user])
 
@@ -625,11 +634,8 @@ export default function Explorer() {
     if (data) {
       setAllVotes(data)
       const actIds = new Set(activities.map(a => a.id))
-      const uids = [...new Set(data.filter(v => actIds.has(v.activity_id)).map(v => v.user_id))]
-      setDoneCount(uids.filter(uid => {
-        const s = new Set(data.filter(v => v.user_id === uid && actIds.has(v.activity_id)).map(v => v.activity_id))
-        return s.size >= activities.length
-      }).length)
+      const today = new Date().toISOString().slice(0, 10)
+      setDoneCount(computeDoneCount(data, actIds, activities.length, today))
     }
   }
 
@@ -639,9 +645,13 @@ export default function Explorer() {
     fetchAll()
   }
 
-  // Derived state
-  const myVotedIds = new Set(myVotes.map(v => v.activity_id))
-  const globalDeck = activities.filter(a => !myVotedIds.has(a.id))
+  // Derived state — multi-jours
+  const today = new Date().toISOString().slice(0, 10)
+  // Activités définitivement décidées (match/trash) : exclues pour toujours
+  const myPermIds = new Set(myVotes.filter(v => v.vote === 'match' || v.vote === 'trash').map(v => v.activity_id))
+  // Activités snoozées jusqu'à un jour futur : exclues aujourd'hui seulement
+  const mySnoozedIds = new Set(myVotes.filter(v => v.vote === 'snooze' && v.snooze_date > today).map(v => v.activity_id))
+  const globalDeck = activities.filter(a => !myPermIds.has(a.id) && !mySnoozedIds.has(a.id))
   const displayDeck = catFilter === 'all'
     ? globalDeck
     : globalDeck.filter(a => a.category === catFilter)
@@ -663,8 +673,10 @@ export default function Explorer() {
     .sort((a, b) => b._matchCount - a._matchCount)
 
   const myMatchCount = myVotes.filter(v => v.vote === 'match').length
-  const totalVoted = myVotes.length
-  const pct = activities.length > 0 ? Math.round(totalVoted / activities.length * 100) : 0
+  // Progression de la session du jour : activités non-permanentes à traiter
+  const todayTotal = activities.filter(a => !myPermIds.has(a.id)).length
+  const totalVoted = todayTotal - globalDeck.length
+  const pct = todayTotal > 0 ? Math.round(totalVoted / todayTotal * 100) : 0
   const votesOpen = dayConfig?.votes_open === true
   const allDone = groupSize > 0 && doneCount >= groupSize
 
