@@ -7,7 +7,7 @@ import HeaderAvatar from '../components/HeaderAvatar'
 const TRIP_START = new Date('2026-08-01T00:00:00')
 const TRIP_DAYS = 22
 const OWM_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
-const WEATHER_CACHE_KEY = 'weather_cache_v2'
+const WEATHER_CACHE_KEY = 'weather_cache_v3'
 
 // OWM city query fallback (GPS denied)
 const CITY_OWM_QUERY = {
@@ -87,17 +87,15 @@ function useWeather({ lat, lon, gpsLoading, gpsDenied }) {
         if (wRes.status === 401) { setApiError(401); setFetching(false); return }
         if (!wRes.ok) throw new Error('owm')
         const wd = await wRes.json()
-        // Compute daily min/max from forecast 3h slots for today
-        const today = new Date().toISOString().split('T')[0]
+        // Compute daily min/max from the next 8 forecast slots (= 24h)
+        // Avoids UTC/local timezone mismatch from date-based filtering
         let min, max
         if (fRes.ok) {
           const fd = await fRes.json()
-          const todayTemps = (fd.list ?? [])
-            .filter(e => new Date(e.dt * 1000).toISOString().split('T')[0] === today)
-            .map(e => e.main.temp)
-          if (todayTemps.length) {
-            min = Math.round(Math.min(...todayTemps))
-            max = Math.round(Math.max(...todayTemps))
+          const temps = (fd.list ?? []).slice(0, 8).map(e => e.main.temp)
+          if (temps.length) {
+            min = Math.round(Math.min(...temps))
+            max = Math.round(Math.max(...temps))
           }
         }
         // Fallback: use current temp for both if forecast unavailable
