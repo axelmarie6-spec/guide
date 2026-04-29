@@ -685,9 +685,10 @@ export default function Explorer() {
 
   let view = 'closed'
   if (votesOpen && globalDeck.length > 0 && !allDone) view = 'voting'
-  else if (votesOpen && globalDeck.length > 0 && allDone) view = 'results'
   else if (votesOpen && globalDeck.length === 0 && !allDone) view = 'done'
-  else if ((votesOpen && allDone) || (dayConfig && !votesOpen && activities.length > 0)) view = 'results'
+  else if (votesOpen && allDone) view = 'results'
+  else if (!votesOpen && validated.length > 0) view = 'results'
+  // Sinon : closed → ClosedView (pas de session, ou session fermée sans activités validées)
 
   return (
     <div style={{ minHeight: '100dvh' }}>

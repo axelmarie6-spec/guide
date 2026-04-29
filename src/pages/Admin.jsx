@@ -278,15 +278,13 @@ function VotesTab() {
               <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
                 {cityVotes.length} vote{cityVotes.length > 1 ? 's' : ''}
               </p>
-              {dayConfig && (
-                <span style={{
-                  fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px',
-                  background: dayConfig.votes_open ? 'rgba(59,170,122,0.12)' : 'rgba(0,0,0,0.06)',
-                  color: dayConfig.votes_open ? 'var(--mint)' : 'var(--text-secondary)',
-                }}>
-                  {dayConfig.votes_open ? '🟢 Ouverts' : '🔴 Fermés'}
-                </span>
-              )}
+              <span style={{
+                fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px',
+                background: dayConfig?.votes_open ? 'rgba(59,170,122,0.12)' : 'rgba(0,0,0,0.06)',
+                color: dayConfig?.votes_open ? 'var(--mint)' : 'var(--text-secondary)',
+              }}>
+                {dayConfig?.votes_open ? '🟢 Ouverts' : '🔴 Fermés'}
+              </span>
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               {dayConfig?.votes_open && (
