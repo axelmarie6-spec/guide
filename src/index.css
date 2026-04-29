@@ -57,6 +57,8 @@ body {
   overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   min-height: 100dvh;
+  /* Repousse le contenu sous le Dynamic Island / notch iOS */
+  padding-top: env(safe-area-inset-top);
 }
 
 /* ── Glass card ─────────────────────────────────────────────── */
