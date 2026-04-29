@@ -16,7 +16,7 @@ const CATEGORY_FR = {
 
 // ── Confirmation inline ────────────────────────────────────────
 
-function DeleteButton({ label, onConfirm }) {
+function DeleteButton({ onConfirm, resetLabel }) {
   const [confirm, setConfirm] = useState(false)
   if (confirm) return (
     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -31,6 +31,13 @@ function DeleteButton({ label, onConfirm }) {
         color: 'var(--trash)', fontWeight: 600,
       }}>Confirmer</button>
     </div>
+  )
+  if (resetLabel) return (
+    <button onClick={() => setConfirm(true)} style={{
+      fontSize: '0.75rem', padding: '5px 12px', borderRadius: '20px',
+      backgroundColor: 'rgba(220,38,38,0.08)', color: 'var(--trash)',
+      border: 'none', cursor: 'pointer', fontWeight: 600,
+    }}>{resetLabel}</button>
   )
   return (
     <button onClick={() => setConfirm(true)} style={{
@@ -102,7 +109,7 @@ function UsersTab({ currentUserId }) {
             </button>
           </div>
           {u.id !== currentUserId && (
-            <DeleteButton label={u.pseudo} onConfirm={() => deleteUser(u.id)} />
+            <DeleteButton onConfirm={() => deleteUser(u.id)} />
           )}
         </div>
       ))}
@@ -185,7 +192,7 @@ function ActivitiesTab() {
             }}>
               {a.is_active ? 'Masquer' : 'Réactiver'}
             </button>
-            <DeleteButton label={a.name} onConfirm={() => deleteActivity(a.id)} />
+            <DeleteButton onConfirm={() => deleteActivity(a.id)} />
           </div>
         ))
       )}
@@ -221,6 +228,12 @@ function VotesTab() {
     const actIds = activities.map(a => a.id)
     if (actIds.length === 0) return
     await supabase.from('votes').delete().in('activity_id', actIds)
+    await supabase.from('day_config').delete().eq('city', city)
+    fetchAll()
+  }
+
+  async function deleteVote(id) {
+    await supabase.from('votes').delete().eq('id', id)
     fetchAll()
   }
 
@@ -230,6 +243,8 @@ function VotesTab() {
   ]))
   const actMap = Object.fromEntries(activities.map(a => [a.id, a.name]))
   const cityVotes = votes.filter(v => activities.some(a => a.id === v.activity_id))
+
+  const VOTE_ICON = { match: '✅', snooze: '⏱️', trash: '🗑️' }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -253,13 +268,7 @@ function VotesTab() {
               {cityVotes.length} vote{cityVotes.length > 1 ? 's' : ''} enregistré{cityVotes.length > 1 ? 's' : ''}
             </p>
             {cityVotes.length > 0 && (
-              <button onClick={resetVotesForCity} style={{
-                fontSize: '0.75rem', padding: '5px 12px', borderRadius: '20px',
-                backgroundColor: 'rgba(220,38,38,0.08)', color: 'var(--trash)',
-                border: 'none', cursor: 'pointer', fontWeight: 600,
-              }}>
-                🔄 Reset votes
-              </button>
+              <DeleteButton label="tous les votes" onConfirm={resetVotesForCity} resetLabel="🔄 Reset tous" />
             )}
           </div>
           {cityVotes.length === 0 ? (
@@ -268,22 +277,22 @@ function VotesTab() {
             </p>
           ) : (
             cityVotes.map(v => (
-              <div key={v.id} style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '10px 14px', borderRadius: '12px',
-                backgroundColor: 'rgba(0,0,0,0.03)',
+              <div key={v.id} className="card" style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 14px',
               }}>
-                <span style={{ fontSize: '1rem' }}>
-                  {v.vote === 'match' ? '✅' : v.vote === 'snooze' ? '⏱️' : '🗑️'}
+                <span style={{ fontSize: '1rem', flexShrink: 0 }}>
+                  {VOTE_ICON[v.vote] ?? '❓'}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 600, fontSize: '0.82rem', margin: 0 }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.82rem', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {actMap[v.activity_id] ?? 'Activité inconnue'}
                   </p>
                   <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: 0 }}>
                     {profileMap[v.user_id] ?? '?'}
                   </p>
                 </div>
+                <DeleteButton onConfirm={() => deleteVote(v.id)} />
               </div>
             ))
           )}
