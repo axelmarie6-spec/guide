@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { EMERGENCY, CITY_SCHEDULE } from '../lib/travel'
 import HeaderAvatar from '../components/HeaderAvatar'
+import PdfViewer from '../components/PdfViewer'
 
 const MEMBER_COLORS = ['#6b6560', '#4a90d9', '#3baa7a', '#e8a030', '#a78bfa']
 
@@ -43,56 +44,6 @@ function Section({ title, icon, badge, accent, children, defaultOpen = false }) 
         </svg>
       </button>
       {open && <div style={{ padding: '0 20px 20px' }}>{children}</div>}
-    </div>
-  )
-}
-
-// ── PDF full-screen viewer ─────────────────────────────────────
-
-function PdfViewer({ pdf, onClose }) {
-  const [blobUrl, setBlobUrl] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-
-  useEffect(() => {
-    let url = null
-    async function load() {
-      const { data } = supabase.storage.from('tickets').getPublicUrl(pdf.storage_path)
-      try {
-        const res = await fetch(data.publicUrl)
-        const blob = await res.blob()
-        url = URL.createObjectURL(blob)
-        setBlobUrl(url)
-      } catch { setError(true) }
-      setLoading(false)
-    }
-    load()
-    return () => { if (url) URL.revokeObjectURL(url) }
-  }, [pdf.storage_path])
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'var(--bg-gradient)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.08)', flexShrink: 0 }}>
-        <span style={{ fontWeight: 700, fontSize: '1rem' }}>{pdf.label}</span>
-        <button onClick={onClose} style={{
-          fontSize: '0.85rem', fontWeight: 600, padding: '7px 16px', borderRadius: '20px',
-          background: 'rgba(0,0,0,0.07)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text-secondary)',
-        }}>Fermer</button>
-      </div>
-      {loading && (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: 26, height: 26, borderRadius: '50%', border: '2.5px solid var(--sky)', borderTopColor: 'transparent', animation: 'cfSpin 0.7s linear infinite' }} />
-          <style>{`@keyframes cfSpin { to { transform: rotate(360deg); } }`}</style>
-        </div>
-      )}
-      {error && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px', textAlign: 'center', gap: 14 }}>
-          <p style={{ fontSize: '3rem', margin: 0 }}>📵</p>
-          <p style={{ fontWeight: 700, fontSize: '0.95rem', margin: 0 }}>Billet non disponible hors-ligne</p>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>Ouvre ce billet une fois connecté — il sera mis en cache.</p>
-        </div>
-      )}
-      {blobUrl && <iframe src={blobUrl} title={pdf.label} style={{ flex: 1, width: '100%', border: 'none' }} />}
     </div>
   )
 }

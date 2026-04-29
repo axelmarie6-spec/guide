@@ -66,7 +66,7 @@ function ProfileForm({ profile, onSuccess, onCancel, isOnboarding }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!form.first_name.trim() || !form.last_name.trim()) {
+    if (!isOnboarding && (!form.first_name.trim() || !form.last_name.trim())) {
       setError('Prénom et nom sont requis.')
       return
     }
@@ -75,22 +75,39 @@ function ProfileForm({ profile, onSuccess, onCancel, isOnboarding }) {
       return
     }
     setLoading(true)
-    try {
-      const { error } = await supabase.from('profiles').update({
-        first_name: form.first_name.trim(),
-        last_name: form.last_name.trim(),
-        emergency_name: form.emergency_name.trim(),
-        emergency_phone: form.emergency_phone.trim(),
-        allergies: form.allergies.trim() || null,
-        passport_number: form.passport_number.trim(),
-        ceam_number: form.ceam_number.trim(),
-      }).eq('id', user.id)
+    setError('')
 
-      if (error) setError('Erreur lors de la sauvegarde. Réessaie.')
-      else onSuccess()
-    } catch {
-      setError('Erreur inattendue. Réessaie.')
+    const payload = {
+      emergency_name: form.emergency_name.trim(),
+      emergency_phone: form.emergency_phone.trim(),
+      allergies: form.allergies.trim() || null,
+      passport_number: form.passport_number.trim(),
+      ceam_number: form.ceam_number.trim(),
     }
+    if (!isOnboarding) {
+      payload.first_name = form.first_name.trim()
+      payload.last_name = form.last_name.trim()
+    }
+
+    const { error: updateError } = await supabase.from('profiles').update(payload).eq('id', user.id)
+
+    if (updateError) {
+      // Réseau mobile peut timeout alors que le UPDATE a déjà été committé.
+      // On re-fetch pour vérifier l'état réel en base.
+      const { data: fresh } = await supabase
+        .from('profiles')
+        .select('emergency_name, emergency_phone, passport_number, ceam_number')
+        .eq('id', user.id)
+        .single()
+      if (fresh?.emergency_name && fresh?.emergency_phone && fresh?.passport_number && fresh?.ceam_number) {
+        onSuccess()
+      } else {
+        setError('Erreur lors de la sauvegarde. Réessaie.')
+      }
+    } else {
+      onSuccess()
+    }
+
     setLoading(false)
   }
 
@@ -111,20 +128,22 @@ function ProfileForm({ profile, onSuccess, onCancel, isOnboarding }) {
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div style={{ display: 'flex', gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <Field label="Prénom" required>
-              <input value={form.first_name} onChange={e => set('first_name', e.target.value)}
-                placeholder="Axel" autoComplete="given-name" />
-            </Field>
+        {!isOnboarding && (
+          <div style={{ display: 'flex', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <Field label="Prénom" required>
+                <input value={form.first_name} onChange={e => set('first_name', e.target.value)}
+                  placeholder="Axel" autoComplete="given-name" />
+              </Field>
+            </div>
+            <div style={{ flex: 1 }}>
+              <Field label="Nom" required>
+                <input value={form.last_name} onChange={e => set('last_name', e.target.value)}
+                  placeholder="Marie" autoComplete="family-name" />
+              </Field>
+            </div>
           </div>
-          <div style={{ flex: 1 }}>
-            <Field label="Nom" required>
-              <input value={form.last_name} onChange={e => set('last_name', e.target.value)}
-                placeholder="Marie" autoComplete="family-name" />
-            </Field>
-          </div>
-        </div>
+        )}
 
         <Field label="Contact d'urgence — Nom" required>
           <input value={form.emergency_name} onChange={e => set('emergency_name', e.target.value)}
