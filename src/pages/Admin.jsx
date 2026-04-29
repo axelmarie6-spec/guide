@@ -207,18 +207,23 @@ function VotesTab() {
   const [votes, setVotes] = useState([])
   const [profiles, setProfiles] = useState([])
   const [activities, setActivities] = useState([])
+  const [dayConfig, setDayConfig] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  const today = new Date().toISOString().split('T')[0]
 
   async function fetchAll() {
     setLoading(true)
-    const [votesRes, profilesRes, activitiesRes] = await Promise.all([
+    const [votesRes, profilesRes, activitiesRes, cfgRes] = await Promise.all([
       supabase.from('votes').select('*'),
       supabase.from('profiles').select('id, first_name, last_name, pseudo'),
       supabase.from('activities').select('id, name, city').eq('city', city),
+      supabase.from('day_config').select('*').eq('city', city).eq('date', today).maybeSingle(),
     ])
     setVotes(votesRes.data ?? [])
     setProfiles(profilesRes.data ?? [])
     setActivities(activitiesRes.data ?? [])
+    setDayConfig(cfgRes.data ?? null)
     setLoading(false)
   }
 
@@ -234,6 +239,11 @@ function VotesTab() {
 
   async function deleteVote(id) {
     await supabase.from('votes').delete().eq('id', id)
+    fetchAll()
+  }
+
+  async function closeVotes() {
+    await supabase.from('day_config').update({ votes_open: false }).eq('city', city).eq('date', today)
     fetchAll()
   }
 
@@ -263,13 +273,33 @@ function VotesTab() {
 
       {loading ? <Spinner /> : (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
-              {cityVotes.length} vote{cityVotes.length > 1 ? 's' : ''} enregistré{cityVotes.length > 1 ? 's' : ''}
-            </p>
-            {cityVotes.length > 0 && (
-              <DeleteButton label="tous les votes" onConfirm={resetVotesForCity} resetLabel="🔄 Reset tous" />
-            )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
+                {cityVotes.length} vote{cityVotes.length > 1 ? 's' : ''}
+              </p>
+              {dayConfig && (
+                <span style={{
+                  fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: '10px',
+                  background: dayConfig.votes_open ? 'rgba(59,170,122,0.12)' : 'rgba(0,0,0,0.06)',
+                  color: dayConfig.votes_open ? 'var(--mint)' : 'var(--text-secondary)',
+                }}>
+                  {dayConfig.votes_open ? '🟢 Ouverts' : '🔴 Fermés'}
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {dayConfig?.votes_open && (
+                <button onClick={closeVotes} style={{
+                  fontSize: '0.75rem', padding: '5px 12px', borderRadius: '20px',
+                  backgroundColor: 'rgba(232,160,48,0.12)', color: 'var(--sun)',
+                  border: 'none', cursor: 'pointer', fontWeight: 600,
+                }}>🔒 Fermer les votes</button>
+              )}
+              {cityVotes.length > 0 && (
+                <DeleteButton onConfirm={resetVotesForCity} resetLabel="🔄 Reset tous" />
+              )}
+            </div>
           </div>
           {cityVotes.length === 0 ? (
             <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '30px 0', fontSize: '0.875rem' }}>
