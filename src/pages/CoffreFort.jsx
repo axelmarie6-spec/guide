@@ -144,7 +144,7 @@ function SOSModal({ members, onClose }) {
       background: 'rgba(14,8,8,0.93)', backdropFilter: 'blur(14px)',
     }}>
       {/* Header */}
-      <div style={{ padding: '20px 20px 12px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0 }}>
+      <div style={{ padding: 'calc(20px + env(safe-area-inset-top)) 20px 12px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#e05a5a' }} />

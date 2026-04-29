@@ -38,7 +38,7 @@ export default function PdfViewer({ pdf, onClose, zIndex = 300 }) {
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 10,
-        padding: '14px 16px', borderBottom: '1px solid rgba(0,0,0,0.08)', flexShrink: 0,
+        padding: 'calc(14px + env(safe-area-inset-top)) 16px 14px', borderBottom: '1px solid rgba(0,0,0,0.08)', flexShrink: 0,
       }}>
         <span style={{
           fontWeight: 700, fontSize: '0.95rem', flex: 1, minWidth: 0,

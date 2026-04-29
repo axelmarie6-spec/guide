@@ -174,7 +174,7 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
         <div style={{ position: 'absolute', top: -40, right: -20, width: '55vw', height: '55vw', maxWidth: 320, borderRadius: '50%', background: `radial-gradient(circle, rgba(74,144,217,0.20) 0%, transparent 70%)`, filter: 'blur(40px)', pointerEvents: 'none' }} />
 
         {/* Header */}
-        <div style={{ padding: '20px 20px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0, position: 'relative', zIndex: 1 }}>
+        <div style={{ padding: 'calc(20px + env(safe-area-inset-top)) 20px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0, position: 'relative', zIndex: 1 }}>
           <div>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 500, margin: '0 0 4px' }}>
               {fmtDate(train.date)}{train.train_number ? ` · ${train.train_number}` : ''}
@@ -481,7 +481,7 @@ function HotelDetailSheet({ city, airbnb, isAdmin, onClose, onSaved }) {
       <div style={{ position: 'absolute', top: -30, right: -20, width: '50vw', height: '50vw', maxWidth: 300, borderRadius: '50%', background: `radial-gradient(circle, ${city.color}30 0%, transparent 70%)`, filter: 'blur(40px)', pointerEvents: 'none' }} />
 
       {/* Header */}
-      <div style={{ padding: '20px 20px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0, position: 'relative', zIndex: 1 }}>
+      <div style={{ padding: 'calc(20px + env(safe-area-inset-top)) 20px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0, position: 'relative', zIndex: 1 }}>
         <div>
           <p style={{ fontSize: '2.5rem', margin: '0 0 6px', lineHeight: 1 }}>{city.flag}</p>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 3px', letterSpacing: '-0.02em' }}>{city.label}</h2>
