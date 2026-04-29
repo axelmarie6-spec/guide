@@ -7,7 +7,7 @@ import HeaderAvatar from '../components/HeaderAvatar'
 const TRIP_START = new Date('2026-08-01T00:00:00')
 const TRIP_DAYS = 22
 const OWM_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
-const WEATHER_CACHE_KEY = 'weather_cache_v4'
+const WEATHER_CACHE_KEY = 'weather_cache_v5'
 
 // OWM city query fallback (GPS denied)
 const CITY_OWM_QUERY = {
@@ -18,6 +18,17 @@ const CITY_OWM_QUERY = {
   budapest: 'Budapest,HU',
   vienne: 'Vienna,AT',
   geneve: 'Geneva,CH',
+}
+
+// Open-Meteo coords fallback (GPS denied) — used for daily min/max
+const CITY_COORDS = {
+  bruxelles: { lat: 50.85, lon: 4.35 },
+  amsterdam: { lat: 52.37, lon: 4.90 },
+  berlin:    { lat: 52.52, lon: 13.40 },
+  prague:    { lat: 50.08, lon: 14.44 },
+  budapest:  { lat: 47.50, lon: 19.04 },
+  vienne:    { lat: 48.21, lon: 16.37 },
+  geneve:    { lat: 46.20, lon: 6.15 },
 }
 
 function owmIconToEmoji(icon = '') {
@@ -68,39 +79,36 @@ function useWeather({ lat, lon, gpsLoading, gpsDenied }) {
     if (!OWM_KEY) { setFetching(false); return }
 
     async function load() {
-      let weatherUrl, forecastUrl
+      let owmUrl, omLat, omLon
       if (!gpsDenied && lat !== null) {
-        const coords = `lat=${lat}&lon=${lon}`
-        weatherUrl = `https://api.openweathermap.org/data/2.5/weather?${coords}&appid=${OWM_KEY}&units=metric&lang=fr`
-        forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?${coords}&appid=${OWM_KEY}&units=metric&cnt=16`
+        owmUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OWM_KEY}&units=metric&lang=fr`
+        omLat = lat; omLon = lon
       } else {
         const city = getCurrentCity()
         const q = encodeURIComponent(city ? CITY_OWM_QUERY[city.city] : 'Brussels,BE')
-        weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${q}&appid=${OWM_KEY}&units=metric&lang=fr`
-        forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${q}&appid=${OWM_KEY}&units=metric&cnt=16`
+        owmUrl = `https://api.openweathermap.org/data/2.5/weather?q=${q}&appid=${OWM_KEY}&units=metric&lang=fr`
+        const coords = city ? CITY_COORDS[city.city] : CITY_COORDS.bruxelles
+        omLat = coords.lat; omLon = coords.lon
       }
+      // Open-Meteo: free, no key, returns true daily min/max for the calendar day in local tz
+      const omUrl = `https://api.open-meteo.com/v1/forecast?latitude=${omLat}&longitude=${omLon}&daily=temperature_2m_min,temperature_2m_max&timezone=auto&forecast_days=1`
       try {
-        const [wRes, fRes] = await Promise.all([
-          globalThis.fetch(weatherUrl),
-          globalThis.fetch(forecastUrl),
+        const [wRes, omRes] = await Promise.all([
+          globalThis.fetch(owmUrl),
+          globalThis.fetch(omUrl),
         ])
         if (wRes.status === 401) { setApiError(401); setFetching(false); return }
         if (!wRes.ok) throw new Error('owm')
         const wd = await wRes.json()
-        // Compute daily min/max for the full calendar day (local timezone)
-        // toLocaleDateString('en-CA') = YYYY-MM-DD in browser's local tz (follows GPS location)
-        const todayLocal = new Date().toLocaleDateString('en-CA')
-        // Seed with current temp so past hours of the day are represented
-        let temps = [wd.main.temp]
-        if (fRes.ok) {
-          const fd = await fRes.json()
-          const todaySlots = (fd.list ?? [])
-            .filter(e => new Date(e.dt * 1000).toLocaleDateString('en-CA') === todayLocal)
-            .map(e => e.main.temp)
-          temps = temps.concat(todaySlots)
+        let min = Math.round(wd.main.temp)
+        let max = min
+        if (omRes.ok) {
+          const od = await omRes.json()
+          if (od.daily?.temperature_2m_min?.[0] != null) {
+            min = Math.round(od.daily.temperature_2m_min[0])
+            max = Math.round(od.daily.temperature_2m_max[0])
+          }
         }
-        const min = Math.round(Math.min(...temps))
-        const max = Math.round(Math.max(...temps))
         const w = {
           temp: Math.round(wd.main.temp),
           min,
