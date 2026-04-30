@@ -54,6 +54,7 @@ function DeleteButton({ onConfirm, resetLabel }) {
 function UsersTab({ currentUserId }) {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [banError, setBanError] = useState('')
 
   async function fetchUsers() {
     const { data } = await supabase.from('profiles').select('id, first_name, last_name, pseudo, role, banned, created_at').order('created_at')
@@ -64,7 +65,9 @@ function UsersTab({ currentUserId }) {
   useEffect(() => { fetchUsers() }, [])
 
   async function toggleBan(user) {
-    await supabase.from('profiles').update({ banned: !user.banned }).eq('id', user.id)
+    setBanError('')
+    const { error } = await supabase.from('profiles').update({ banned: !user.banned }).eq('id', user.id)
+    if (error) { setBanError('Erreur : ' + error.message); return }
     fetchUsers()
   }
 
@@ -78,6 +81,11 @@ function UsersTab({ currentUserId }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {banError && (
+        <p style={{ fontSize: '0.8rem', color: 'var(--trash)', padding: '8px 12px', background: 'rgba(220,38,38,0.06)', borderRadius: '10px', margin: 0 }}>
+          {banError}
+        </p>
+      )}
       {users.length === 0 && (
         <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '40px 0', fontSize: '0.875rem' }}>
           Aucun utilisateur
