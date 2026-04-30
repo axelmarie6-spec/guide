@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useTutorial } from '../context/TutorialContext'
 import { supabase } from '../lib/supabase'
 
 function Field({ label, required, hint, children }) {
@@ -188,6 +189,23 @@ function ProfileForm({ profile, onSuccess, onCancel, isOnboarding }) {
   )
 }
 
+// ── Bouton revoir le tuto ─────────────────────────────────────
+
+function ReplayTutorialButton() {
+  const { reset } = useTutorial()
+  const [done, setDone] = useState(false)
+  async function handle() {
+    await reset()
+    setDone(true)
+    setTimeout(() => setDone(false), 2000)
+  }
+  return (
+    <button onClick={handle} className="btn-secondary mt-2" style={{ color: done ? 'var(--match)' : 'var(--text-secondary)' }}>
+      {done ? '✓ C\'est parti !' : 'Revoir le tutoriel'}
+    </button>
+  )
+}
+
 // ── Vue profil complet ────────────────────────────────────────
 
 function ProfileView({ profile, isAdmin, onEdit, onSignOut }) {
@@ -277,6 +295,8 @@ function ProfileView({ profile, isAdmin, onEdit, onSignOut }) {
           </div>
         </Section>
       )}
+
+      <ReplayTutorialButton />
 
       <button onClick={onSignOut} className="btn-secondary mt-2"
         style={{ color: 'var(--trash)' }}>

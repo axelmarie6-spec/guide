@@ -13,6 +13,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import { useAuth } from './context/AuthContext'
 import { prefetchAllPdfs } from './lib/pdfCache'
+import TutorialOverlay from './components/TutorialOverlay'
 
 function AdminRoute({ children }) {
   const { profile, loading } = useAuth()
@@ -66,6 +67,7 @@ export default function App() {
     <div style={{ minHeight: '100dvh', color: 'var(--text-primary)', position: 'relative' }}>
       <OfflineBanner />
       <BackgroundBlobs />
+      <TutorialOverlay />
       <div style={{ position: 'relative', zIndex: 1 }}>
         <Routes>
           <Route path="/login"         element={<GuestRoute><Login /></GuestRoute>} />

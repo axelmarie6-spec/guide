@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useTutorial } from '../context/TutorialContext'
 
 const CITY_ORDER = ['bruxelles','amsterdam','berlin','prague','budapest','vienne','geneve']
 const CITY_LABELS = {
@@ -131,6 +132,35 @@ function UsersTab({ currentUserId }) {
       <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '8px 0 0' }}>
         Bannir un utilisateur révoque son accès à l'app sans supprimer son compte.
       </p>
+      <ResetTutorialButton currentUserId={currentUserId} />
+    </div>
+  )
+}
+
+function ResetTutorialButton({ currentUserId }) {
+  const { reset } = useTutorial()
+  const [done, setDone] = useState(false)
+  async function handle() {
+    await reset()
+    setDone(true)
+    setTimeout(() => setDone(false), 2500)
+  }
+  return (
+    <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: '16px', background: 'rgba(74,144,217,0.07)', border: '1px dashed rgba(74,144,217,0.25)' }}>
+      <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--sky)', margin: '0 0 8px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+        Test du tutoriel
+      </p>
+      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 10px' }}>
+        Relance le tuto sur ton compte pour le tester sans créer de nouveau compte.
+      </p>
+      <button onClick={handle} style={{
+        fontSize: '0.82rem', fontWeight: 700, padding: '8px 16px', borderRadius: '12px',
+        background: done ? 'rgba(22,163,74,0.1)' : 'rgba(74,144,217,0.12)',
+        color: done ? 'var(--match)' : 'var(--sky)',
+        border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+      }}>
+        {done ? '✓ Tuto relancé !' : '▶ Rejouer le tutoriel'}
+      </button>
     </div>
   )
 }
