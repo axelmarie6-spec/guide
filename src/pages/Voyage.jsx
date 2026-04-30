@@ -214,7 +214,7 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px', display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', zIndex: 1 }}>
 
           {/* Main card: times */}
-          <div style={{ ...glass, borderRadius: '22px', padding: '22px 20px' }}>
+          <div style={{ ...glass, borderRadius: '22px', padding: '22px 20px', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
               <div style={{ textAlign: 'center' }}>
                 <p style={{ fontSize: '2.6rem', fontWeight: 800, lineHeight: 1, margin: 0, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>{fmtTime(train.departure_time)}</p>
@@ -262,7 +262,7 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
               </button>
             )}
             {isAdmin && editing && (
-              <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden' }}>
                 {[
                   { key: 'date', label: 'Date', type: 'date' },
                   { key: 'from_station', label: 'Gare de départ', placeholder: 'Bruxelles-Midi' },
@@ -273,11 +273,11 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
                   { key: 'platform_dep', label: 'Voie départ', placeholder: '4A' },
                   { key: 'platform_arr', label: 'Voie arrivée', placeholder: '7' },
                 ].map(({ key, label, type, placeholder }) => (
-                  <div key={key}>
+                  <div key={key} style={{ width: '100%', overflow: 'hidden' }}>
                     <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>{label}</p>
                     <input type={type || 'text'} value={editForm[key]} placeholder={placeholder}
                       onChange={e => setEditForm(f => ({ ...f, [key]: e.target.value }))}
-                      style={{ display: 'block', width: '100%' }} />
+                      style={{ display: 'block', width: '100%', maxWidth: '100%', minWidth: 0 }} />
                   </div>
                 ))}
                 <div>
