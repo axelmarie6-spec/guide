@@ -200,7 +200,7 @@ function useActivities(city) {
         const [actsRes, votesRes, profilesRes] = await Promise.all([
           supabase.from('activities').select('*').eq('city', city).eq('is_active', true),
           supabase.from('votes').select('activity_id, vote'),
-          supabase.from('profiles').select('id'),
+          supabase.from('profiles').select('id').eq('banned', false),
         ])
         if (!isMounted) return
         if (actsRes.error) { console.error('[AujourdHui] activities fetch:', actsRes.error); return }

@@ -56,15 +56,15 @@ function UsersTab({ currentUserId }) {
   const [loading, setLoading] = useState(true)
 
   async function fetchUsers() {
-    const { data } = await supabase.from('profiles').select('id, first_name, last_name, pseudo, role, created_at').order('created_at')
+    const { data } = await supabase.from('profiles').select('id, first_name, last_name, pseudo, role, banned, created_at').order('created_at')
     if (data) setUsers(data)
     setLoading(false)
   }
 
   useEffect(() => { fetchUsers() }, [])
 
-  async function deleteUser(id) {
-    await supabase.from('profiles').delete().eq('id', id)
+  async function toggleBan(user) {
+    await supabase.from('profiles').update({ banned: !user.banned }).eq('id', user.id)
     fetchUsers()
   }
 
@@ -84,7 +84,7 @@ function UsersTab({ currentUserId }) {
         </p>
       )}
       {users.map(u => (
-        <div key={u.id} className="card" style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div key={u.id} className="card" style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, opacity: u.banned ? 0.55 : 1 }}>
           <div style={{
             width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
             backgroundColor: 'var(--accent-light)',
@@ -109,12 +109,19 @@ function UsersTab({ currentUserId }) {
             </button>
           </div>
           {u.id !== currentUserId && (
-            <DeleteButton onConfirm={() => deleteUser(u.id)} />
+            <button onClick={() => toggleBan(u)} style={{
+              fontSize: '0.72rem', padding: '4px 10px', borderRadius: '10px', border: 'none',
+              cursor: 'pointer', fontWeight: 600, flexShrink: 0,
+              backgroundColor: u.banned ? 'rgba(22,163,74,0.1)' : 'rgba(220,38,38,0.08)',
+              color: u.banned ? 'var(--match)' : 'var(--trash)',
+            }}>
+              {u.banned ? 'Débannir' : 'Bannir'}
+            </button>
           )}
         </div>
       ))}
       <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '8px 0 0' }}>
-        Supprimer un utilisateur révoque son accès à l'app.
+        Bannir un utilisateur révoque son accès à l'app sans supprimer son compte.
       </p>
     </div>
   )

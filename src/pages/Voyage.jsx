@@ -130,21 +130,45 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
   const stationMapUrl = getStationMapUrl(train.from_station)
 
   const [viewerPdf, setViewerPdf] = useState(null)
-  const [editingPlatforms, setEditingPlatforms] = useState(false)
-  const [depQ, setDepQ] = useState(train.platform_dep || '')
-  const [arrQ, setArrQ] = useState(train.platform_arr || '')
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState({
+    date: train.date || '',
+    from_station: train.from_station || '',
+    to_station: train.to_station || '',
+    departure_time: fmtTime(train.departure_time),
+    arrival_time: fmtTime(train.arrival_time),
+    train_number: train.train_number || '',
+    platform_dep: train.platform_dep || '',
+    platform_arr: train.platform_arr || '',
+    is_connection: train.is_connection || false,
+    notes: train.notes || '',
+  })
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [showUpload, setShowUpload] = useState(false)
   const [uploadLabel, setUploadLabel] = useState('')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const fileRef = useRef(null)
 
-  async function savePlatforms() {
+  async function saveTrainEdit() {
     setSaving(true)
-    await supabase.from('trains').update({ platform_dep: depQ || null, platform_arr: arrQ || null }).eq('id', train.id)
+    setSaveError('')
+    const { error } = await supabase.from('trains').update({
+      date: editForm.date || null,
+      from_station: editForm.from_station.trim() || null,
+      to_station: editForm.to_station.trim() || null,
+      departure_time: editForm.departure_time || null,
+      arrival_time: editForm.arrival_time || null,
+      train_number: editForm.train_number.trim() || null,
+      platform_dep: editForm.platform_dep.trim() || null,
+      platform_arr: editForm.platform_arr.trim() || null,
+      is_connection: editForm.is_connection,
+      notes: editForm.notes.trim() || null,
+    }).eq('id', train.id)
+    if (error) { setSaveError('Erreur lors de la sauvegarde.'); setSaving(false); return }
+    setEditing(false)
     onSaved()
-    setEditingPlatforms(false)
     setSaving(false)
   }
 
@@ -231,25 +255,64 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
               ))}
             </div>
 
-            {/* Admin platform edit */}
-            {isAdmin && !editingPlatforms && (
-              <button onClick={() => setEditingPlatforms(true)} style={{ marginTop: 12, fontSize: '0.75rem', fontWeight: 700, padding: '6px 14px', borderRadius: '20px', background: 'var(--accent-light)', color: 'var(--accent)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                Modifier les voies
+            {/* Admin full edit */}
+            {isAdmin && !editing && (
+              <button onClick={() => setEditing(true)} style={{ marginTop: 12, fontSize: '0.75rem', fontWeight: 700, padding: '6px 14px', borderRadius: '20px', background: 'var(--accent-light)', color: 'var(--accent)', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                Modifier le train
               </button>
             )}
-            {isAdmin && editingPlatforms && (
-              <div style={{ marginTop: 14, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Voie départ</p>
-                  <input value={depQ} onChange={e => setDepQ(e.target.value)} placeholder="4A" style={{ padding: '8px 12px', fontSize: '0.875rem' }} />
+            {isAdmin && editing && (
+              <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Date</p>
+                    <input type="date" value={editForm.date} onChange={e => setEditForm(f => ({ ...f, date: e.target.value }))} />
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', paddingBottom: 10 }}>
+                    <input type="checkbox" checked={editForm.is_connection} onChange={e => setEditForm(f => ({ ...f, is_connection: e.target.checked }))} />
+                    Correspond.
+                  </label>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Voie arrivée</p>
-                  <input value={arrQ} onChange={e => setArrQ(e.target.value)} placeholder="7" style={{ padding: '8px 12px', fontSize: '0.875rem' }} />
+                <div>
+                  <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Gare de départ</p>
+                  <input value={editForm.from_station} onChange={e => setEditForm(f => ({ ...f, from_station: e.target.value }))} placeholder="Bruxelles-Midi" />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <button onClick={savePlatforms} disabled={saving} style={{ padding: '10px 14px', borderRadius: '12px', background: 'var(--ink)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem', fontFamily: 'inherit' }}>{saving ? '…' : 'OK'}</button>
-                  <button onClick={() => setEditingPlatforms(false)} style={{ padding: '10px 14px', borderRadius: '12px', background: 'rgba(0,0,0,0.06)', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontFamily: 'inherit', color: 'var(--text-secondary)' }}>✕</button>
+                <div>
+                  <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Gare d'arrivée</p>
+                  <input value={editForm.to_station} onChange={e => setEditForm(f => ({ ...f, to_station: e.target.value }))} placeholder="Amsterdam Centraal" />
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Départ</p>
+                    <input type="time" value={editForm.departure_time} onChange={e => setEditForm(f => ({ ...f, departure_time: e.target.value }))} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Arrivée</p>
+                    <input type="time" value={editForm.arrival_time} onChange={e => setEditForm(f => ({ ...f, arrival_time: e.target.value }))} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>N° train</p>
+                    <input value={editForm.train_number} onChange={e => setEditForm(f => ({ ...f, train_number: e.target.value }))} placeholder="IC112" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Voie dép.</p>
+                    <input value={editForm.platform_dep} onChange={e => setEditForm(f => ({ ...f, platform_dep: e.target.value }))} placeholder="4A" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Voie arr.</p>
+                    <input value={editForm.platform_arr} onChange={e => setEditForm(f => ({ ...f, platform_arr: e.target.value }))} placeholder="7" />
+                  </div>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Notes</p>
+                  <textarea value={editForm.notes} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} placeholder="Infos utiles…" rows={2} style={{ resize: 'vertical' }} />
+                </div>
+                {saveError && <p style={{ fontSize: '0.8rem', color: 'var(--trash)', margin: 0 }}>{saveError}</p>}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={saveTrainEdit} disabled={saving} className="btn-primary" style={{ flex: 1 }}>{saving ? 'Sauvegarde…' : 'Sauvegarder'}</button>
+                  <button onClick={() => { setEditing(false); setSaveError('') }} className="btn-secondary" style={{ flex: 'none', width: 'auto', padding: '0 20px' }}>✕</button>
                 </div>
               </div>
             )}
@@ -452,12 +515,14 @@ function HotelDetailSheet({ city, airbnb, isAdmin, onClose, onSaved }) {
     instructions: airbnb?.instructions || '',
   })
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   function set(field, value) { setForm(f => ({ ...f, [field]: value })) }
 
   async function save() {
     setSaving(true)
-    await supabase.from('airbnbs').update({
+    setSaveError('')
+    const { error } = await supabase.from('airbnbs').update({
       address: form.address.trim() || null,
       entry_code: form.entry_code.trim() || null,
       checkin_time: form.checkin_time.trim() || null,
@@ -466,6 +531,7 @@ function HotelDetailSheet({ city, airbnb, isAdmin, onClose, onSaved }) {
       wifi_password: form.wifi_password.trim() || null,
       instructions: form.instructions.trim() || null,
     }).eq('city', city.city)
+    if (error) { setSaveError('Erreur lors de la sauvegarde.'); setSaving(false); return }
     setEditing(false)
     onSaved()
     setSaving(false)
@@ -539,11 +605,9 @@ function HotelDetailSheet({ city, airbnb, isAdmin, onClose, onSaved }) {
               )}
             </div>
 
-            {isAdmin && (
-              <button onClick={() => setEditing(true)} style={{ padding: '14px', borderRadius: '16px', background: 'var(--accent-light)', color: 'var(--accent)', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.875rem', fontFamily: 'inherit' }}>
-                Modifier les infos
-              </button>
-            )}
+            <button onClick={() => setEditing(true)} style={{ padding: '14px', borderRadius: '16px', background: 'var(--accent-light)', color: 'var(--accent)', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.875rem', fontFamily: 'inherit' }}>
+              Modifier les infos
+            </button>
           </>
         ) : (
           /* Edit form */
@@ -566,6 +630,7 @@ function HotelDetailSheet({ city, airbnb, isAdmin, onClose, onSaved }) {
               <p style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>Instructions</p>
               <textarea value={form.instructions} onChange={e => set('instructions', e.target.value)} placeholder="Sonner à l'interphone B…" rows={3} style={{ resize: 'vertical' }} />
             </div>
+            {saveError && <p style={{ fontSize: '0.8rem', color: 'var(--trash)', margin: 0 }}>{saveError}</p>}
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={save} disabled={saving} className="btn-primary" style={{ flex: 1 }}>{saving ? 'Sauvegarde…' : 'Sauvegarder'}</button>
               <button onClick={() => setEditing(false)} className="btn-secondary" style={{ flex: 'none', width: 'auto', padding: '0 20px' }}>Annuler</button>
@@ -690,7 +755,7 @@ export default function Voyage() {
       supabase.from('trains').select('*').order('leg_order'),
       supabase.from('airbnbs').select('*'),
       supabase.from('ticket_pdfs').select('*').order('created_at'),
-      supabase.from('profiles').select('id, first_name, last_name, pseudo').order('created_at'),
+      supabase.from('profiles').select('id, first_name, last_name, pseudo').eq('banned', false).order('created_at'),
     ])
     if (trainsRes.data) { setTrains(trainsRes.data); writeCache('voyage_trains_v1', trainsRes.data) }
     if (airbnbsRes.data) { setAirbnbs(airbnbsRes.data); writeCache('voyage_airbnbs_v1', airbnbsRes.data) }

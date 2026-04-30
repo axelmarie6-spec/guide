@@ -297,6 +297,7 @@ export default function CoffreFort() {
       supabase.from('ticket_pdfs').select('*').order('created_at'),
       supabase.from('profiles')
         .select('id, first_name, last_name, pseudo, role, emergency_name, emergency_phone, allergies, ceam_number, passport_number')
+        .eq('banned', false)
         .order('created_at'),
     ])
     if (trainsRes.error) console.error('[CoffreFort] trains fetch:', trainsRes.error)

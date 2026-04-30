@@ -612,7 +612,7 @@ export default function Explorer() {
       supabase.from('day_config').select('*').eq('city', city).eq('date', today).maybeSingle(),
       supabase.from('activities').select('*').eq('city', city).eq('is_active', true),
       supabase.from('votes').select('*'),
-      supabase.from('profiles').select('id', { count: 'exact', head: true }),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('banned', false),
     ])
     if (actRes.error) console.error('[Explorer] activities fetch:', actRes.error)
     if (votesRes.error) console.error('[Explorer] votes fetch:', votesRes.error)
