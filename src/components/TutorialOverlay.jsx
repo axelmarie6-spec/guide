@@ -4,66 +4,224 @@ import { useTutorial, STEPS } from '../context/TutorialContext'
 
 const NAV_STEPS = STEPS.filter(s => s.type === 'navigate')
 
-// Démo interactive pour l'étape Explorer
-function ExplorerDemo() {
-  const [vote, setVote] = useState(null)
-  const choices = [
-    { key: 'yes',   icon: '✅', label: "Oui, on fait ça aujourd'hui !", color: '#16a34a', bg: 'rgba(22,163,74,0.10)' },
-    { key: 'later', icon: '⏱️', label: 'Non, pas auj. mais pourquoi pas', color: '#e8a030', bg: 'rgba(232,160,48,0.10)' },
-    { key: 'no',    icon: '🗑️', label: 'Non, pas pour moi du voyage',    color: '#dc2626', bg: 'rgba(220,38,38,0.08)' },
-  ]
-  const feedback = {
-    yes:   "Super ! Si tout le groupe vote ✅, l'activité est validée pour la journée.",
-    later: "L'activité reste dans la liste pour un autre jour.",
-    no:    "L'activité disparaît de ta vue pour tout le voyage.",
+const btnGlass = {
+  background: 'rgba(255,255,255,0.82)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+  border: '1px solid rgba(255,255,255,0.90)',
+}
+
+// ── Démo Explorer : 3 votes forcés ────────────────────────────
+
+const DEMO_ACTS = [
+  {
+    emoji: '🏛️', name: 'Rijksmuseum', city: 'Amsterdam', tag: 'Culture', price: '20€',
+    required: 'match',
+    instruction: 'Tu es partant → tape',
+    btnLabel: '✓',
+    bg: 'rgba(74,144,217,0.12)',
+    color: '#4a90d9',
+  },
+  {
+    emoji: '🎡', name: 'Prater', city: 'Vienne', tag: 'Nature', price: 'Gratuit',
+    required: 'snooze',
+    instruction: 'Pas sûr(e) aujourd\'hui → tape',
+    btnLabel: '⏱️',
+    bg: 'rgba(59,170,122,0.10)',
+    color: '#3baa7a',
+  },
+  {
+    emoji: '🎤', name: 'Karaoké', city: 'Budapest', tag: 'Soirée', price: '15€',
+    required: 'trash',
+    instruction: 'Pas pour toi du tout → tape',
+    btnLabel: '✕',
+    bg: 'rgba(224,90,90,0.10)',
+    color: '#e05a5a',
+  },
+]
+
+function ExplorerDemo({ onComplete }) {
+  const [idx, setIdx] = useState(0)
+  const [done, setDone] = useState(false)
+  const [hint, setHint] = useState('')
+  const [shake, setShake] = useState('')
+
+  function castVote(type) {
+    const act = DEMO_ACTS[idx]
+    if (type !== act.required) {
+      const labels = { match: '✓', snooze: '⏱️', trash: '✕' }
+      setHint(`Pas celui-là ! ${act.instruction} ${act.btnLabel}`)
+      setShake(type)
+      setTimeout(() => { setHint(''); setShake('') }, 1600)
+      return
+    }
+    const next = idx + 1
+    if (next >= DEMO_ACTS.length) {
+      setDone(true)
+      onComplete()
+    } else {
+      setIdx(next)
+    }
   }
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 8px' }}>
-        Essaie sur une activité fictive
-      </p>
-      <div style={{ background: 'rgba(26,23,20,0.05)', borderRadius: '12px', padding: '10px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ fontSize: '1.4rem' }}>🏛️</span>
-        <div>
-          <p style={{ fontWeight: 700, fontSize: '0.875rem', margin: 0 }}>Rijksmuseum</p>
-          <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', margin: 0 }}>Amsterdam · Culture · 20€</p>
-        </div>
+
+  if (done) {
+    return (
+      <div style={{ textAlign: 'center', padding: '8px 0 12px' }}>
+        <p style={{ fontSize: '1.6rem', margin: '0 0 6px' }}>🎉</p>
+        <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', margin: '0 0 4px' }}>
+          Tu sais maintenant voter !
+        </p>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+          Dans l'app les votes sont réels et partagés avec tout le groupe.
+        </p>
       </div>
-      <div style={{ display: 'flex', gap: 6 }}>
-        {choices.map(c => (
-          <button key={c.key} onClick={() => setVote(c.key)} style={{
-            flex: 1, padding: '10px 4px', borderRadius: '14px',
-            background: vote === c.key ? c.bg : 'rgba(26,23,20,0.04)',
-            border: `1.5px solid ${vote === c.key ? c.color : 'transparent'}`,
-            cursor: 'pointer', fontFamily: 'inherit',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-            transition: 'all 0.15s',
-          }}>
-            <span style={{ fontSize: '1.25rem' }}>{c.icon}</span>
-            <span style={{ fontSize: '0.58rem', fontWeight: 600, color: vote === c.key ? c.color : 'var(--text-tertiary)', textAlign: 'center', lineHeight: 1.3 }}>
-              {c.label}
-            </span>
-          </button>
+    )
+  }
+
+  const act = DEMO_ACTS[idx]
+
+  return (
+    <div>
+      <style>{`
+        @keyframes demoShake {
+          0%,100% { transform: translateX(0); }
+          25%      { transform: translateX(-5px); }
+          75%      { transform: translateX(5px); }
+        }
+        @keyframes demoPulse {
+          0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.0); }
+          50%      { box-shadow: 0 0 0 5px rgba(255,255,255,0.25); }
+        }
+      `}</style>
+
+      {/* Progression */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+        {DEMO_ACTS.map((a, i) => (
+          <div key={i} style={{
+            flex: 1, height: 3, borderRadius: 2,
+            background: i < idx ? 'var(--accent)' : i === idx ? 'rgba(26,23,20,0.15)' : 'rgba(26,23,20,0.08)',
+            transition: 'background 0.3s',
+          }} />
         ))}
       </div>
-      {vote && (
-        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '10px 0 0', textAlign: 'center', lineHeight: 1.5 }}>
-          {feedback[vote]}
+
+      {/* Fausse carte activité */}
+      <div style={{
+        background: act.bg, borderRadius: '18px', padding: '16px 18px',
+        marginBottom: 14, border: `1px solid ${act.color}25`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: '16px', flexShrink: 0,
+            background: `${act.color}20`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1.6rem',
+          }}>
+            {act.emoji}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontWeight: 800, fontSize: '1rem', margin: 0, letterSpacing: '-0.01em' }}>{act.name}</p>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+              {act.city} · {act.tag} · {act.price}
+            </p>
+          </div>
+        </div>
+        <div style={{
+          marginTop: 12, padding: '8px 12px', borderRadius: '10px',
+          background: 'rgba(255,255,255,0.55)',
+          fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)',
+        }}>
+          👉 {act.instruction} <span style={{ color: act.color }}>{act.btnLabel}</span>
+        </div>
+      </div>
+
+      {/* Boutons de vote (vrais styles d'Explorer) */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 8 }}>
+
+        {/* Trash ✕ */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+          <button
+            onClick={() => castVote('trash')}
+            style={{
+              width: 60, height: 60, borderRadius: '50%', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
+              ...btnGlass,
+              boxShadow: '0 4px 20px rgba(224,90,90,0.22), inset 0 1px 0 rgba(255,255,255,0.9)',
+              animation: shake === 'trash' ? 'demoShake 0.3s ease' : (act.required === 'trash' ? 'demoPulse 1.4s ease-in-out infinite' : 'none'),
+              outline: act.required === 'trash' ? '2px solid rgba(224,90,90,0.5)' : 'none',
+            }}
+          >
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6l12 12" stroke="#e05a5a" strokeWidth="2.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+          <span style={{ fontSize: '0.58rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>Non</span>
+        </div>
+
+        {/* Snooze ⏱️ */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+          <button
+            onClick={() => castVote('snooze')}
+            style={{
+              width: 44, height: 44, borderRadius: '50%', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
+              ...btnGlass,
+              animation: shake === 'snooze' ? 'demoShake 0.3s ease' : (act.required === 'snooze' ? 'demoPulse 1.4s ease-in-out infinite' : 'none'),
+              outline: act.required === 'snooze' ? '2px solid rgba(176,170,163,0.6)' : 'none',
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="#b0aaa3" strokeWidth="1.8"/>
+              <path d="M12 7v5l3 3" stroke="#b0aaa3" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <span style={{ fontSize: '0.58rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>Plus tard</span>
+        </div>
+
+        {/* Match ✓ */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+          <button
+            onClick={() => castVote('match')}
+            style={{
+              width: 60, height: 60, borderRadius: '50%', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
+              ...btnGlass,
+              boxShadow: '0 4px 20px rgba(59,170,122,0.26), inset 0 1px 0 rgba(255,255,255,0.9)',
+              animation: shake === 'match' ? 'demoShake 0.3s ease' : (act.required === 'match' ? 'demoPulse 1.4s ease-in-out infinite' : 'none'),
+              outline: act.required === 'match' ? '2px solid rgba(59,170,122,0.5)' : 'none',
+            }}
+          >
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+              <path d="M20 6L9 17l-5-5" stroke="#3baa7a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <span style={{ fontSize: '0.58rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>Oui !</span>
+        </div>
+      </div>
+
+      {hint && (
+        <p style={{ fontSize: '0.78rem', color: 'var(--trash)', textAlign: 'center', margin: '4px 0 0', fontWeight: 600 }}>
+          {hint}
         </p>
       )}
     </div>
   )
 }
 
+// ── Overlay principal ──────────────────────────────────────────
+
 export default function TutorialOverlay() {
   const { step, phase, active, currentStep, advance, onNavigated, skip } = useTutorial()
   const location = useLocation()
   const [skipConfirm, setSkipConfirm] = useState(false)
+  const [demoComplete, setDemoComplete] = useState(false)
 
-  // Réagit aux changements de page ET aux changements de step (cas "déjà sur la bonne page")
   useEffect(() => {
     if (active) onNavigated(location.pathname)
   }, [location.pathname, step])
+
+  // Reset demo complete quand on change d'étape
+  useEffect(() => { setDemoComplete(false) }, [step])
 
   useEffect(() => {
     if (!skipConfirm) return
@@ -75,6 +233,8 @@ export default function TutorialOverlay() {
 
   const isModal = currentStep.type === 'modal'
   const navStepIndex = NAV_STEPS.indexOf(currentStep)
+  const isExplorer = currentStep.id === 'explorer'
+  const canAdvance = !isExplorer || demoComplete
 
   function handleSkip() {
     if (skipConfirm) { skip() } else { setSkipConfirm(true) }
@@ -103,12 +263,9 @@ export default function TutorialOverlay() {
         padding: '0 24px',
       }}>
         <div style={{
-          width: '100%', maxWidth: 360,
-          background: 'var(--bg-base)',
-          borderRadius: '28px',
-          padding: '36px 28px 28px',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.3)',
-          textAlign: 'center',
+          width: '100%', maxWidth: 360, background: 'var(--bg-base)',
+          borderRadius: '28px', padding: '36px 28px 28px',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.3)', textAlign: 'center',
         }}>
           <p style={{ fontSize: '3rem', margin: '0 0 18px', lineHeight: 1 }}>{currentStep.emoji}</p>
           <h2 style={{ fontSize: '1.35rem', fontWeight: 800, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
@@ -126,9 +283,8 @@ export default function TutorialOverlay() {
     )
   }
 
-  // Position de la flèche et du glow (centre de l'onglet cible)
+  // Position précise de l'onglet cible dans la nav
   // Nav: width = 100vw - 32px, padding 6px, 4 tabs égaux
-  // Centre onglet i = 16px + 6px + (i + 0.5) * (100vw - 44px) / 4
   const tabCenterExpr = `calc(22px + (100vw - 44px) * ${(currentStep.tabIndex * 2 + 1) / 8})`
 
   // ── Navigate phase ─────────────────────────────────────────────
@@ -137,18 +293,15 @@ export default function TutorialOverlay() {
       <>
         <style>{`
           @keyframes tutoBounce {
-            0%, 100% { transform: translateX(-50%) translateY(0px); }
-            50%       { transform: translateX(-50%) translateY(8px); }
+            0%,100% { transform: translateX(-50%) translateY(0px); }
+            50%      { transform: translateX(-50%) translateY(8px); }
           }
           @keyframes tutoPulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4), 0 0 20px rgba(255,255,255,0.2); }
-            50%       { box-shadow: 0 0 0 6px rgba(255,255,255,0.0), 0 0 30px rgba(255,255,255,0.35); }
+            0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4), 0 0 16px rgba(255,255,255,0.15); }
+            50%      { box-shadow: 0 0 0 6px rgba(255,255,255,0.0), 0 0 28px rgba(255,255,255,0.3); }
           }
         `}</style>
-
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', pointerEvents: 'none' }}>
-
-          {/* Zone bloquante */}
           <div style={{
             flex: 1, background: 'rgba(8,8,8,0.74)', pointerEvents: 'all',
             display: 'flex', flexDirection: 'column',
@@ -175,26 +328,19 @@ export default function TutorialOverlay() {
             {skipBtn(true)}
           </div>
 
-          {/* Zone transparente sur la nav — pointer-events: none → clics passent à la BottomBar */}
           <div style={{ height: 110, position: 'relative' }}>
-            {/* Glow ring autour de l'onglet cible */}
             <div style={{
-              position: 'absolute',
-              bottom: 18,
-              left: tabCenterExpr,
+              position: 'absolute', bottom: 18, left: tabCenterExpr,
               transform: 'translateX(-50%)',
-              width: 54, height: 54,
-              borderRadius: '18px',
+              width: 54, height: 54, borderRadius: '18px',
               border: '2px solid rgba(255,255,255,0.65)',
               animation: 'tutoPulse 1.4s ease-in-out infinite',
             }} />
-            {/* Flèche animée */}
             <div style={{
               position: 'absolute', top: 4, left: tabCenterExpr,
               transform: 'translateX(-50%)',
               fontSize: '1.4rem', color: 'white',
-              animation: 'tutoBounce 0.8s ease-in-out infinite',
-              lineHeight: 1,
+              animation: 'tutoBounce 0.8s ease-in-out infinite', lineHeight: 1,
             }}>↓</div>
           </div>
         </div>
@@ -207,26 +353,36 @@ export default function TutorialOverlay() {
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', pointerEvents: 'none' }}>
       <div style={{ flex: 1, background: 'rgba(8,8,8,0.25)' }} />
 
-      <div style={{ pointerEvents: 'all', padding: '0 12px 118px' }}>
+      <div style={{ pointerEvents: 'all', padding: '0 12px 118px', maxHeight: '80vh', overflowY: 'auto' }}>
         <div style={{
-          background: 'white', borderRadius: '26px', padding: '22px 22px 18px',
+          background: 'white', borderRadius: '26px', padding: '22px 20px 18px',
           boxShadow: '0 -8px 40px rgba(0,0,0,0.16)',
         }}>
-          <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-tertiary)', margin: '0 0 8px' }}>
+          <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-tertiary)', margin: '0 0 6px' }}>
             Étape {navStepIndex + 1} / {NAV_STEPS.length}
           </p>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 8px', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
             {currentStep.title}
           </h3>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0 0 14px', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0 0 16px', lineHeight: 1.6 }}>
             {currentStep.body}
           </p>
 
-          {currentStep.id === 'explorer' && <ExplorerDemo />}
+          {isExplorer && (
+            <ExplorerDemo onComplete={() => setDemoComplete(true)} />
+          )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <button onClick={() => advance(location.pathname)} className="btn-primary" style={{ flex: 1, padding: '13px' }}>
-              {currentStep.action} →
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: isExplorer ? 12 : 0 }}>
+            <button
+              onClick={() => canAdvance && advance(location.pathname)}
+              className="btn-primary"
+              style={{
+                flex: 1, padding: '13px',
+                opacity: canAdvance ? 1 : 0.35,
+                cursor: canAdvance ? 'pointer' : 'default',
+              }}
+            >
+              {isExplorer && !demoComplete ? 'Complète les 3 votes pour continuer' : `${currentStep.action} →`}
             </button>
             {skipBtn(false)}
           </div>
