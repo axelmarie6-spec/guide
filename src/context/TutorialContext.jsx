@@ -11,7 +11,7 @@ export const STEPS = [
     type: 'modal',
     emoji: '✈️',
     title: 'Bienvenue sur Travel Hub !',
-    body: "Ton passeport numérique pour 31 jours et 7 villes en Europe. On te fait faire le tour de l'app en quelques secondes.",
+    body: "Ton passeport numérique pour 23 jours et 7 villes en Europe. On te fait faire le tour de l'app en quelques secondes.",
     action: 'Commencer la visite',
   },
   {
@@ -31,7 +31,7 @@ export const STEPS = [
     tabIndex: 1,
     tabLabel: 'Explorer',
     title: 'Explorer & Voter',
-    body: "Découvrez les activités de chaque ville et votez ensemble. ✅ partant · ⏱️ pourquoi pas · 🗑️ pas pour moi. Quand tout le groupe est partant, l'activité est validée !",
+    body: "Découvrez les activités de chaque ville et votez. Quand tout le groupe vote oui, l'activité est validée pour la journée !",
     action: 'Suivant',
   },
   {
@@ -91,12 +91,14 @@ export function TutorialProvider({ children }) {
     if (user) await supabase.from('profiles').update({ onboarding_done: true }).eq('id', user.id)
   }
 
-  function advance() {
+  function advance(currentPath) {
     const next = step + 1
     if (next >= STEPS.length) { markDone(); return }
     localStorage.setItem(LS_KEY, String(next))
     setStep(next)
-    setPhase(STEPS[next].type === 'navigate' ? 'navigate' : 'explain')
+    const nextStep = STEPS[next]
+    const alreadyThere = nextStep.type === 'navigate' && currentPath && nextStep.path === currentPath
+    setPhase(alreadyThere ? 'explain' : (nextStep.type === 'navigate' ? 'navigate' : 'explain'))
   }
 
   function onNavigated(path) {
