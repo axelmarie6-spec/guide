@@ -262,51 +262,32 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
               </button>
             )}
             {isAdmin && editing && (
-              <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div>
-                  <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Date</p>
-                  <input type="date" value={editForm.date} onChange={e => setEditForm(f => ({ ...f, date: e.target.value }))} />
-                </div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={editForm.is_connection} onChange={e => setEditForm(f => ({ ...f, is_connection: e.target.checked }))} />
-                  Correspondance
-                </label>
-                <div>
-                  <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Gare de départ</p>
-                  <input value={editForm.from_station} onChange={e => setEditForm(f => ({ ...f, from_station: e.target.value }))} placeholder="Bruxelles-Midi" />
-                </div>
-                <div>
-                  <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Gare d'arrivée</p>
-                  <input value={editForm.to_station} onChange={e => setEditForm(f => ({ ...f, to_station: e.target.value }))} placeholder="Amsterdam Centraal" />
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Départ</p>
-                    <input type="time" value={editForm.departure_time} onChange={e => setEditForm(f => ({ ...f, departure_time: e.target.value }))} />
+              <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  { key: 'date', label: 'Date', type: 'date' },
+                  { key: 'from_station', label: 'Gare de départ', placeholder: 'Bruxelles-Midi' },
+                  { key: 'to_station', label: "Gare d'arrivée", placeholder: 'Amsterdam Centraal' },
+                  { key: 'departure_time', label: 'Heure de départ', type: 'time' },
+                  { key: 'arrival_time', label: "Heure d'arrivée", type: 'time' },
+                  { key: 'train_number', label: 'N° train', placeholder: 'IC112' },
+                  { key: 'platform_dep', label: 'Voie départ', placeholder: '4A' },
+                  { key: 'platform_arr', label: 'Voie arrivée', placeholder: '7' },
+                ].map(({ key, label, type, placeholder }) => (
+                  <div key={key}>
+                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>{label}</p>
+                    <input type={type || 'text'} value={editForm[key]} placeholder={placeholder}
+                      onChange={e => setEditForm(f => ({ ...f, [key]: e.target.value }))}
+                      style={{ display: 'block', width: '100%' }} />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Arrivée</p>
-                    <input type="time" value={editForm.arrival_time} onChange={e => setEditForm(f => ({ ...f, arrival_time: e.target.value }))} />
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>N° train</p>
-                    <input value={editForm.train_number} onChange={e => setEditForm(f => ({ ...f, train_number: e.target.value }))} placeholder="IC112" />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Voie dép.</p>
-                    <input value={editForm.platform_dep} onChange={e => setEditForm(f => ({ ...f, platform_dep: e.target.value }))} placeholder="4A" />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Voie arr.</p>
-                    <input value={editForm.platform_arr} onChange={e => setEditForm(f => ({ ...f, platform_arr: e.target.value }))} placeholder="7" />
-                  </div>
-                </div>
+                ))}
                 <div>
                   <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Notes</p>
                   <textarea value={editForm.notes} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} placeholder="Infos utiles…" rows={2} style={{ resize: 'vertical' }} />
                 </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={editForm.is_connection} onChange={e => setEditForm(f => ({ ...f, is_connection: e.target.checked }))} style={{ width: 'auto' }} />
+                  Correspondance
+                </label>
                 {saveError && <p style={{ fontSize: '0.8rem', color: 'var(--trash)', margin: 0 }}>{saveError}</p>}
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={saveTrainEdit} disabled={saving} className="btn-primary" style={{ flex: 1 }}>{saving ? 'Sauvegarde…' : 'Sauvegarder'}</button>
