@@ -15,11 +15,12 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS banned boolean NOT NULL DEFAULT fa
 
 -- 3. RLS airbnbs : autoriser tous les membres authentifiés à modifier
 --    (pas seulement les admins — nécessaire pour l'édition par tous)
-DROP POLICY IF EXISTS "Admins can update airbnbs"           ON airbnbs;
-DROP POLICY IF EXISTS "Enable update for admins"            ON airbnbs;
-DROP POLICY IF EXISTS "Admin update airbnbs"                ON airbnbs;
-DROP POLICY IF EXISTS "Only admins can update airbnbs"      ON airbnbs;
+DROP POLICY IF EXISTS "Admins can update airbnbs"              ON airbnbs;
+DROP POLICY IF EXISTS "Enable update for admins"               ON airbnbs;
+DROP POLICY IF EXISTS "Admin update airbnbs"                   ON airbnbs;
+DROP POLICY IF EXISTS "Only admins can update airbnbs"         ON airbnbs;
 DROP POLICY IF EXISTS "Authenticated users can update airbnbs" ON airbnbs;
+DROP POLICY IF EXISTS "Members can update airbnbs"             ON airbnbs;
 
 CREATE POLICY "Members can update airbnbs"
   ON airbnbs FOR UPDATE
