@@ -263,16 +263,14 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
             )}
             {isAdmin && editing && (
               <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Date</p>
-                    <input type="date" value={editForm.date} onChange={e => setEditForm(f => ({ ...f, date: e.target.value }))} />
-                  </div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', paddingBottom: 10 }}>
-                    <input type="checkbox" checked={editForm.is_connection} onChange={e => setEditForm(f => ({ ...f, is_connection: e.target.checked }))} />
-                    Correspond.
-                  </label>
+                <div>
+                  <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Date</p>
+                  <input type="date" value={editForm.date} onChange={e => setEditForm(f => ({ ...f, date: e.target.value }))} />
                 </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={editForm.is_connection} onChange={e => setEditForm(f => ({ ...f, is_connection: e.target.checked }))} />
+                  Correspondance
+                </label>
                 <div>
                   <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Gare de départ</p>
                   <input value={editForm.from_station} onChange={e => setEditForm(f => ({ ...f, from_station: e.target.value }))} placeholder="Bruxelles-Midi" />
