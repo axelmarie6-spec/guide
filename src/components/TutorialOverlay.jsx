@@ -297,8 +297,8 @@ export default function TutorialOverlay() {
             50%      { transform: translateX(-50%) translateY(8px); }
           }
           @keyframes tutoPulse {
-            0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4), 0 0 16px rgba(255,255,255,0.15); }
-            50%      { box-shadow: 0 0 0 6px rgba(255,255,255,0.0), 0 0 28px rgba(255,255,255,0.3); }
+            0%,100% { box-shadow: 0 0 0 0 rgba(26,23,20,0.45), 0 0 12px rgba(26,23,20,0.10); }
+            50%      { box-shadow: 0 0 0 7px rgba(26,23,20,0.0), 0 0 22px rgba(26,23,20,0.20); }
           }
         `}</style>
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', pointerEvents: 'none' }}>
@@ -328,12 +328,15 @@ export default function TutorialOverlay() {
             {skipBtn(true)}
           </div>
 
-          <div style={{ height: 110, position: 'relative' }}>
+          {/* Hauteur dynamique : suit le bottom de la BottomBar (safe-area + 10px) */}
+          <div style={{ height: 'calc(env(safe-area-inset-bottom, 0px) + 110px)', position: 'relative' }}>
             <div style={{
-              position: 'absolute', bottom: 18, left: tabCenterExpr,
+              position: 'absolute',
+              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 15px)',
+              left: tabCenterExpr,
               transform: 'translateX(-50%)',
               width: 54, height: 54, borderRadius: '18px',
-              border: '2px solid rgba(255,255,255,0.65)',
+              border: '2.5px solid rgba(26,23,20,0.80)',
               animation: 'tutoPulse 1.4s ease-in-out infinite',
             }} />
             <div style={{
