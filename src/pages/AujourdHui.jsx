@@ -533,8 +533,8 @@ function TimelineCard({ city, train, isPreview = false }) {
   const isAdmin = profile?.role === 'admin'
   const listRef = useRef(null)
   const drag = useRef({ active: false, from: null, over: null })
-  const longPressTimer = useRef(null)
   const scheduledLen = useRef(0)
+  const moveToPositionRef = useRef(null)
   const [dragVisual, setDragVisual] = useState({ from: null, over: null })
 
   const today = new Date().toISOString().split('T')[0]
@@ -543,11 +543,12 @@ function TimelineCard({ city, train, isPreview = false }) {
     catch { return new Set() }
   })
 
-  // Listener non-passif pour bloquer le scroll pendant le drag
+  // Non-passive listeners: block scroll during drag, commit on touchend
   useEffect(() => {
     const list = listRef.current
     if (!list) return
-    const handler = (e) => {
+
+    const onMove = (e) => {
       if (!drag.current.active) return
       e.preventDefault()
       const y = e.touches[0].clientY
@@ -562,8 +563,23 @@ function TimelineCard({ city, train, isPreview = false }) {
         setDragVisual(prev => ({ ...prev, over }))
       }
     }
-    list.addEventListener('touchmove', handler, { passive: false })
-    return () => list.removeEventListener('touchmove', handler)
+
+    const onEnd = () => {
+      if (!drag.current.active) return
+      const { from, over } = drag.current
+      drag.current = { active: false, from: null, over: null }
+      setDragVisual({ from: null, over: null })
+      moveToPositionRef.current?.(from, over)
+    }
+
+    list.addEventListener('touchmove', onMove, { passive: false })
+    list.addEventListener('touchend', onEnd)
+    list.addEventListener('touchcancel', onEnd)
+    return () => {
+      list.removeEventListener('touchmove', onMove)
+      list.removeEventListener('touchend', onEnd)
+      list.removeEventListener('touchcancel', onEnd)
+    }
   }, [])
 
   function toggleDone(id) {
@@ -573,47 +589,6 @@ function TimelineCard({ city, train, isPreview = false }) {
       localStorage.setItem(`tl_done_${today}`, JSON.stringify([...next]))
       return next
     })
-  }
-
-  async function moveToPosition(from, to) {
-    if (from === to || !items) return
-    const next = [...scheduled]
-    const [moved] = next.splice(from, 1)
-    next.splice(to, 0, moved)
-    const withOrder = next.map((item, i) => ({ ...item, plan_order: i }))
-    setItems(items.map(item => withOrder.find(u => u.id === item.id) ?? item))
-    await Promise.all(
-      withOrder.map(item =>
-        supabase.from('activities').update({ plan_order: item.plan_order }).eq('id', item.id)
-      )
-    )
-  }
-
-  function onTouchStart(e, idx) {
-    longPressTimer.current = setTimeout(() => {
-      navigator.vibrate?.(25)
-      drag.current = { active: true, from: idx, over: idx }
-      setDragVisual({ from: idx, over: idx })
-    }, 300)
-  }
-
-  function onTouchEnd(e, itemId) {
-    e.preventDefault()
-    clearTimeout(longPressTimer.current)
-    if (drag.current.active) {
-      const { from, over } = drag.current
-      drag.current = { active: false, from: null, over: null }
-      setDragVisual({ from: null, over: null })
-      moveToPosition(from, over)
-    } else {
-      toggleDone(itemId)
-    }
-  }
-
-  function onTouchCancel() {
-    clearTimeout(longPressTimer.current)
-    drag.current = { active: false, from: null, over: null }
-    setDragVisual({ from: null, over: null })
   }
 
   if (!city) return null
@@ -644,6 +619,22 @@ function TimelineCard({ city, train, isPreview = false }) {
   }
 
   scheduledLen.current = scheduled.length
+
+  // Refresh each render so the closure sees the latest `scheduled`
+  moveToPositionRef.current = async (from, to) => {
+    if (from === to || !items) return
+    const next = [...scheduled]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    const withOrder = next.map((it, i) => ({ ...it, plan_order: i }))
+    setItems(items.map(it => withOrder.find(u => u.id === it.id) ?? it))
+    await Promise.all(
+      withOrder.map(it =>
+        supabase.from('activities').update({ plan_order: it.plan_order }).eq('id', it.id)
+      )
+    )
+  }
+
   if (scheduled.length === 0) return null
 
   const doneCount = scheduled.filter(it => done.has(it.id)).length
@@ -689,14 +680,8 @@ function TimelineCard({ city, train, isPreview = false }) {
               <div
                 key={item.id}
                 data-ri={String(idx)}
-                onClick={() => toggleDone(item.id)}
-                onContextMenu={(e) => e.preventDefault()}
-                onTouchStart={isAdmin ? (e) => onTouchStart(e, idx) : undefined}
-                onTouchEnd={isAdmin ? (e) => onTouchEnd(e, item.id) : undefined}
-                onTouchCancel={isAdmin ? onTouchCancel : undefined}
                 style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 12,
-                  cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 12,
                   userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none',
                   opacity: isDone ? 0.38 : isDragging ? 0.45 : 1,
                   transform: isDragging ? 'scale(1.02)' : 'scale(1)',
@@ -706,14 +691,17 @@ function TimelineCard({ city, train, isPreview = false }) {
                 }}
               >
                 {/* Dot */}
-                <div style={{
-                  position: 'relative', zIndex: 1, flexShrink: 0, marginTop: 2,
-                  width: 38, height: 38, borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: isDone ? 'rgba(26,23,20,0.10)' : 'white',
-                  border: `2px solid ${isDone ? 'rgba(26,23,20,0.10)' : 'rgba(26,23,20,0.08)'}`,
-                  boxShadow: isDone ? 'none' : '0 1px 3px rgba(26,23,20,0.08)',
-                }}>
+                <div
+                  onClick={() => toggleDone(item.id)}
+                  style={{
+                    position: 'relative', zIndex: 1, flexShrink: 0,
+                    width: 38, height: 38, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer',
+                    background: isDone ? 'rgba(26,23,20,0.10)' : 'white',
+                    border: `2px solid ${isDone ? 'rgba(26,23,20,0.10)' : 'rgba(26,23,20,0.08)'}`,
+                    boxShadow: isDone ? 'none' : '0 1px 3px rgba(26,23,20,0.08)',
+                  }}>
                   {isDone
                     ? <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
                         <path d="M3 8.5l3.5 3.5 6.5-7" stroke="#6b6560" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -725,12 +713,14 @@ function TimelineCard({ city, train, isPreview = false }) {
                 </div>
 
                 {/* Carte contenu */}
-                <div style={{
-                  flex: 1, minWidth: 0, background: 'white', borderRadius: 16,
-                  padding: '10px 12px',
-                  border: '1px solid rgba(26,23,20,0.06)',
-                  boxShadow: '0 1px 3px rgba(26,23,20,0.05)',
-                }}>
+                <div
+                  onClick={() => toggleDone(item.id)}
+                  style={{
+                    flex: 1, minWidth: 0, background: 'white', borderRadius: 16,
+                    padding: '10px 12px', cursor: 'pointer',
+                    border: '1px solid rgba(26,23,20,0.06)',
+                    boxShadow: '0 1px 3px rgba(26,23,20,0.05)',
+                  }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minWidth: 0 }}>
                     <p style={{
                       fontWeight: 700, fontSize: '0.875rem', margin: 0, flex: 1, minWidth: 0,
@@ -768,6 +758,29 @@ function TimelineCard({ city, train, isPreview = false }) {
                     )}
                   </div>
                 </div>
+
+                {/* Drag handle — admin only */}
+                {isAdmin && (
+                  <div
+                    onTouchStart={(e) => {
+                      e.preventDefault()
+                      drag.current = { active: true, from: idx, over: idx }
+                      setDragVisual({ from: idx, over: idx })
+                      navigator.vibrate?.(12)
+                    }}
+                    style={{
+                      flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: 28, alignSelf: 'stretch', cursor: 'grab', touchAction: 'none',
+                      color: 'rgba(26,23,20,0.20)',
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                      <rect y="1.5"  width="14" height="1.75" rx="0.875"/>
+                      <rect y="6.1"  width="14" height="1.75" rx="0.875"/>
+                      <rect y="10.7" width="14" height="1.75" rx="0.875"/>
+                    </svg>
+                  </div>
+                )}
               </div>
             )
           })}
