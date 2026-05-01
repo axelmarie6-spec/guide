@@ -76,7 +76,10 @@ export default function Register() {
       email: email.trim().toLowerCase(), password
     })
     if (signUpError) {
-      setError(`Erreur : ${signUpError.message}`)
+      const isNetwork = signUpError.message === 'Load failed' || signUpError.message === 'Failed to fetch' || signUpError.message?.includes('network')
+      setError(isNetwork
+        ? 'Impossible de contacter le serveur. Vérifie ta connexion et réessaie.'
+        : `Erreur : ${signUpError.message}`)
       setLoading(false)
       return
     }
