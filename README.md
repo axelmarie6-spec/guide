@@ -9,7 +9,7 @@ L'app ne te demande pas ce que tu veux faire. Elle le décide pour toi.
 
 ## Développeur
 
-Projet solo développé par un étudiant en **2e année de classe préparatoire aux grandes écoles d'ingénieurs**. Bonnes bases en informatique, pas de formation web professionnelle — ce projet est aussi un apprentissage. Stack choisie pour sa documentation, sa communauté et sa complexité adaptée à un développeur solo.
+Projet solo développé par un étudiant en **2e année de classe préparatoire aux grandes écoles d'ingénieurs**. Bonnes bases en informatique, pas de formation web professionnelle — ce projet est aussi un apprentissage. Stack choisie pour sa documentation, sa communauté et sa complexité adaptée à un développeur solo. Pour le SQL toujours lui generer un fichiers dans /supabase qu'il doit copier coller dans le sql editor de Supabase.
 
 ---
 
@@ -37,15 +37,19 @@ Cinq amis. Vingt-deux jours de train. Un budget serré à 1 200 €/personne. De
 
 ## Architecture — Les Onglets
 
-### Onglet 1 · "Aujourd'hui" — Le Dashboard 🔄
+### Onglet 1 · "Aujourd'hui" — Le Dashboard ✅
 
 Ce que le groupe voit en ouvrant l'app le matin :
 
 - Salutation personnalisée "Bonjour [Prénom] 👋" + compteur J-X avant le départ (trip start : 1er août 2026)
-- Prochain train depuis la BDD (gares, horaires, voie)
-- Convertisseur de devises live via Frankfurter API (EUR → CZK, HUF, CHF — fallback offline)
-- Météo locale *(à brancher : OpenWeatherMap API)*
-- Activités validées par le vote de la veille *(à venir : Phase 4 finale)*
+- **Météo locale** via OpenWeatherMap (GPS → fallback ville en cours → Bruxelles) : température, min/max, description + strip de prévisions 3h sur 18h
+- **Prochain train** depuis Supabase (gares, horaires, voie)
+- **Devises live** CZK/HUF/CHF via Frankfurter API + convertisseur monnaie locale → EUR (fallback cache offline)
+- **Programme du jour** : timeline des activités validées par les votes, ordonnées par `plan_order`, avec horaire estimé à partir de 9h et coupure 30 min avant le départ du train
+  - Admin peut réordonner en glissant depuis le dot horaire
+  - Tick par activité (état stocké par jour en localStorage, reset automatique)
+  - Preview avant le départ (aperçu sur Bruxelles)
+- Chaque card a son gradient de couleur (ambre météo, bleu train, rose devises, vert timeline)
 
 ### Onglet 2 · "Explorer" — L'Oracle de Décision ✅
 
@@ -156,16 +160,18 @@ created_at      timestamptz
 
 ### `activities`
 ```
-id              uuid        PK
-city            text        'bruxelles' | 'amsterdam' | 'berlin' | 'prague' | 'budapest' | 'vienne' | 'geneve'
-name            text
-description     text        nullable
-category        text        libre (culture, nature, food, nightlife, shopping, sport, other, ou custom)
-price_eur       numeric     nullable
-photo_url       text        nullable  -- URL publique bucket Supabase "activities"
-added_by        uuid        FK → profiles.id
-is_active       boolean     default true
-created_at      timestamptz
+id               uuid        PK
+city             text        'bruxelles' | 'amsterdam' | 'berlin' | 'prague' | 'budapest' | 'vienne' | 'geneve'
+name             text
+description      text        nullable
+category         text        libre (culture, nature, food, nightlife, shopping, sport, other, ou custom)
+price_eur        numeric     nullable
+photo_url        text        nullable  -- URL publique bucket Supabase "activities"
+added_by         uuid        FK → profiles.id
+is_active        boolean     default true
+duration_minutes integer     NOT NULL DEFAULT 90 -- durée estimée pour la timeline
+plan_order       integer     nullable -- ordre dans la timeline (drag admin)
+created_at       timestamptz
 ```
 
 ### `votes`
@@ -246,7 +252,7 @@ Chaque `git push` sur `main` déclenche un déploiement automatique. Variables d
 | Coffre-Fort — PDFs billets | ✅ | ✅ (blob URL via SW, précaché au chargement) |
 | Voyage — trains & airbnbs | ✅ | ✅ (données Supabase en cache) |
 | Plans de gare (liens externes) | ✅ | ❌ |
-| Météo | ✅ | ⚠️ Phase 5 — fallback valeur cachée |
-| Taux de change | ✅ | ⚠️ Phase 5 — fallback valeur cachée |
+| Météo | ✅ | ✅ fallback cache localStorage |
+| Taux de change | ✅ | ✅ fallback cache localStorage |
 | Explorer / Votes | ✅ | ❌ (online uniquement) |
 | Admin | ✅ | ❌ (online uniquement) |

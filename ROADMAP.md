@@ -148,31 +148,36 @@ Objectif : cohérence visuelle totale entre toutes les pages, basée sur le syst
 **Terminé**
 
 - ✅ Salutation "Bonjour [Prénom] 👋" + compteur J-X avant le départ
-- ✅ Prochain train depuis Supabase (date, gares, horaires, voie)
-- ✅ **Météo locale réelle** via OpenWeatherMap (clé gratuite)
+- ✅ Détection automatique de la ville en cours (CITY_SCHEDULE), sous-titre enrichi pendant le voyage
+- ✅ **Météo locale réelle** via OpenWeatherMap
   - GPS d'abord, fallback CITY_SCHEDULE, fallback Bruxelles
-  - Température actuelle + min/max + description
+  - Température actuelle + min/max + description + **strip prévisions 3h sur 18h** (scroll horizontal)
   - Cache localStorage pour offline
-- ✅ Détection automatique de la ville en cours (CITY_SCHEDULE)
-  - Sous-titre enrichi pendant le voyage : Jour X · 🇨🇿 Prague · N jours restants
-- ✅ Devises live CZK/HUF/CHF toujours affichées + convertisseur monnaie locale → EUR
-- ✅ **Activités validées** de la ville en cours (issues des votes Explorer, triées par score)
-  - Placeholder avant le voyage : "RDV dans X jours"
-- ✅ Ordre des cards : Météo · Train · Devises · Activités
+- ✅ Prochain train depuis Supabase (date, gares, horaires, voie)
+- ✅ Devises live CZK/HUF/CHF toujours affichées + convertisseur monnaie locale → EUR (cache offline)
+- ✅ **Programme du jour** : timeline des activités validées (issues des votes Explorer)
+  - Colonnes `duration_minutes` et `plan_order` ajoutées à la table `activities`
+  - Horaires estimés depuis 9h avec pauses 15 min, coupure 30 min avant le train
+  - Tick par activité (localStorage par date, reset automatique chaque jour)
+  - Admin peut réordonner en glissant depuis le dot horaire (drag handle immédiat, pas de long-press)
+  - Preview avant le départ (aperçu sur Bruxelles avec badge "PREVIEW")
+- ✅ Gradient de couleur par card (ambre météo · bleu train · rose devises · vert timeline)
+- ✅ **Tour d'onboarding interactif** pour les nouveaux membres (toutes les pages, demo Explorer)
 
 ---
 
-## Phase 5 — Algorithme de Timeline ⬜
-**À faire (optionnel pour le voyage)**
+## Phase 5 — Algorithme de Timeline 🔄
+**Partiellement terminé**
 
-Objectif : les activités validées sont triées en un itinéraire géographiquement logique.
+L'affichage manuel est en place. L'optimisation géographique reste optionnelle.
 
+- ✅ Colonnes `duration_minutes` et `plan_order` sur `activities`
+- ✅ Timeline affichée dans "Aujourd'hui" avec horaires estimés
+- ✅ Réordonnancement admin par drag (persisté en base)
+- ✅ Durées par défaut par catégorie (culture 90min, food 75min, nightlife 120min…)
 - ⬜ Ajouter coordonnées GPS aux activités
-- ⬜ Algorithme du "plus proche voisin" :
-  - Point de départ = adresse Airbnb
-  - Point d'arrivée = gare de départ (si jour de train)
-- ⬜ Afficher la timeline ordonnée dans "Aujourd'hui"
-- ⬜ Interface admin pour ajuster l'ordre manuellement
+- ⬜ Algorithme du "plus proche voisin" (Airbnb → activités → gare)
+- ⬜ Ordre géographique automatique comme base, ajustable manuellement
 
 ---
 
@@ -212,7 +217,7 @@ Objectif : les activités validées sont triées en un itinéraire géographique
 | 3 | Explorer : Votes & Oracle | ✅ Terminé |
 | 3.5 | Refonte UI/UX (Claude Design) | ✅ Terminé |
 | 4 | Dashboard "Aujourd'hui" | ✅ Terminé |
-| 5 | Algorithme de Timeline | ⬜ À faire (optionnel) |
+| 5 | Algorithme de Timeline | 🔄 Partiel (manuel ✅, géo ⬜) |
 | 6 | PWA & Offline Hardening | 🔄 Partiel |
 | 7 | Contenu & Déploiement Final | ⬜ À faire avant août 2026 |
 
