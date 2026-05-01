@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <filter id="ts" x="-8%" y="-8%" width="122%" height="135%">
+      <feDropShadow dx="0" dy="5" stdDeviation="10" flood-color="#1a1714" flood-opacity="0.13"/>
+    </filter>
+  </defs>
+
+  <!-- App background (warm sand) -->
+  <rect width="512" height="512" rx="80" fill="#f5f1ea"/>
+
+  <g filter="url(#ts)">
+    <!-- Main body + aerodynamic nose (left) -->
+    <path d="M132,170 C104,170 78,181 62,204 C48,224 46,250 56,270 C66,289 88,298 116,298 L448,298 Q464,298 464,282 L464,186 Q464,170 448,170 Z" fill="white"/>
+
+    <!-- Windshield glass (front cab) -->
+    <polygon points="88,175 132,172 132,253 84,249 62,238 55,222 68,198 88,175" fill="rgba(26,23,20,0.13)"/>
+
+    <!-- Cab post (A-pillar) -->
+    <line x1="132" y1="170" x2="132" y2="298" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+
+    <!-- Passenger window strip -->
+    <rect x="140" y="180" width="294" height="53" rx="7" fill="rgba(26,23,20,0.09)"/>
+
+    <!-- Window dividers -->
+    <line x1="220" y1="180" x2="220" y2="233" stroke="white" stroke-width="4.5" stroke-opacity="0.65"/>
+    <line x1="300" y1="180" x2="300" y2="233" stroke="white" stroke-width="4.5" stroke-opacity="0.65"/>
+    <line x1="380" y1="180" x2="380" y2="233" stroke="white" stroke-width="4.5" stroke-opacity="0.65"/>
+
+    <!-- Amber accent stripe (brand colour) -->
+    <line x1="58" y1="253" x2="464" y2="253" stroke="#e8a030" stroke-width="8" stroke-linecap="round"/>
+
+    <!-- Undercarriage plate -->
+    <rect x="108" y="298" width="358" height="14" rx="5" fill="rgba(255,255,255,0.55)"/>
+
+    <!-- Front bogie -->
+    <rect x="120" y="310" width="66" height="7" rx="3" fill="rgba(255,255,255,0.45)"/>
+    <circle cx="136" cy="328" r="20" fill="white"/>
+    <circle cx="136" cy="328" r="9"  fill="#ddd8cf"/>
+    <circle cx="170" cy="328" r="20" fill="white"/>
+    <circle cx="170" cy="328" r="9"  fill="#ddd8cf"/>
+
+    <!-- Rear bogie -->
+    <rect x="330" y="310" width="66" height="7" rx="3" fill="rgba(255,255,255,0.45)"/>
+    <circle cx="343" cy="328" r="20" fill="white"/>
+    <circle cx="343" cy="328" r="9"  fill="#ddd8cf"/>
+    <circle cx="377" cy="328" r="20" fill="white"/>
+    <circle cx="377" cy="328" r="9"  fill="#ddd8cf"/>
+  </g>
+
+  <!-- Rail / ground line -->
+  <rect x="44" y="352" width="426" height="5" rx="2.5" fill="rgba(26,23,20,0.07)"/>
+</svg>

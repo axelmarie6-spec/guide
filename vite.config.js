@@ -13,14 +13,16 @@ export default defineConfig({
         name: 'Travel Hub & Oracle',
         short_name: 'Travel Hub',
         description: 'Passeport numérique de groupe — 22 jours en Europe',
-        theme_color: '#0f0f1a',
-        background_color: '#0f0f1a',
+        theme_color: '#f5f1ea',
+        background_color: '#f5f1ea',
         display: 'standalone',
         orientation: 'portrait',
         lang: 'fr',
         icons: [
-          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' }
+          { src: 'pwa-64x64.png',              sizes: '64x64',   type: 'image/png' },
+          { src: 'pwa-192x192.png',             sizes: '192x192', type: 'image/png' },
+          { src: 'pwa-512x512.png',             sizes: '512x512', type: 'image/png' },
+          { src: 'maskable-icon-512x512.png',   sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
       workbox: {
