@@ -690,14 +690,20 @@ function TimelineCard({ city, train, isPreview = false }) {
                   marginTop: isDropTarget ? -2 : 0,
                 }}
               >
-                {/* Dot */}
+                {/* Dot — tap toggles done, admin can drag from it */}
                 <div
                   onClick={() => toggleDone(item.id)}
+                  onTouchStart={isAdmin ? (e) => {
+                    e.preventDefault()
+                    drag.current = { active: true, from: idx, over: idx }
+                    setDragVisual({ from: idx, over: idx })
+                    navigator.vibrate?.(12)
+                  } : undefined}
                   style={{
                     position: 'relative', zIndex: 1, flexShrink: 0,
                     width: 38, height: 38, borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer',
+                    cursor: isAdmin ? 'grab' : 'pointer', touchAction: isAdmin ? 'none' : 'auto',
                     background: isDone ? 'rgba(26,23,20,0.10)' : 'white',
                     border: `2px solid ${isDone ? 'rgba(26,23,20,0.10)' : 'rgba(26,23,20,0.08)'}`,
                     boxShadow: isDone ? 'none' : '0 1px 3px rgba(26,23,20,0.08)',
@@ -759,28 +765,7 @@ function TimelineCard({ city, train, isPreview = false }) {
                   </div>
                 </div>
 
-                {/* Drag handle — admin only */}
-                {isAdmin && (
-                  <div
-                    onTouchStart={(e) => {
-                      e.preventDefault()
-                      drag.current = { active: true, from: idx, over: idx }
-                      setDragVisual({ from: idx, over: idx })
-                      navigator.vibrate?.(12)
-                    }}
-                    style={{
-                      flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      width: 28, alignSelf: 'stretch', cursor: 'grab', touchAction: 'none',
-                      color: 'rgba(26,23,20,0.20)',
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-                      <rect y="1.5"  width="14" height="1.75" rx="0.875"/>
-                      <rect y="6.1"  width="14" height="1.75" rx="0.875"/>
-                      <rect y="10.7" width="14" height="1.75" rx="0.875"/>
-                    </svg>
-                  </div>
-                )}
+
               </div>
             )
           })}
