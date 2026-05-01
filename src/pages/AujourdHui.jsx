@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -168,6 +168,55 @@ function useWeather({ lat, lon, gpsLoading, gpsDenied }) {
   return { weather, loading, offline, apiError }
 }
 
+// Fetches weather for multiple trip cities (non-GPS) in parallel
+function useCitiesWeather(cityKeys) {
+  const key = cityKeys.join(',')
+  const [weathers, setWeathers] = useState(() =>
+    cityKeys.map(k => {
+      try { return JSON.parse(localStorage.getItem(`weather_city_${k}_v1`)) } catch { return null }
+    })
+  )
+
+  useEffect(() => {
+    if (!OWM_KEY || !key) return
+    const keys = key.split(',').filter(Boolean)
+    Promise.all(keys.map(async k => {
+      const q = encodeURIComponent(CITY_OWM_QUERY[k] ?? k)
+      try {
+        const [wRes, fcRes] = await Promise.all([
+          fetch(`https://api.openweathermap.org/data/2.5/weather?q=${q}&appid=${OWM_KEY}&units=metric&lang=fr`),
+          fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${q}&appid=${OWM_KEY}&units=metric&lang=fr&cnt=6`),
+        ])
+        if (!wRes.ok) return null
+        const wd = await wRes.json()
+        let forecast = []
+        if (fcRes.ok) {
+          const fd = await fcRes.json()
+          forecast = (fd.list ?? []).slice(0, 6).map(s => ({
+            hour: new Date(s.dt * 1000).getHours() + 'h',
+            emoji: owmIconToEmoji(s.weather[0]?.icon),
+            temp: Math.round(s.main.temp),
+          }))
+        }
+        const w = {
+          temp: Math.round(wd.main.temp),
+          min: Math.round(wd.main.temp_min),
+          max: Math.round(wd.main.temp_max),
+          desc: wd.weather[0]?.description ?? '',
+          icon: wd.weather[0]?.icon ?? '',
+          city: wd.name,
+          forecast,
+          ts: Date.now(),
+        }
+        localStorage.setItem(`weather_city_${k}_v1`, JSON.stringify(w))
+        return w
+      } catch { return null }
+    })).then(results => setWeathers(results))
+  }, [key])
+
+  return weathers
+}
+
 const CURRENCY_CACHE_KEY = 'currency_cache_v1'
 
 function useCurrencies() {
@@ -270,9 +319,9 @@ function useTimeline(city) {
 
 // ── Shared shells ──────────────────────────────────────────────
 
-function Card({ children, style, onClick }) {
+function Card({ children, style, onClick, onTouchStart, onTouchEnd }) {
   return (
-    <div className="card" onClick={onClick}
+    <div className="card" onClick={onClick} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
       style={{ padding: '18px 20px', ...style, cursor: onClick ? 'pointer' : undefined }}>
       {children}
     </div>
@@ -301,10 +350,104 @@ function Spinner({ color = 'var(--sky)' }) {
   )
 }
 
-// ── WeatherCard ────────────────────────────────────────────────
+// ── WeatherSlide ───────────────────────────────────────────────
+
+function WeatherSlide({ weather, label, offline }) {
+  return (
+    <>
+      <CardLabel>
+        {label ?? `Météo · ${weather?.city ?? '—'}`}{offline ? ' · cache' : ''}
+      </CardLabel>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <span style={{ fontSize: '2.6rem', lineHeight: 1 }}>{owmIconToEmoji(weather?.icon)}</span>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontWeight: 800, fontSize: '2rem', margin: 0, lineHeight: 1 }}>
+            {weather?.temp ?? '—'}°
+          </p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '4px 0 0', textTransform: 'capitalize' }}>
+            {weather?.desc ?? (weather ? '…' : '—')}
+          </p>
+        </div>
+        {weather && (
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>↑ {weather.max}°</p>
+            <p style={{ fontSize: '0.9rem', fontWeight: 500, margin: '4px 0 0', color: 'var(--text-secondary)' }}>↓ {weather.min}°</p>
+          </div>
+        )}
+        {!weather && (
+          <div style={{ flexShrink: 0 }}><Spinner color="var(--sun)" /></div>
+        )}
+      </div>
+      {weather?.forecast?.length > 0 && (
+        <>
+          <style>{`.fc-strip::-webkit-scrollbar{display:none}`}</style>
+          <div className="fc-strip" style={{
+            marginTop: 14, paddingTop: 14,
+            borderTop: '1px solid rgba(0,0,0,0.06)',
+            display: 'flex', gap: 8,
+            overflowX: 'auto', scrollbarWidth: 'none',
+            WebkitOverflowScrolling: 'touch',
+          }}>
+            {weather.forecast.map((slot, i) => (
+              <div key={i} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: 4, flexShrink: 0,
+                background: 'rgba(232,160,48,0.09)',
+                borderRadius: 12, padding: '8px 10px', minWidth: 48,
+              }}>
+                <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-tertiary)', margin: 0 }}>{slot.hour}</p>
+                <span style={{ fontSize: '1.15rem', lineHeight: 1 }}>{slot.emoji}</span>
+                <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{slot.temp}°</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  )
+}
+
+// ── WeatherCard (carousel) ─────────────────────────────────────
 
 function WeatherCard({ lat, lon, gpsLoading, gpsDenied }) {
-  const { weather, loading, offline, apiError } = useWeather({ lat, lon, gpsLoading, gpsDenied })
+  const { weather: currentWeather, loading, offline, apiError } = useWeather({ lat, lon, gpsLoading, gpsDenied })
+  const [slide, setSlide] = useState(0)
+  const touchStartX = useRef(null)
+
+  const currentCityKey = getCurrentCity()?.city
+  const tripDone = getDayInfo().status === 'after'
+
+  // Future trip cities that aren't already shown as slide 0
+  const additionalCities = useMemo(() => {
+    if (tripDone) return []
+    const pad = n => String(n).padStart(2, '0')
+    const now = new Date()
+    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+    return CITY_SCHEDULE.filter(c => c.to >= today && c.city !== currentCityKey)
+  }, [currentCityKey, tripDone])
+
+  const additionalWeathers = useCitiesWeather(additionalCities.map(c => c.city))
+
+  const slides = [
+    { weather: currentWeather, label: null, offline },
+    ...additionalCities.map((c, i) => ({
+      weather: additionalWeathers[i] ?? null,
+      label: `${c.flag} ${c.label}`,
+      offline: false,
+    })),
+  ]
+
+  const total = slides.length
+  const idx = Math.min(slide, total - 1)
+
+  function onTouchStart(e) { touchStartX.current = e.touches[0].clientX }
+  function onTouchEnd(e) {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    touchStartX.current = null
+    if (dx < -50) setSlide(s => Math.min(s + 1, total - 1))
+    else if (dx > 50) setSlide(s => Math.max(s - 1, 0))
+  }
 
   const bg = 'linear-gradient(135deg, rgba(232,160,48,0.10) 0%, rgba(255,255,255,0.85) 60%)'
 
@@ -333,52 +476,24 @@ function WeatherCard({ lat, lon, gpsLoading, gpsDenied }) {
     </Card>
   )
 
+  const current = slides[idx]
+
   return (
-    <Card style={{ background: bg }}>
-      <CardLabel>
-        Météo · {weather?.city ?? '—'}{offline ? ' · cache' : ''}
-      </CardLabel>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <span style={{ fontSize: '2.6rem', lineHeight: 1 }}>{owmIconToEmoji(weather?.icon)}</span>
-        <div style={{ flex: 1 }}>
-          <p style={{ fontWeight: 800, fontSize: '2rem', margin: 0, lineHeight: 1 }}>
-            {weather?.temp ?? '—'}°
-          </p>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '4px 0 0', textTransform: 'capitalize' }}>
-            {weather?.desc ?? '—'}
-          </p>
+    <Card style={{ background: bg }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <WeatherSlide weather={current.weather} label={current.label} offline={current.offline} />
+
+      {/* Dots */}
+      {total > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 14 }}>
+          {slides.map((_, i) => (
+            <div key={i} onClick={() => setSlide(i)} style={{
+              height: 6, borderRadius: 3, cursor: 'pointer',
+              width: i === idx ? 18 : 6,
+              background: i === idx ? 'var(--sun)' : 'rgba(232,160,48,0.28)',
+              transition: 'width 0.2s, background 0.2s',
+            }} />
+          ))}
         </div>
-        {weather && (
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0 }}>↑ {weather.max}°</p>
-            <p style={{ fontSize: '0.9rem', fontWeight: 500, margin: '4px 0 0', color: 'var(--text-secondary)' }}>↓ {weather.min}°</p>
-          </div>
-        )}
-      </div>
-      {weather?.forecast?.length > 0 && (
-        <>
-          <style>{`.fc-strip::-webkit-scrollbar{display:none}`}</style>
-          <div className="fc-strip" style={{
-            marginTop: 14, paddingTop: 14,
-            borderTop: '1px solid rgba(0,0,0,0.06)',
-            display: 'flex', gap: 8,
-            overflowX: 'auto', scrollbarWidth: 'none',
-            WebkitOverflowScrolling: 'touch',
-          }}>
-            {weather.forecast.map((slot, i) => (
-              <div key={i} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                gap: 4, flexShrink: 0,
-                background: 'rgba(232,160,48,0.09)',
-                borderRadius: 12, padding: '8px 10px', minWidth: 48,
-              }}>
-                <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-tertiary)', margin: 0 }}>{slot.hour}</p>
-                <span style={{ fontSize: '1.15rem', lineHeight: 1 }}>{slot.emoji}</span>
-                <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{slot.temp}°</p>
-              </div>
-            ))}
-          </div>
-        </>
       )}
     </Card>
   )
