@@ -9,7 +9,7 @@ import { readCache, writeCache } from '../lib/dbCache'
 const TRIP_START = new Date('2026-08-01T00:00:00')
 const TRIP_DAYS = 22
 const OWM_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
-const WEATHER_CACHE_KEY = 'weather_cache_v5'
+const WEATHER_CACHE_KEY = 'weather_cache_v6'
 
 // OWM city query fallback (GPS denied)
 const CITY_OWM_QUERY = {
@@ -81,23 +81,26 @@ function useWeather({ lat, lon, gpsLoading, gpsDenied }) {
     if (!OWM_KEY) { setFetching(false); return }
 
     async function load() {
-      let owmUrl, omLat, omLon
+      let owmUrl, fcUrl, omLat, omLon
       if (!gpsDenied && lat !== null) {
         owmUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OWM_KEY}&units=metric&lang=fr`
+        fcUrl  = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${OWM_KEY}&units=metric&lang=fr&cnt=6`
         omLat = lat; omLon = lon
       } else {
         const city = getCurrentCity()
         const q = encodeURIComponent(city ? CITY_OWM_QUERY[city.city] : 'Brussels,BE')
         owmUrl = `https://api.openweathermap.org/data/2.5/weather?q=${q}&appid=${OWM_KEY}&units=metric&lang=fr`
+        fcUrl  = `https://api.openweathermap.org/data/2.5/forecast?q=${q}&appid=${OWM_KEY}&units=metric&lang=fr&cnt=6`
         const coords = city ? CITY_COORDS[city.city] : CITY_COORDS.bruxelles
         omLat = coords.lat; omLon = coords.lon
       }
       // Open-Meteo: free, no key, returns true daily min/max for the calendar day in local tz
       const omUrl = `https://api.open-meteo.com/v1/forecast?latitude=${omLat}&longitude=${omLon}&daily=temperature_2m_min,temperature_2m_max&timezone=auto&forecast_days=1`
       try {
-        const [wRes, omRes] = await Promise.all([
+        const [wRes, omRes, fcRes] = await Promise.all([
           globalThis.fetch(owmUrl),
           globalThis.fetch(omUrl),
+          globalThis.fetch(fcUrl),
         ])
         if (wRes.status === 401) { setApiError(401); setFetching(false); return }
         if (!wRes.ok) throw new Error('owm')
@@ -111,6 +114,15 @@ function useWeather({ lat, lon, gpsLoading, gpsDenied }) {
             max = Math.round(od.daily.temperature_2m_max[0])
           }
         }
+        let forecast = []
+        if (fcRes.ok) {
+          const fd = await fcRes.json()
+          forecast = (fd.list ?? []).slice(0, 6).map(slot => ({
+            hour: new Date(slot.dt * 1000).getHours() + 'h',
+            emoji: owmIconToEmoji(slot.weather[0]?.icon),
+            temp: Math.round(slot.main.temp),
+          }))
+        }
         const w = {
           temp: Math.round(wd.main.temp),
           min,
@@ -118,6 +130,7 @@ function useWeather({ lat, lon, gpsLoading, gpsDenied }) {
           desc: wd.weather[0]?.description ?? '',
           icon: wd.weather[0]?.icon ?? '',
           city: wd.name,
+          forecast,
           ts: Date.now(),
         }
         setWeather(w)
@@ -322,6 +335,31 @@ function WeatherCard({ lat, lon, gpsLoading, gpsDenied }) {
           </div>
         )}
       </div>
+      {weather?.forecast?.length > 0 && (
+        <>
+          <style>{`.fc-strip::-webkit-scrollbar{display:none}`}</style>
+          <div className="fc-strip" style={{
+            marginTop: 14, paddingTop: 14,
+            borderTop: '1px solid rgba(0,0,0,0.06)',
+            display: 'flex', gap: 8,
+            overflowX: 'auto', scrollbarWidth: 'none',
+            WebkitOverflowScrolling: 'touch',
+          }}>
+            {weather.forecast.map((slot, i) => (
+              <div key={i} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: 4, flexShrink: 0,
+                background: 'rgba(232,160,48,0.09)',
+                borderRadius: 12, padding: '8px 10px', minWidth: 48,
+              }}>
+                <p style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-tertiary)', margin: 0 }}>{slot.hour}</p>
+                <span style={{ fontSize: '1.15rem', lineHeight: 1 }}>{slot.emoji}</span>
+                <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>{slot.temp}°</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </Card>
   )
 }
