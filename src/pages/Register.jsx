@@ -83,6 +83,11 @@ export default function Register() {
       setLoading(false)
       return
     }
+    if (!authData.user) {
+      setError('Cet email est déjà utilisé. Connecte-toi ou utilise un autre email.')
+      setLoading(false)
+      return
+    }
 
     const { error: profileError } = await supabase
       .from('profiles').insert({

@@ -26,14 +26,18 @@ export const CITY_SCHEDULE = [
 // Jours de transit (pas de ville d'arrivée fixe toute la journée)
 export const TRAVEL_DAYS = ['2026-08-01', '2026-08-04', '2026-08-08', '2026-08-11', '2026-08-14', '2026-08-18', '2026-08-21']
 
+function localDateStr(date = new Date()) {
+  const p = n => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`
+}
+
 export function getCurrentCity(date = new Date()) {
-  const d = date.toISOString().slice(0, 10)
+  const d = localDateStr(date)
   return CITY_SCHEDULE.find(c => d >= c.from && d <= c.to) ?? null
 }
 
 export function isTravelDay(date = new Date()) {
-  const d = date.toISOString().slice(0, 10)
-  return TRAVEL_DAYS.includes(d)
+  return TRAVEL_DAYS.includes(localDateStr(date))
 }
 
 // Numéros d'urgence par pays

@@ -73,6 +73,11 @@ function UsersTab({ currentUserId }) {
   }
 
   async function toggleRole(user) {
+    if (user.id === currentUserId) { setBanError('Tu ne peux pas modifier ton propre rôle.'); return }
+    if (user.role === 'admin' && users.filter(u => u.role === 'admin').length <= 1) {
+      setBanError('Impossible : il doit rester au moins un admin.')
+      return
+    }
     const newRole = user.role === 'admin' ? 'member' : 'admin'
     await supabase.from('profiles').update({ role: newRole }).eq('id', user.id)
     fetchUsers()

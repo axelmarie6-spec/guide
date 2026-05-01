@@ -599,6 +599,7 @@ export default function Explorer() {
       setActivities(cached.activities)
       setAllVotes(cached.votes)
       setGroupSize(cached.groupSize)
+      setDayConfig(cached.dayConfig ?? null)
       setMyVotes(cached.votes.filter(v => v.user_id === user.id && actIds.has(v.activity_id)))
       setDoneCount(computeDoneCount(cached.votes, actIds, cached.activities.length, today))
       setLoading(false)
@@ -620,7 +621,7 @@ export default function Explorer() {
     const votes = votesRes.data ?? []
     const gSize = countRes.count ?? 1
 
-    writeCache(cacheKey, { activities: acts, votes, groupSize: gSize })
+    writeCache(cacheKey, { activities: acts, votes, groupSize: gSize, dayConfig: cfgRes.data ?? null })
 
     setDayConfig(cfgRes.data ?? null)
     setActivities(acts)
@@ -666,6 +667,17 @@ export default function Explorer() {
     const today = new Date().toISOString().slice(0, 10)
     await supabase.from('day_config').update({ votes_open: false }).eq('city', city).eq('date', today)
     fetchAll()
+  }
+
+  async function saveSecondTour(selectedIds) {
+    // Persist plan_order: selected → 0,1,2… (appear first in timeline)
+    // Others stay null (appear after, sorted by name)
+    await Promise.all(
+      selectedIds.map((id, i) =>
+        supabase.from('activities').update({ plan_order: i }).eq('id', id)
+      )
+    )
+    setSecondTour(false)
   }
 
   // Derived state — multi-jours
@@ -910,7 +922,7 @@ export default function Explorer() {
           <DoneView matchCount={myMatchCount} doneCount={doneCount} groupSize={groupSize} />
         ) : view === 'results' ? (
           secondTour ? (
-            <SecondTourView candidates={validated} maxActivities={maxActivities} onDone={() => setSecondTour(false)} />
+            <SecondTourView candidates={validated} maxActivities={maxActivities} onDone={saveSecondTour} />
           ) : (
             <ResultsView
               validated={validated} maxActivities={maxActivities}

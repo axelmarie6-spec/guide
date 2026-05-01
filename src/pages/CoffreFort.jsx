@@ -290,23 +290,28 @@ export default function CoffreFort() {
   const [openPdf, setOpenPdf] = useState(null)
 
   async function fetchData() {
-    const [trainsRes, pdfsRes, membersRes] = await Promise.all([
-      supabase.from('trains')
-        .select('leg_order, date, from_station, to_station, departure_time, arrival_time')
-        .order('leg_order'),
-      supabase.from('ticket_pdfs').select('*').order('created_at'),
-      supabase.from('profiles')
-        .select('id, first_name, last_name, pseudo, role, emergency_name, emergency_phone, allergies, ceam_number, passport_number')
-        .eq('banned', false)
-        .order('created_at'),
-    ])
-    if (trainsRes.error) console.error('[CoffreFort] trains fetch:', trainsRes.error)
-    if (pdfsRes.error) console.error('[CoffreFort] pdfs fetch:', pdfsRes.error)
-    if (membersRes.error) console.error('[CoffreFort] members fetch:', membersRes.error)
-    if (trainsRes.data) { setTrains(trainsRes.data); writeCache('coffre_trains_v1', trainsRes.data) }
-    if (pdfsRes.data) { setPdfs(pdfsRes.data); writeCache('coffre_pdfs_v1', pdfsRes.data) }
-    if (membersRes.data) { setMembers(membersRes.data); writeCache('coffre_members_v1', membersRes.data) }
-    setLoading(false)
+    try {
+      const [trainsRes, pdfsRes, membersRes] = await Promise.all([
+        supabase.from('trains')
+          .select('leg_order, date, from_station, to_station, departure_time, arrival_time')
+          .order('leg_order'),
+        supabase.from('ticket_pdfs').select('*').order('created_at'),
+        supabase.from('profiles')
+          .select('id, first_name, last_name, pseudo, role, emergency_name, emergency_phone, allergies, ceam_number, passport_number')
+          .eq('banned', false)
+          .order('created_at'),
+      ])
+      if (trainsRes.error) console.error('[CoffreFort] trains fetch:', trainsRes.error)
+      if (pdfsRes.error) console.error('[CoffreFort] pdfs fetch:', pdfsRes.error)
+      if (membersRes.error) console.error('[CoffreFort] members fetch:', membersRes.error)
+      if (trainsRes.data) { setTrains(trainsRes.data); writeCache('coffre_trains_v1', trainsRes.data) }
+      if (pdfsRes.data) { setPdfs(pdfsRes.data); writeCache('coffre_pdfs_v1', pdfsRes.data) }
+      if (membersRes.data) { setMembers(membersRes.data); writeCache('coffre_members_v1', membersRes.data) }
+    } catch (err) {
+      console.error('[CoffreFort] fetchData:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { fetchData() }, [])

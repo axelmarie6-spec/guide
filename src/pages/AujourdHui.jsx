@@ -168,8 +168,12 @@ function useWeather({ lat, lon, gpsLoading, gpsDenied }) {
   return { weather, loading, offline, apiError }
 }
 
+const CURRENCY_CACHE_KEY = 'currency_cache_v1'
+
 function useCurrencies() {
-  const [rates, setRates] = useState(null)
+  const [rates, setRates] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(CURRENCY_CACHE_KEY)) } catch { return null }
+  })
   const [offline, setOffline] = useState(false)
 
   useEffect(() => {
@@ -179,7 +183,9 @@ function useCurrencies() {
         if (!res.ok) throw new Error()
         const d = await res.json()
         if (d.result !== 'success') throw new Error()
-        setRates({ CZK: d.rates.CZK, HUF: d.rates.HUF, CHF: d.rates.CHF })
+        const r = { CZK: d.rates.CZK, HUF: d.rates.HUF, CHF: d.rates.CHF }
+        setRates(r)
+        localStorage.setItem(CURRENCY_CACHE_KEY, JSON.stringify(r))
       } catch {
         // fallback Frankfurter
         try {
@@ -187,8 +193,9 @@ function useCurrencies() {
           if (!res.ok) throw new Error()
           const d = await res.json()
           setRates(d.rates)
+          localStorage.setItem(CURRENCY_CACHE_KEY, JSON.stringify(d.rates))
         } catch {
-          setOffline(true)
+          if (!rates) setOffline(true)
         }
       }
     }
@@ -252,6 +259,7 @@ function useTimeline(city) {
       setItems(validated)
     } catch (err) {
       console.error('[useTimeline]', err)
+      setItems([])
     }
   }, [city])
 
