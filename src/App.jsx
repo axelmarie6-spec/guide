@@ -27,7 +27,8 @@ function WithNav({ children }) {
   const { pathname } = useLocation()
   return (
     <>
-      <main key={pathname} className="pb-28 max-w-lg mx-auto fade-in">{children}</main>
+      <div key={pathname} className="page-flash" />
+      <main className="pb-28 max-w-lg mx-auto">{children}</main>
       <BottomBar />
     </>
   )
@@ -86,7 +87,7 @@ export default function App() {
       <OfflineBanner />
       <BackgroundBlobs />
       <TutorialOverlay />
-      <div style={{ position: 'relative', zIndex: 1 }}>
+      <div style={{ position: 'relative' }}>
         <Routes>
           <Route path="/login"         element={<GuestRoute><Login /></GuestRoute>} />
           <Route path="/invite/:token" element={<GuestRoute><Register /></GuestRoute>} />

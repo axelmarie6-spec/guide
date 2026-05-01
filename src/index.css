@@ -189,6 +189,20 @@ input::placeholder, textarea::placeholder {
   to   { transform: translateY(0);    }
 }
 
+@keyframes pageFlash {
+  0%   { opacity: 0.55; }
+  100% { opacity: 0;    }
+}
+
+.page-flash {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-base);
+  pointer-events: none;
+  animation: pageFlash 0.22s ease-out forwards;
+  z-index: 2;
+}
+
 /* ── Utilitaires d'entrée ────────────────────────────────────── */
 .fade-in    { animation: fadeIn    var(--t-std) ease both; }
 .slide-up   { animation: slideUp   var(--t-std) cubic-bezier(0.22,1,0.36,1) both; }
