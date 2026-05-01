@@ -458,7 +458,7 @@ function CurrencyCard({ rates, offline, currentCurrency }) {
   const result = rate && convAmount !== '' ? (parseFloat(convAmount) / rate).toFixed(2) : null
 
   return (
-    <Card style={{ background: 'linear-gradient(135deg, rgba(232,160,48,0.09) 0%, rgba(255,255,255,0.85) 60%)' }}>
+    <Card style={{ background: 'linear-gradient(135deg, rgba(224,90,90,0.08) 0%, rgba(255,255,255,0.85) 60%)' }}>
       <CardLabel>Devises · 1 EUR =</CardLabel>
       {offline && (
         <p style={{ fontSize: '0.72rem', color: 'var(--snooze)', marginBottom: 8 }}>
