@@ -1,20 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ProtectedRoute, AuthRoute, GuestRoute } from './components/ProtectedRoute'
 import BottomBar from './components/BottomBar'
 import OfflineBanner from './components/OfflineBanner'
 import AujourdHui from './pages/AujourdHui'
-import Explorer from './pages/Explorer'
-import Voyage from './pages/Voyage'
-import CoffreFort from './pages/CoffreFort'
-import Profil from './pages/Profil'
-import Admin from './pages/Admin'
-import Login from './pages/Login'
-import Register from './pages/Register'
 import { useAuth } from './context/AuthContext'
 import { prefetchAllPdfs } from './lib/pdfCache'
 import TutorialOverlay from './components/TutorialOverlay'
 import RouteAnimation, { ROUTE_INTRO_KEY } from './components/RouteAnimation'
+
+const Explorer   = lazy(() => import('./pages/Explorer'))
+const Voyage     = lazy(() => import('./pages/Voyage'))
+const CoffreFort = lazy(() => import('./pages/CoffreFort'))
+const Profil     = lazy(() => import('./pages/Profil'))
+const Admin      = lazy(() => import('./pages/Admin'))
+const Login      = lazy(() => import('./pages/Login'))
+const Register   = lazy(() => import('./pages/Register'))
 
 function AdminRoute({ children }) {
   const { profile, loading } = useAuth()
@@ -23,12 +24,22 @@ function AdminRoute({ children }) {
   return children
 }
 
+function PageLoader() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
+      <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2.5px solid var(--text-tertiary)', borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
+    </div>
+  )
+}
+
 function WithNav({ children }) {
   const { pathname } = useLocation()
   return (
     <>
       <div key={pathname} className="page-flash" />
-      <main className="pb-28 max-w-lg mx-auto">{children}</main>
+      <main className="pb-28 max-w-lg mx-auto">
+        <Suspense fallback={<PageLoader />}>{children}</Suspense>
+      </main>
       <BottomBar />
     </>
   )
