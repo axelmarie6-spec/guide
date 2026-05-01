@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -36,6 +36,24 @@ const CITY_COORDS = {
 function owmIconToEmoji(icon = '') {
   const id = icon.slice(0, 2)
   return { '01': '☀️', '02': '🌤️', '03': '☁️', '04': '☁️', '09': '🌧️', '10': '🌦️', '11': '⛈️', '13': '❄️', '50': '🌫️' }[id] ?? '🌡️'
+}
+
+const DURATION_DEFAULTS = {
+  culture: 90, food: 75, nightlife: 120, nature: 90, shopping: 60, other: 60,
+}
+
+const CAT_TIMELINE = {
+  culture:   { color: 'var(--sky)',             bg: 'rgba(74,144,217,0.10)',  label: 'Culture'  },
+  food:      { color: 'var(--trash)',            bg: 'rgba(224,90,90,0.10)',   label: 'Resto'    },
+  nightlife: { color: 'var(--sun)',              bg: 'rgba(232,160,48,0.10)',  label: 'Soirée'   },
+  nature:    { color: 'var(--mint)',             bg: 'rgba(59,170,122,0.10)',  label: 'Nature'   },
+  shopping:  { color: 'var(--text-secondary)',   bg: 'rgba(26,23,20,0.07)',   label: 'Shopping' },
+}
+
+function minToTime(min) {
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
 }
 
 // ── getDayInfo ─────────────────────────────────────────────────
@@ -202,50 +220,44 @@ function useNextTrain() {
   return train
 }
 
-function useActivities(city) {
-  const [validated, setValidated] = useState(null)
+function useTimeline(city) {
+  const [items, setItems] = useState(null)
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!city) return
-    let isMounted = true
-
-    async function load() {
-      try {
-        const [actsRes, votesRes, profilesRes] = await Promise.all([
-          supabase.from('activities').select('*').eq('city', city).eq('is_active', true),
-          supabase.from('votes').select('activity_id, vote'),
-          supabase.from('profiles').select('id').eq('banned', false),
-        ])
-        if (!isMounted) return
-        if (actsRes.error) { console.error('[AujourdHui] activities fetch:', actsRes.error); return }
-        const acts = actsRes.data ?? []
-        const votes = votesRes.data ?? []
-        const groupSize = profilesRes.data?.length ?? 5
-        const threshold = Math.ceil(groupSize / 2)
-        const actIds = new Set(acts.map(a => a.id))
-
-        const matchCounts = {}
-        votes.forEach(v => {
-          if (actIds.has(v.activity_id) && v.vote === 'match')
-            matchCounts[v.activity_id] = (matchCounts[v.activity_id] || 0) + 1
+    try {
+      const [actsRes, votesRes, profilesRes] = await Promise.all([
+        supabase.from('activities').select('*').eq('city', city).eq('is_active', true),
+        supabase.from('votes').select('activity_id, vote'),
+        supabase.from('profiles').select('id').eq('banned', false),
+      ])
+      const acts = actsRes.data ?? []
+      const votes = votesRes.data ?? []
+      const groupSize = profilesRes.data?.length ?? 5
+      const threshold = Math.ceil(groupSize / 2)
+      const actIds = new Set(acts.map(a => a.id))
+      const matchCounts = {}
+      votes.forEach(v => {
+        if (actIds.has(v.activity_id) && v.vote === 'match')
+          matchCounts[v.activity_id] = (matchCounts[v.activity_id] || 0) + 1
+      })
+      const validated = acts
+        .filter(a => (matchCounts[a.id] || 0) >= threshold)
+        .sort((a, b) => {
+          if (a.plan_order != null && b.plan_order != null) return a.plan_order - b.plan_order
+          if (a.plan_order != null) return -1
+          if (b.plan_order != null) return 1
+          return a.name.localeCompare(b.name)
         })
-
-        setValidated(
-          acts
-            .map(a => ({ ...a, _matchCount: matchCounts[a.id] || 0 }))
-            .filter(a => a._matchCount >= threshold)
-            .sort((a, b) => b._matchCount - a._matchCount)
-        )
-      } catch (err) {
-        if (isMounted) console.error('[AujourdHui] useActivities unexpected:', err)
-      }
+      setItems(validated)
+    } catch (err) {
+      console.error('[useTimeline]', err)
     }
-
-    load()
-    return () => { isMounted = false }
   }, [city])
 
-  return validated
+  useEffect(() => { load() }, [load])
+
+  return { items, setItems }
 }
 
 // ── Shared shells ──────────────────────────────────────────────
@@ -513,76 +525,207 @@ function CurrencyCard({ rates, offline, currentCurrency }) {
   )
 }
 
-// ── ActivitiesCard ─────────────────────────────────────────────
+// ── TimelineCard ───────────────────────────────────────────────
 
-const CAT_EMOJI = { culture: '🏛️', food: '🍽️', nightlife: '🎉', nature: '🌿', shopping: '🛍️' }
+function TimelineCard({ city, train }) {
+  const { profile } = useAuth()
+  const { items, setItems } = useTimeline(city)
+  const isAdmin = profile?.role === 'admin'
 
-function ActivitiesCard({ currentCity, dayInfo }) {
-  const validated = useActivities(currentCity?.city)
+  const today = new Date().toISOString().split('T')[0]
+  const [done, setDone] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(`tl_done_${today}`)) ?? []) }
+    catch { return new Set() }
+  })
 
-  if (dayInfo.status === 'before') return (
+  function toggleDone(id) {
+    setDone(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      localStorage.setItem(`tl_done_${today}`, JSON.stringify([...next]))
+      return next
+    })
+  }
+
+  async function moveItem(idx, dir) {
+    const j = idx + dir
+    if (!items || j < 0 || j >= items.length) return
+    const a = items[idx], b = items[j]
+    const oA = a.plan_order ?? idx
+    const oB = b.plan_order ?? j
+    setItems(items.map((it, i) => {
+      if (i === idx) return { ...b, plan_order: oA }
+      if (i === j)   return { ...a, plan_order: oB }
+      return it
+    }))
+    await Promise.all([
+      supabase.from('activities').update({ plan_order: oB }).eq('id', a.id),
+      supabase.from('activities').update({ plan_order: oA }).eq('id', b.id),
+    ])
+  }
+
+  if (!city) return null
+
+  if (!items) return (
     <Card>
-      <CardLabel>Activités</CardLabel>
-      <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-        Aucun vote pour l'instant — rdv dans {dayInfo.daysUntil} jour{dayInfo.daysUntil > 1 ? 's' : ''} avant le départ 🗓️
-      </p>
-    </Card>
-  )
-
-  if (dayInfo.status === 'after') return null
-
-  if (!currentCity) return (
-    <Card>
-      <CardLabel>Activités</CardLabel>
-      <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Ville non reconnue</p>
-    </Card>
-  )
-
-  if (validated === null) return (
-    <Card>
-      <CardLabel>À faire · {currentCity.label}</CardLabel>
+      <CardLabel>Programme du jour</CardLabel>
       <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
         <Spinner color="var(--mint)" />
       </div>
     </Card>
   )
 
+  const isTrainToday = train?.date === today
+  const trainDepMin = isTrainToday && train.departure_time
+    ? parseInt(train.departure_time.slice(0, 2)) * 60 + parseInt(train.departure_time.slice(3, 5))
+    : null
+
+  let cursor = 9 * 60
+  const scheduled = []
+  for (const item of items) {
+    const dur = item.duration_minutes ?? DURATION_DEFAULTS[item.category] ?? 90
+    if (trainDepMin !== null && cursor + dur > trainDepMin - 30) break
+    scheduled.push({ ...item, _startMin: cursor, _dur: dur })
+    cursor += dur + 15
+  }
+
+  if (scheduled.length === 0) return null
+
+  const doneCount = scheduled.filter(it => done.has(it.id)).length
+
   return (
     <Card>
-      <CardLabel>À faire · {currentCity.flag} {currentCity.label}</CardLabel>
-      {validated.length === 0 ? (
-        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-          Aucune activité validée pour {currentCity.label} pour l'instant.
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <p style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-tertiary)', margin: 0 }}>
+          Programme du jour
         </p>
-      ) : (
-        validated.map((act, i) => (
-          <div key={act.id}>
-            {i > 0 && <div style={{ height: '1px', background: 'rgba(26,23,20,0.05)' }} />}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0' }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: '12px', flexShrink: 0,
-                background: 'rgba(59,170,122,0.10)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem',
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+          {doneCount}/{scheduled.length}
+        </span>
+      </div>
+
+      <div style={{ position: 'relative' }}>
+        {/* Ligne verticale */}
+        <div style={{
+          position: 'absolute', left: 17, top: 6, bottom: 6,
+          width: 1.5, background: 'rgba(26,23,20,0.07)', borderRadius: 1,
+        }} />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {scheduled.map((item, idx) => {
+            const isDone = done.has(item.id)
+            const cat = CAT_TIMELINE[item.category] ?? { color: 'var(--text-secondary)', bg: 'rgba(26,23,20,0.07)', label: item.category }
+            const isOutdoor = item.category === 'nature'
+
+            return (
+              <div key={item.id} style={{
+                display: 'flex', alignItems: 'flex-start', gap: 10,
+                opacity: isDone ? 0.38 : 1, transition: 'opacity 0.2s',
               }}>
-                {CAT_EMOJI[act.category] ?? '✨'}
+                {/* Dot cliquable */}
+                <button onClick={() => toggleDone(item.id)} style={{
+                  position: 'relative', zIndex: 1, flexShrink: 0,
+                  width: 35, height: 35, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: isDone ? 'rgba(26,23,20,0.08)' : 'white',
+                  border: isDone ? '1.5px solid rgba(26,23,20,0.12)' : '1.5px solid rgba(26,23,20,0.10)',
+                  boxShadow: isDone ? 'none' : '0 1px 4px rgba(26,23,20,0.07)',
+                  cursor: 'pointer', padding: 0,
+                }}>
+                  {isDone
+                    ? <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                        <path d="M3 8.5l3.5 3.5 6.5-7" stroke="var(--text-secondary)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    : <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', lineHeight: 1 }}>
+                        {minToTime(item._startMin)}
+                      </span>
+                  }
+                </button>
+
+                {/* Contenu */}
+                <div style={{
+                  flex: 1, background: 'rgba(26,23,20,0.02)', borderRadius: 14,
+                  padding: '10px 12px', border: '1px solid rgba(26,23,20,0.06)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                    <p style={{
+                      fontWeight: 700, fontSize: '0.875rem', margin: 0, flex: 1,
+                      textDecoration: isDone ? 'line-through' : 'none',
+                      color: 'var(--text-primary)',
+                    }}>{item.name}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+                      {isAdmin && idx > 0 && (
+                        <button onClick={() => moveItem(idx, -1)} style={{
+                          background: 'none', border: 'none', padding: '1px 3px', cursor: 'pointer',
+                          color: 'var(--text-tertiary)', fontSize: '0.6rem', lineHeight: 1,
+                        }}>▲</button>
+                      )}
+                      {isAdmin && idx < scheduled.length - 1 && (
+                        <button onClick={() => moveItem(idx, 1)} style={{
+                          background: 'none', border: 'none', padding: '1px 3px', cursor: 'pointer',
+                          color: 'var(--text-tertiary)', fontSize: '0.6rem', lineHeight: 1,
+                        }}>▼</button>
+                      )}
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', fontWeight: 500, marginLeft: 2 }}>
+                        ~{item._dur}min
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
+                    <span style={{
+                      fontSize: '0.65rem', fontWeight: 600, padding: '2px 7px',
+                      borderRadius: 20, background: cat.bg, color: cat.color,
+                    }}>{cat.label}</span>
+                    <span style={{
+                      fontSize: '0.65rem', fontWeight: 600, padding: '2px 7px', borderRadius: 20,
+                      background: isOutdoor ? 'rgba(59,170,122,0.10)' : 'rgba(74,144,217,0.10)',
+                      color: isOutdoor ? 'var(--mint)' : 'var(--sky)',
+                    }}>{isOutdoor ? 'Extérieur' : 'Intérieur'}</span>
+                    {item.price_eur != null && (
+                      <span style={{
+                        fontSize: '0.65rem', fontWeight: 600, padding: '2px 7px',
+                        borderRadius: 20, background: 'rgba(26,23,20,0.05)', color: 'var(--text-secondary)',
+                      }}>{item.price_eur === 0 ? 'Gratuit' : `${item.price_eur} €`}</span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontWeight: 700, fontSize: '0.875rem', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {act.name}
-                </p>
-                {act.price_eur !== null && act.price_eur !== undefined && (
-                  <p style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', margin: '2px 0 0' }}>
-                    {act.price_eur === 0 ? 'Gratuit' : `${act.price_eur} €`}
+            )
+          })}
+
+          {/* Item train si départ aujourd'hui */}
+          {isTrainToday && train.departure_time && (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <div style={{
+                position: 'relative', zIndex: 1, flexShrink: 0,
+                width: 35, height: 35, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(74,144,217,0.10)',
+                border: '1.5px solid rgba(74,144,217,0.20)',
+              }}>
+                <span style={{ fontSize: '0.85rem', lineHeight: 1 }}>🚄</span>
+              </div>
+              <div style={{
+                flex: 1, background: 'rgba(74,144,217,0.06)', borderRadius: 14,
+                padding: '10px 12px', border: '1px solid rgba(74,144,217,0.14)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <p style={{ fontWeight: 700, fontSize: '0.875rem', margin: 0, color: 'var(--sky)' }}>
+                    {train.from_station} → {train.to_station}
                   </p>
-                )}
+                  <span style={{ fontSize: '0.7rem', color: 'var(--sky)', fontWeight: 600 }}>
+                    {train.departure_time.slice(0, 5)}
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.7rem', color: 'var(--sky)', margin: '3px 0 0', opacity: 0.65 }}>
+                  Départ · Voie {train.platform ?? '—'}
+                </p>
               </div>
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--mint)', flexShrink: 0 }}>
-                {act._matchCount} ✓
-              </span>
             </div>
-          </div>
-        ))
-      )}
+          )}
+        </div>
+      </div>
     </Card>
   )
 }
@@ -621,12 +764,12 @@ export default function AujourdHui() {
         <HeaderAvatar />
       </div>
 
-      {/* Cards : Météo · Train · Devises · Activités */}
+      {/* Cards : Météo · Train · Devises · Timeline */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <WeatherCard lat={gps.lat} lon={gps.lon} gpsLoading={gps.loading} gpsDenied={gps.denied} />
         <TrainCard train={train} onClick={train?.id ? () => navigate('/voyage', { state: { openTrainId: train.id } }) : undefined} />
         <CurrencyCard rates={rates} offline={ratesOffline} currentCurrency={currentCurrency} />
-        <ActivitiesCard currentCity={currentCity} dayInfo={dayInfo} />
+        <TimelineCard city={currentCity?.city} train={train} />
       </div>
 
     </div>
