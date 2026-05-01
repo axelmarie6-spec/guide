@@ -649,7 +649,7 @@ function TimelineCard({ city, train, isPreview = false }) {
   const doneCount = scheduled.filter(it => done.has(it.id)).length
 
   return (
-    <Card>
+    <Card style={{ background: 'linear-gradient(135deg, rgba(59,170,122,0.09) 0%, rgba(255,255,255,0.85) 60%)' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -690,12 +690,14 @@ function TimelineCard({ city, train, isPreview = false }) {
                 key={item.id}
                 data-ri={String(idx)}
                 onClick={() => toggleDone(item.id)}
+                onContextMenu={(e) => e.preventDefault()}
                 onTouchStart={isAdmin ? (e) => onTouchStart(e, idx) : undefined}
                 onTouchEnd={isAdmin ? (e) => onTouchEnd(e, item.id) : undefined}
                 onTouchCancel={isAdmin ? onTouchCancel : undefined}
                 style={{
                   display: 'flex', alignItems: 'flex-start', gap: 12,
-                  cursor: 'pointer', userSelect: 'none',
+                  cursor: 'pointer',
+                  userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none',
                   opacity: isDone ? 0.38 : isDragging ? 0.45 : 1,
                   transform: isDragging ? 'scale(1.02)' : 'scale(1)',
                   transition: isDragging ? 'none' : 'opacity 0.2s, transform 0.15s',
@@ -724,14 +726,15 @@ function TimelineCard({ city, train, isPreview = false }) {
 
                 {/* Carte contenu */}
                 <div style={{
-                  flex: 1, background: 'white', borderRadius: 16,
+                  flex: 1, minWidth: 0, background: 'white', borderRadius: 16,
                   padding: '10px 12px',
                   border: '1px solid rgba(26,23,20,0.06)',
                   boxShadow: '0 1px 3px rgba(26,23,20,0.05)',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minWidth: 0 }}>
                     <p style={{
-                      fontWeight: 700, fontSize: '0.875rem', margin: 0, flex: 1,
+                      fontWeight: 700, fontSize: '0.875rem', margin: 0, flex: 1, minWidth: 0,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       color: 'var(--text-primary)',
                       textDecoration: isDone ? 'line-through' : 'none',
                     }}>{item.name}</p>
