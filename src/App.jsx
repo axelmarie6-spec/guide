@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute, AuthRoute, GuestRoute } from './components/ProtectedRoute'
 import BottomBar from './components/BottomBar'
@@ -14,6 +14,7 @@ import Register from './pages/Register'
 import { useAuth } from './context/AuthContext'
 import { prefetchAllPdfs } from './lib/pdfCache'
 import TutorialOverlay from './components/TutorialOverlay'
+import RouteAnimation, { ROUTE_INTRO_KEY } from './components/RouteAnimation'
 
 function AdminRoute({ children }) {
   const { profile, loading } = useAuth()
@@ -58,6 +59,21 @@ function BackgroundBlobs() {
 
 export default function App() {
   const { user } = useAuth()
+  const [showRouteAnim, setShowRouteAnim] = useState(false)
+
+  useEffect(() => {
+    if (user && !localStorage.getItem(ROUTE_INTRO_KEY)) {
+      setShowRouteAnim(true)
+    }
+  }, [user])
+
+  useEffect(() => {
+    window.__resetRouteIntro = () => {
+      localStorage.removeItem(ROUTE_INTRO_KEY)
+      setShowRouteAnim(true)
+    }
+    return () => { delete window.__resetRouteIntro }
+  }, [])
 
   useEffect(() => {
     if (user) prefetchAllPdfs()
@@ -65,6 +81,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100dvh', color: 'var(--text-primary)', position: 'relative' }}>
+      {showRouteAnim && <RouteAnimation onDone={() => setShowRouteAnim(false)} />}
       <OfflineBanner />
       <BackgroundBlobs />
       <TutorialOverlay />

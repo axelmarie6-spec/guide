@@ -138,6 +138,36 @@ function UsersTab({ currentUserId }) {
         Bannir un utilisateur révoque son accès à l'app sans supprimer son compte.
       </p>
       <ResetTutorialButton currentUserId={currentUserId} />
+      <ReplayIntroButton />
+    </div>
+  )
+}
+
+function ReplayIntroButton() {
+  const [done, setDone] = useState(false)
+  function handle() {
+    if (typeof window.__resetRouteIntro === 'function') {
+      window.__resetRouteIntro()
+      setDone(true)
+      setTimeout(() => setDone(false), 2500)
+    }
+  }
+  return (
+    <div style={{ padding: '14px 16px', borderRadius: '16px', background: 'rgba(232,160,48,0.06)', border: '1px dashed rgba(232,160,48,0.22)' }}>
+      <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent)', margin: '0 0 8px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+        Animation d'intro
+      </p>
+      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 10px' }}>
+        Rejoue l'animation de la carte du trajet (s'affiche une seule fois pour les nouveaux).
+      </p>
+      <button onClick={handle} style={{
+        fontSize: '0.82rem', fontWeight: 700, padding: '8px 16px', borderRadius: '12px',
+        background: done ? 'rgba(22,163,74,0.1)' : 'rgba(232,160,48,0.12)',
+        color: done ? 'var(--match)' : 'var(--accent)',
+        border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+      }}>
+        {done ? '✓ Intro relancée !' : '▶ Rejouer l\'intro'}
+      </button>
     </div>
   )
 }
