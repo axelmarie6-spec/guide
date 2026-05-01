@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { CITY_SCHEDULE, getStationMapUrl } from '../lib/travel'
 import { useAuth } from '../context/AuthContext'
@@ -717,6 +718,7 @@ function HotelCard({ city, airbnb, onClick }) {
 
 export default function Voyage() {
   const { profile } = useAuth()
+  const location = useLocation()
   const isAdmin = profile?.role === 'admin'
 
   const [tab, setTab] = useState('trains')
@@ -744,6 +746,12 @@ export default function Voyage() {
   }
 
   useEffect(() => { fetchData() }, [])
+
+  // Ouvre le détail d'un train si on vient du Dashboard
+  useEffect(() => {
+    const id = location.state?.openTrainId
+    if (id && trains.length > 0) setOpenTrain(id)
+  }, [trains, location.state])
 
   const trainList = getTrainStatuses(trains)
   const cityList = getCityStatuses()

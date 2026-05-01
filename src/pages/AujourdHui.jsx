@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { getCurrentCity } from '../lib/travel'
@@ -236,8 +237,13 @@ function useActivities(city) {
 
 // ── Shared shells ──────────────────────────────────────────────
 
-function Card({ children, style }) {
-  return <div className="card" style={{ padding: '18px 20px', ...style }}>{children}</div>
+function Card({ children, style, onClick }) {
+  return (
+    <div className="card" onClick={onClick}
+      style={{ padding: '18px 20px', ...style, cursor: onClick ? 'pointer' : undefined }}>
+      {children}
+    </div>
+  )
 }
 
 function CardLabel({ children }) {
@@ -322,7 +328,7 @@ function WeatherCard({ lat, lon, gpsLoading, gpsDenied }) {
 
 // ── TrainCard ──────────────────────────────────────────────────
 
-function TrainCard({ train }) {
+function TrainCard({ train, onClick }) {
   if (train === undefined) return (
     <Card>
       <CardLabel>Prochain train</CardLabel>
@@ -344,7 +350,7 @@ function TrainCard({ train }) {
   })
 
   return (
-    <Card style={{ background: 'linear-gradient(135deg, rgba(74,144,217,0.08) 0%, rgba(255,255,255,0.85) 60%)' }}>
+    <Card onClick={onClick} style={{ background: 'linear-gradient(135deg, rgba(74,144,217,0.08) 0%, rgba(255,255,255,0.85) 60%)' }}>
       <CardLabel>Prochain train</CardLabel>
       <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 10 }}>{dateStr}</p>
       <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -547,6 +553,7 @@ function ActivitiesCard({ currentCity, dayInfo }) {
 
 export default function AujourdHui() {
   const { profile } = useAuth()
+  const navigate = useNavigate()
   const dayInfo = getDayInfo()
   const currentCity = getCurrentCity()
   const gps = useGPS()
@@ -579,7 +586,7 @@ export default function AujourdHui() {
       {/* Cards : Météo · Train · Devises · Activités */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <WeatherCard lat={gps.lat} lon={gps.lon} gpsLoading={gps.loading} gpsDenied={gps.denied} />
-        <TrainCard train={train} />
+        <TrainCard train={train} onClick={train?.id ? () => navigate('/voyage', { state: { openTrainId: train.id } }) : undefined} />
         <CurrencyCard rates={rates} offline={ratesOffline} currentCurrency={currentCurrency} />
         <ActivitiesCard currentCity={currentCity} dayInfo={dayInfo} />
       </div>
