@@ -309,7 +309,7 @@ function ProfileView({ profile, isAdmin, onEdit, onSignOut }) {
 // ── Composant principal ───────────────────────────────────────
 
 export default function Profil() {
-  const { profile, isProfileComplete, fetchProfile, signOut } = useAuth()
+  const { user, profile, isProfileComplete, fetchProfile, signOut } = useAuth()
   const [editing, setEditing] = useState(false)
 
   if (!isProfileComplete) {
@@ -317,7 +317,7 @@ export default function Profil() {
       <ProfileForm
         profile={profile}
         isOnboarding
-        onSuccess={() => fetchProfile(profile.id)}
+        onSuccess={() => fetchProfile(user.id)}
       />
     )
   }
@@ -326,7 +326,7 @@ export default function Profil() {
     return (
       <ProfileForm
         profile={profile}
-        onSuccess={() => { fetchProfile(profile.id); setEditing(false) }}
+        onSuccess={() => { fetchProfile(user.id); setEditing(false) }}
         onCancel={() => setEditing(false)}
       />
     )
