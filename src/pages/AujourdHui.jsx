@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -531,12 +531,40 @@ function TimelineCard({ city, train, isPreview = false }) {
   const { profile } = useAuth()
   const { items, setItems } = useTimeline(city)
   const isAdmin = profile?.role === 'admin'
+  const listRef = useRef(null)
+  const drag = useRef({ active: false, from: null, over: null })
+  const longPressTimer = useRef(null)
+  const scheduledLen = useRef(0)
+  const [dragVisual, setDragVisual] = useState({ from: null, over: null })
 
   const today = new Date().toISOString().split('T')[0]
   const [done, setDone] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem(`tl_done_${today}`)) ?? []) }
     catch { return new Set() }
   })
+
+  // Listener non-passif pour bloquer le scroll pendant le drag
+  useEffect(() => {
+    const list = listRef.current
+    if (!list) return
+    const handler = (e) => {
+      if (!drag.current.active) return
+      e.preventDefault()
+      const y = e.touches[0].clientY
+      let over = drag.current.from
+      list.querySelectorAll('[data-ri]').forEach(row => {
+        const r = row.getBoundingClientRect()
+        if (y > (r.top + r.bottom) / 2) over = parseInt(row.dataset.ri)
+      })
+      over = Math.max(0, Math.min(over, scheduledLen.current - 1))
+      if (over !== drag.current.over) {
+        drag.current.over = over
+        setDragVisual(prev => ({ ...prev, over }))
+      }
+    }
+    list.addEventListener('touchmove', handler, { passive: false })
+    return () => list.removeEventListener('touchmove', handler)
+  }, [])
 
   function toggleDone(id) {
     setDone(prev => {
@@ -547,28 +575,54 @@ function TimelineCard({ city, train, isPreview = false }) {
     })
   }
 
-  async function moveItem(idx, dir) {
-    const j = idx + dir
-    if (!items || j < 0 || j >= items.length) return
-    const a = items[idx], b = items[j]
-    const oA = a.plan_order ?? idx
-    const oB = b.plan_order ?? j
-    setItems(items.map((it, i) => {
-      if (i === idx) return { ...b, plan_order: oA }
-      if (i === j)   return { ...a, plan_order: oB }
-      return it
-    }))
-    await Promise.all([
-      supabase.from('activities').update({ plan_order: oB }).eq('id', a.id),
-      supabase.from('activities').update({ plan_order: oA }).eq('id', b.id),
-    ])
+  async function moveToPosition(from, to) {
+    if (from === to || !items) return
+    const next = [...scheduled]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    const withOrder = next.map((item, i) => ({ ...item, plan_order: i }))
+    setItems(items.map(item => withOrder.find(u => u.id === item.id) ?? item))
+    await Promise.all(
+      withOrder.map(item =>
+        supabase.from('activities').update({ plan_order: item.plan_order }).eq('id', item.id)
+      )
+    )
+  }
+
+  function onTouchStart(e, idx) {
+    longPressTimer.current = setTimeout(() => {
+      navigator.vibrate?.(25)
+      drag.current = { active: true, from: idx, over: idx }
+      setDragVisual({ from: idx, over: idx })
+    }, 300)
+  }
+
+  function onTouchEnd(e, itemId) {
+    e.preventDefault()
+    clearTimeout(longPressTimer.current)
+    if (drag.current.active) {
+      const { from, over } = drag.current
+      drag.current = { active: false, from: null, over: null }
+      setDragVisual({ from: null, over: null })
+      moveToPosition(from, over)
+    } else {
+      toggleDone(itemId)
+    }
+  }
+
+  function onTouchCancel() {
+    clearTimeout(longPressTimer.current)
+    drag.current = { active: false, from: null, over: null }
+    setDragVisual({ from: null, over: null })
   }
 
   if (!city) return null
 
   if (!items) return (
     <Card>
-      <CardLabel>Programme du jour</CardLabel>
+      <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>
+        Programme du jour
+      </p>
       <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
         <Spinner color="var(--mint)" />
       </div>
@@ -589,112 +643,124 @@ function TimelineCard({ city, train, isPreview = false }) {
     cursor += dur + 15
   }
 
+  scheduledLen.current = scheduled.length
   if (scheduled.length === 0) return null
 
   const doneCount = scheduled.filter(it => done.has(it.id)).length
 
   return (
     <Card>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <p style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-tertiary)', margin: 0 }}>
+          <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             Programme du jour
           </p>
           {isPreview && (
             <span style={{
-              fontSize: '0.6rem', fontWeight: 700, padding: '1px 6px', borderRadius: 20,
+              fontSize: '0.6rem', fontWeight: 700, padding: '2px 6px', borderRadius: 20,
               background: 'rgba(232,160,48,0.12)', color: 'var(--sun)', letterSpacing: '0.04em',
               textTransform: 'uppercase',
             }}>preview</span>
           )}
         </div>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+        <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#b0aaa3' }}>
           {doneCount}/{scheduled.length}
         </span>
       </div>
 
-      <div style={{ position: 'relative' }}>
+      {/* Liste */}
+      <div style={{ position: 'relative' }} ref={listRef}>
         {/* Ligne verticale */}
         <div style={{
-          position: 'absolute', left: 17, top: 6, bottom: 6,
-          width: 1.5, background: 'rgba(26,23,20,0.07)', borderRadius: 1,
+          position: 'absolute', left: 19, top: 12, bottom: 12,
+          width: 2, background: 'rgba(26,23,20,0.08)', borderRadius: 1,
         }} />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {scheduled.map((item, idx) => {
             const isDone = done.has(item.id)
-            const cat = CAT_TIMELINE[item.category] ?? { color: 'var(--text-secondary)', bg: 'rgba(26,23,20,0.07)', label: item.category }
+            const isDragging = dragVisual.from === idx
+            const isDropTarget = dragVisual.over === idx && dragVisual.from !== null && dragVisual.from !== idx
+            const cat = CAT_TIMELINE[item.category] ?? { color: '#6b6560', bg: 'rgba(26,23,20,0.07)', label: item.category }
             const isOutdoor = item.category === 'nature'
 
             return (
-              <div key={item.id} style={{
-                display: 'flex', alignItems: 'flex-start', gap: 10,
-                opacity: isDone ? 0.38 : 1, transition: 'opacity 0.2s',
-              }}>
-                {/* Dot cliquable */}
-                <button onClick={() => toggleDone(item.id)} style={{
-                  position: 'relative', zIndex: 1, flexShrink: 0,
-                  width: 35, height: 35, borderRadius: '50%',
+              <div
+                key={item.id}
+                data-ri={String(idx)}
+                onClick={() => toggleDone(item.id)}
+                onTouchStart={isAdmin ? (e) => onTouchStart(e, idx) : undefined}
+                onTouchEnd={isAdmin ? (e) => onTouchEnd(e, item.id) : undefined}
+                onTouchCancel={isAdmin ? onTouchCancel : undefined}
+                style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 12,
+                  cursor: 'pointer', userSelect: 'none',
+                  opacity: isDone ? 0.38 : isDragging ? 0.45 : 1,
+                  transform: isDragging ? 'scale(1.02)' : 'scale(1)',
+                  transition: isDragging ? 'none' : 'opacity 0.2s, transform 0.15s',
+                  borderTop: isDropTarget ? '2px solid var(--sky)' : '2px solid transparent',
+                  marginTop: isDropTarget ? -2 : 0,
+                }}
+              >
+                {/* Dot */}
+                <div style={{
+                  position: 'relative', zIndex: 1, flexShrink: 0, marginTop: 2,
+                  width: 38, height: 38, borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: isDone ? 'rgba(26,23,20,0.08)' : 'white',
-                  border: isDone ? '1.5px solid rgba(26,23,20,0.12)' : '1.5px solid rgba(26,23,20,0.10)',
-                  boxShadow: isDone ? 'none' : '0 1px 4px rgba(26,23,20,0.07)',
-                  cursor: 'pointer', padding: 0,
+                  background: isDone ? 'rgba(26,23,20,0.10)' : 'white',
+                  border: `2px solid ${isDone ? 'rgba(26,23,20,0.10)' : 'rgba(26,23,20,0.08)'}`,
+                  boxShadow: isDone ? 'none' : '0 1px 3px rgba(26,23,20,0.08)',
                 }}>
                   {isDone
-                    ? <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                        <path d="M3 8.5l3.5 3.5 6.5-7" stroke="var(--text-secondary)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    ? <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                        <path d="M3 8.5l3.5 3.5 6.5-7" stroke="#6b6560" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
-                    : <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-secondary)', lineHeight: 1 }}>
-                        {minToTime(item._startMin)}
+                    : <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b6560', lineHeight: 1 }}>
+                        {Math.floor(item._startMin / 60)}
                       </span>
                   }
-                </button>
+                </div>
 
-                {/* Contenu */}
+                {/* Carte contenu */}
                 <div style={{
-                  flex: 1, background: 'rgba(26,23,20,0.02)', borderRadius: 14,
-                  padding: '10px 12px', border: '1px solid rgba(26,23,20,0.06)',
+                  flex: 1, background: 'white', borderRadius: 16,
+                  padding: '10px 12px',
+                  border: '1px solid rgba(26,23,20,0.06)',
+                  boxShadow: '0 1px 3px rgba(26,23,20,0.05)',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <p style={{
                       fontWeight: 700, fontSize: '0.875rem', margin: 0, flex: 1,
-                      textDecoration: isDone ? 'line-through' : 'none',
                       color: 'var(--text-primary)',
+                      textDecoration: isDone ? 'line-through' : 'none',
                     }}>{item.name}</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-                      {isAdmin && idx > 0 && (
-                        <button onClick={() => moveItem(idx, -1)} style={{
-                          background: 'none', border: 'none', padding: '1px 3px', cursor: 'pointer',
-                          color: 'var(--text-tertiary)', fontSize: '0.6rem', lineHeight: 1,
-                        }}>▲</button>
-                      )}
-                      {isAdmin && idx < scheduled.length - 1 && (
-                        <button onClick={() => moveItem(idx, 1)} style={{
-                          background: 'none', border: 'none', padding: '1px 3px', cursor: 'pointer',
-                          color: 'var(--text-tertiary)', fontSize: '0.6rem', lineHeight: 1,
-                        }}>▼</button>
-                      )}
-                      <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', fontWeight: 500, marginLeft: 2 }}>
-                        ~{item._dur}min
-                      </span>
-                    </div>
+                    <span style={{ fontSize: '0.72rem', color: '#b0aaa3', fontWeight: 500, flexShrink: 0, marginLeft: 8 }}>
+                      {minToTime(item._startMin)}
+                    </span>
                   </div>
 
-                  <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
+                  {item.description && (
+                    <p style={{
+                      fontSize: '0.72rem', color: '#6b6560', margin: '3px 0 0',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{item.description}</p>
+                  )}
+
+                  <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
                     <span style={{
                       fontSize: '0.65rem', fontWeight: 600, padding: '2px 7px',
                       borderRadius: 20, background: cat.bg, color: cat.color,
                     }}>{cat.label}</span>
                     <span style={{
-                      fontSize: '0.65rem', fontWeight: 600, padding: '2px 7px', borderRadius: 20,
+                      fontSize: '0.65rem', fontWeight: 500, padding: '2px 7px', borderRadius: 20,
                       background: isOutdoor ? 'rgba(59,170,122,0.10)' : 'rgba(74,144,217,0.10)',
                       color: isOutdoor ? 'var(--mint)' : 'var(--sky)',
                     }}>{isOutdoor ? 'Extérieur' : 'Intérieur'}</span>
                     {item.price_eur != null && (
                       <span style={{
                         fontSize: '0.65rem', fontWeight: 600, padding: '2px 7px',
-                        borderRadius: 20, background: 'rgba(26,23,20,0.05)', color: 'var(--text-secondary)',
+                        borderRadius: 20, background: 'rgba(26,23,20,0.05)', color: '#6b6560',
                       }}>{item.price_eur === 0 ? 'Gratuit' : `${item.price_eur} €`}</span>
                     )}
                   </div>
@@ -703,31 +769,33 @@ function TimelineCard({ city, train, isPreview = false }) {
             )
           })}
 
-          {/* Item train si départ aujourd'hui */}
+          {/* Item train */}
           {isTrainToday && train.departure_time && (
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <div style={{
-                position: 'relative', zIndex: 1, flexShrink: 0,
-                width: 35, height: 35, borderRadius: '50%',
+                position: 'relative', zIndex: 1, flexShrink: 0, marginTop: 2,
+                width: 38, height: 38, borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: 'rgba(74,144,217,0.10)',
-                border: '1.5px solid rgba(74,144,217,0.20)',
+                border: '2px solid rgba(74,144,217,0.20)',
               }}>
-                <span style={{ fontSize: '0.85rem', lineHeight: 1 }}>🚄</span>
+                <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>🚄</span>
               </div>
               <div style={{
-                flex: 1, background: 'rgba(74,144,217,0.06)', borderRadius: 14,
-                padding: '10px 12px', border: '1px solid rgba(74,144,217,0.14)',
+                flex: 1, background: 'rgba(74,144,217,0.06)', borderRadius: 16,
+                padding: '10px 12px',
+                border: '1px solid rgba(74,144,217,0.14)',
+                boxShadow: '0 1px 3px rgba(74,144,217,0.06)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <p style={{ fontWeight: 700, fontSize: '0.875rem', margin: 0, color: 'var(--sky)' }}>
                     {train.from_station} → {train.to_station}
                   </p>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--sky)', fontWeight: 600 }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--sky)', fontWeight: 600 }}>
                     {train.departure_time.slice(0, 5)}
                   </span>
                 </div>
-                <p style={{ fontSize: '0.7rem', color: 'var(--sky)', margin: '3px 0 0', opacity: 0.65 }}>
+                <p style={{ fontSize: '0.72rem', color: 'var(--sky)', margin: '3px 0 0', opacity: 0.65 }}>
                   Départ · Voie {train.platform ?? '—'}
                 </p>
               </div>
