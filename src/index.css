@@ -133,3 +133,26 @@ input::placeholder, textarea::placeholder {
   transition: background 0.15s, transform 0.1s;
 }
 .btn-secondary:active { transform: scale(0.98); }
+
+/* ── Blocker paysage ─────────────────────────────────────────── */
+#landscape-blocker {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #1a1714;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  color: #f5f1ea;
+}
+#landscape-blocker .lb-emoji { font-size: 3rem; }
+#landscape-blocker .lb-title { font-size: 1.1rem; font-weight: 600; }
+#landscape-blocker .lb-sub   { font-size: 0.85rem; opacity: 0.55; }
+
+@media screen and (orientation: landscape) and (max-height: 600px) {
+  #landscape-blocker { display: flex; }
+}

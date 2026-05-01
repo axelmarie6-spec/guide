@@ -46,7 +46,7 @@ const TABS = [
 export default function BottomBar() {
   return (
     <nav style={{
-      position: 'fixed', bottom: '16px', left: '50%', transform: 'translateX(-50%)',
+      position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)', left: '50%', transform: 'translateX(-50%)',
       width: 'calc(100% - 32px)', maxWidth: '480px',
       background: 'var(--glass-bar)',
       backdropFilter: 'blur(32px) saturate(180%)',
