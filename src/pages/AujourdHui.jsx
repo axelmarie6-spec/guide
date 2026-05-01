@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { getCurrentCity } from '../lib/travel'
+import { getCurrentCity, CITY_SCHEDULE } from '../lib/travel'
 import HeaderAvatar from '../components/HeaderAvatar'
 import { readCache, writeCache } from '../lib/dbCache'
 
@@ -527,7 +527,7 @@ function CurrencyCard({ rates, offline, currentCurrency }) {
 
 // ── TimelineCard ───────────────────────────────────────────────
 
-function TimelineCard({ city, train }) {
+function TimelineCard({ city, train, isPreview = false }) {
   const { profile } = useAuth()
   const { items, setItems } = useTimeline(city)
   const isAdmin = profile?.role === 'admin'
@@ -596,9 +596,18 @@ function TimelineCard({ city, train }) {
   return (
     <Card>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <p style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-tertiary)', margin: 0 }}>
-          Programme du jour
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <p style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-tertiary)', margin: 0 }}>
+            Programme du jour
+          </p>
+          {isPreview && (
+            <span style={{
+              fontSize: '0.6rem', fontWeight: 700, padding: '1px 6px', borderRadius: 20,
+              background: 'rgba(232,160,48,0.12)', color: 'var(--sun)', letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+            }}>preview</span>
+          )}
+        </div>
         <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
           {doneCount}/{scheduled.length}
         </span>
@@ -743,6 +752,7 @@ export default function AujourdHui() {
 
   const firstName = profile?.first_name || profile?.pseudo || ''
   const currentCurrency = currentCity?.currency ?? 'EUR'
+  const timelineCity = currentCity?.city ?? CITY_SCHEDULE[0]?.city
 
   return (
     <div style={{ padding: '28px 16px 100px' }}>
@@ -769,7 +779,7 @@ export default function AujourdHui() {
         <WeatherCard lat={gps.lat} lon={gps.lon} gpsLoading={gps.loading} gpsDenied={gps.denied} />
         <TrainCard train={train} onClick={train?.id ? () => navigate('/voyage', { state: { openTrainId: train.id } }) : undefined} />
         <CurrencyCard rates={rates} offline={ratesOffline} currentCurrency={currentCurrency} />
-        <TimelineCard city={currentCity?.city} train={train} />
+        <TimelineCard city={timelineCity} train={train} isPreview={!currentCity} />
       </div>
 
     </div>
