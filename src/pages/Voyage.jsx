@@ -194,7 +194,7 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
     <>
       {viewerPdf && <PdfViewer pdf={viewerPdf} onClose={() => setViewerPdf(null)} zIndex={500} />}
 
-      <div style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', flexDirection: 'column', background: 'var(--bg-gradient)' }}>
+      <div className="sheet-enter" style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', flexDirection: 'column', background: 'var(--bg-gradient)' }}>
         {/* Ambient blob */}
         <div style={{ position: 'absolute', top: -40, right: -20, width: '55vw', height: '55vw', maxWidth: 320, borderRadius: '50%', background: `radial-gradient(circle, rgba(74,144,217,0.20) 0%, transparent 70%)`, filter: 'blur(40px)', pointerEvents: 'none' }} />
 
@@ -522,7 +522,7 @@ function HotelDetailSheet({ city, airbnb, isAdmin, onClose, onSaved }) {
     : null
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', flexDirection: 'column', background: 'var(--bg-gradient)' }}>
+    <div className="sheet-enter" style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', flexDirection: 'column', background: 'var(--bg-gradient)' }}>
       {/* Ambient blob */}
       <div style={{ position: 'absolute', top: -30, right: -20, width: '50vw', height: '50vw', maxWidth: 300, borderRadius: '50%', background: `radial-gradient(circle, ${city.color}30 0%, transparent 70%)`, filter: 'blur(40px)', pointerEvents: 'none' }} />
 
@@ -810,8 +810,7 @@ export default function Voyage() {
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
-            <div style={{ width: 26, height: 26, borderRadius: '50%', border: '2.5px solid var(--sky)', borderTopColor: 'transparent', animation: 'vSpin 0.7s linear infinite' }} />
-            <style>{`@keyframes vSpin { to { transform: rotate(360deg); } }`}</style>
+            <div style={{ width: 26, height: 26, borderRadius: '50%', border: '2.5px solid var(--sky)', borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
           </div>
         ) : (
           <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>

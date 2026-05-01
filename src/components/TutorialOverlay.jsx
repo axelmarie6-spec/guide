@@ -262,7 +262,7 @@ export default function TutorialOverlay() {
         backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
         padding: '0 24px',
       }}>
-        <div style={{
+        <div className="slide-up" style={{
           width: '100%', maxWidth: 360, background: 'var(--bg-base)',
           borderRadius: '28px', padding: '36px 28px 28px',
           boxShadow: '0 24px 80px rgba(0,0,0,0.3)', textAlign: 'center',
@@ -357,7 +357,7 @@ export default function TutorialOverlay() {
       <div style={{ flex: 1, background: 'rgba(8,8,8,0.25)' }} />
 
       <div style={{ pointerEvents: 'all', padding: '0 12px 118px', maxHeight: '80vh', overflowY: 'auto' }}>
-        <div style={{
+        <div className="slide-up" style={{
           background: 'white', borderRadius: '26px', padding: '22px 20px 18px',
           boxShadow: '0 -8px 40px rgba(0,0,0,0.16)',
         }}>

@@ -156,3 +156,65 @@ input::placeholder, textarea::placeholder {
 @media screen and (orientation: landscape) and (max-height: 600px) {
   #landscape-blocker { display: flex; }
 }
+
+/* ── Timing tokens ──────────────────────────────────────────── */
+:root {
+  --t-fast: 0.12s;
+  --t-std:  0.20s;
+  --t-slow: 0.30s;
+}
+
+/* ── Keyframes globaux ───────────────────────────────────────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -300% 0; }
+  100% { background-position:  300% 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes sheetEnter {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0);    }
+}
+
+/* ── Utilitaires d'entrée ────────────────────────────────────── */
+.fade-in    { animation: fadeIn    var(--t-std) ease both; }
+.slide-up   { animation: slideUp   var(--t-std) cubic-bezier(0.22,1,0.36,1) both; }
+.sheet-enter{ animation: sheetEnter 0.30s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ── Skeleton shimmer ────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(26,23,20,0.06) 25%,
+    rgba(26,23,20,0.10) 50%,
+    rgba(26,23,20,0.06) 75%
+  );
+  background-size: 300% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ── Press states ────────────────────────────────────────────── */
+.nav-tab:active {
+  transform: scale(0.88) !important;
+  transition: transform 0.08s ease !important;
+}
+
+.btn-vote:active {
+  transform: scale(0.88) !important;
+  opacity: 0.78 !important;
+  transition: transform 0.08s ease, opacity 0.08s ease !important;
+}

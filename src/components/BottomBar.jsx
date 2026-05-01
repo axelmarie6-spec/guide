@@ -63,6 +63,7 @@ export default function BottomBar() {
           key={path}
           to={path}
           end={path === '/'}
+          className="nav-tab"
           style={({ isActive }) => ({
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', flex: 1, padding: '8px 2px', gap: '3px',

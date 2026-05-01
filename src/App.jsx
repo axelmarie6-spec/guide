@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ProtectedRoute, AuthRoute, GuestRoute } from './components/ProtectedRoute'
 import BottomBar from './components/BottomBar'
 import OfflineBanner from './components/OfflineBanner'
@@ -24,9 +24,10 @@ function AdminRoute({ children }) {
 }
 
 function WithNav({ children }) {
+  const { pathname } = useLocation()
   return (
     <>
-      <main className="pb-28 max-w-lg mx-auto">{children}</main>
+      <main key={pathname} className="pb-28 max-w-lg mx-auto fade-in">{children}</main>
       <BottomBar />
     </>
   )

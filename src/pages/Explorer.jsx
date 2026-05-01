@@ -314,7 +314,7 @@ function AddActivityModal({ city, userId, onClose, onAdded }) {
       backgroundColor: 'rgba(0,0,0,0.5)',
       display: 'flex', alignItems: 'flex-end',
     }}>
-      <div style={{
+      <div className="slide-up" style={{
         background: 'var(--bg-base)', borderRadius: '24px 24px 0 0',
         width: '100%', maxHeight: '88dvh', overflowY: 'auto',
         padding: '20px 16px',
@@ -645,6 +645,7 @@ export default function Explorer() {
   }, [city, fetchAll])
 
   async function vote(activity, voteType) {
+    navigator.vibrate?.(10)
     const snooze_date = voteType === 'snooze'
       ? new Date(Date.now() + 86400000).toISOString().slice(0, 10)
       : null
@@ -860,6 +861,7 @@ export default function Explorer() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
                   <button
                     onClick={() => vote(currentCard, 'trash')}
+                    className="btn-vote"
                     style={{
                       width: 64, height: 64, borderRadius: '50%', border: 'none', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
@@ -874,6 +876,7 @@ export default function Explorer() {
 
                   <button
                     onClick={() => vote(currentCard, 'snooze')}
+                    className="btn-vote"
                     style={{
                       width: 46, height: 46, borderRadius: '50%', border: 'none', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
@@ -888,6 +891,7 @@ export default function Explorer() {
 
                   <button
                     onClick={() => vote(currentCard, 'match')}
+                    className="btn-vote"
                     style={{
                       width: 64, height: 64, borderRadius: '50%', border: 'none', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
@@ -940,7 +944,6 @@ export default function Explorer() {
         />
       )}
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

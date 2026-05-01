@@ -339,14 +339,11 @@ function CardLabel({ children }) {
 
 function Spinner({ color = 'var(--sky)' }) {
   return (
-    <>
-      <div style={{
-        width: 20, height: 20, borderRadius: '50%',
-        border: `2px solid ${color}`, borderTopColor: 'transparent',
-        animation: 'ahSpin 0.7s linear infinite',
-      }} />
-      <style>{`@keyframes ahSpin { to { transform: rotate(360deg); } }`}</style>
-    </>
+    <div style={{
+      width: 20, height: 20, borderRadius: '50%',
+      border: `2px solid ${color}`, borderTopColor: 'transparent',
+      animation: 'spin 0.7s linear infinite',
+    }} />
   )
 }
 
@@ -461,8 +458,16 @@ function WeatherCard({ lat, lon, gpsLoading, gpsDenied }) {
   if (loading) return (
     <Card style={{ background: bg }}>
       <CardLabel>Météo locale</CardLabel>
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
-        <Spinner color="var(--sun)" />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div className="skeleton" style={{ width: 44, height: 44, borderRadius: '50%', flexShrink: 0 }} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <div className="skeleton" style={{ height: 30, width: 72 }} />
+          <div className="skeleton" style={{ height: 12, width: 110 }} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+          <div className="skeleton" style={{ height: 14, width: 38 }} />
+          <div className="skeleton" style={{ height: 14, width: 38 }} />
+        </div>
       </div>
     </Card>
   )
@@ -480,6 +485,7 @@ function WeatherCard({ lat, lon, gpsLoading, gpsDenied }) {
 
   return (
     <Card style={{ background: bg }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div className="fade-in">
       <WeatherSlide weather={current.weather} label={current.label} offline={current.offline} />
 
       {/* Dots */}
@@ -495,6 +501,7 @@ function WeatherCard({ lat, lon, gpsLoading, gpsDenied }) {
           ))}
         </div>
       )}
+      </div>
     </Card>
   )
 }
@@ -505,8 +512,17 @@ function TrainCard({ train, onClick }) {
   if (train === undefined) return (
     <Card>
       <CardLabel>Prochain train</CardLabel>
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
-        <Spinner color="var(--sky)" />
+      <div className="skeleton" style={{ height: 12, width: 130, marginBottom: 12 }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div className="skeleton" style={{ height: 16, width: '75%' }} />
+          <div className="skeleton" style={{ height: 28, width: 52 }} />
+        </div>
+        <div className="skeleton" style={{ height: 12, width: 44 }} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+          <div className="skeleton" style={{ height: 16, width: '75%' }} />
+          <div className="skeleton" style={{ height: 28, width: 52 }} />
+        </div>
       </div>
     </Card>
   )
@@ -524,6 +540,7 @@ function TrainCard({ train, onClick }) {
 
   return (
     <Card onClick={onClick} style={{ background: 'linear-gradient(135deg, rgba(74,144,217,0.08) 0%, rgba(255,255,255,0.85) 60%)' }}>
+      <div className="fade-in">
       <CardLabel>Prochain train</CardLabel>
       <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 10 }}>{dateStr}</p>
       <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -560,6 +577,7 @@ function TrainCard({ train, onClick }) {
       {train.notes && (
         <p style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{train.notes}</p>
       )}
+      </div>
     </Card>
   )
 }
@@ -718,12 +736,18 @@ function TimelineCard({ city, train, isPreview = false }) {
 
   if (!items) return (
     <Card>
-      <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>
+      <p style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>
         Programme du jour
       </p>
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
-        <Spinner color="var(--mint)" />
-      </div>
+      {[90, 70, 80].map((w, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: i < 2 ? 12 : 0 }}>
+          <div className="skeleton" style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0 }} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="skeleton" style={{ height: 14, width: `${w}%` }} />
+            <div className="skeleton" style={{ height: 10, width: '45%' }} />
+          </div>
+        </div>
+      ))}
     </Card>
   )
 
