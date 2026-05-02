@@ -206,6 +206,7 @@ function ActivitiesTab() {
   const [city, setCity] = useState('bruxelles')
   const [activities, setActivities] = useState([])
   const [loading, setLoading] = useState(true)
+  const [deleteError, setDeleteError] = useState('')
 
   async function fetchActivities() {
     setLoading(true)
@@ -226,12 +227,21 @@ function ActivitiesTab() {
   }
 
   async function deleteActivity(id) {
-    await supabase.from('activities').delete().eq('id', id)
+    setDeleteError('')
+    // Supprimer les votes liés d'abord (contrainte FK)
+    await supabase.from('votes').delete().eq('activity_id', id)
+    const { error } = await supabase.from('activities').delete().eq('id', id)
+    if (error) { setDeleteError('Erreur lors de la suppression : ' + error.message); return }
     fetchActivities()
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {deleteError && (
+        <p style={{ fontSize: '0.8rem', color: 'var(--trash)', padding: '8px 12px', background: 'rgba(220,38,38,0.06)', borderRadius: '10px', margin: 0 }}>
+          {deleteError}
+        </p>
+      )}
       {/* City picker */}
       <div style={{ overflowX: 'auto', display: 'flex', gap: 8, scrollbarWidth: 'none', paddingBottom: 2 }}>
         {CITY_ORDER.map(c => (

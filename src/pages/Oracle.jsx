@@ -243,17 +243,24 @@ export default function Oracle() {
   const [pendingActivity, setPendingActivity] = useState(null)
   const [confirmLoading, setConfirmLoading] = useState(false)
   const [deckActivities, setDeckActivities] = useState([])
+  const [trains, setTrains]   = useState([])
+  const [airbnbs, setAirbnbs] = useState([])
 
   const bottomRef = useRef(null)
   const inputRef  = useRef(null)
   const currentCity = getCurrentCity()
 
-  // Fetch all deck activities for context (avoid duplicates in suggestions)
+  // Fetch all context data in parallel at mount
   useEffect(() => {
-    supabase
-      .from('activities')
-      .select('city, name')
-      .then(({ data }) => { if (data) setDeckActivities(data) })
+    Promise.all([
+      supabase.from('activities').select('city, name'),
+      supabase.from('trains').select('leg_order, date, from_station, to_station, departure_time, arrival_time, train_number, platform_dep, platform_arr, is_connection, notes').order('leg_order'),
+      supabase.from('airbnbs').select('city, address, checkin_time, checkout_time, wifi_name, instructions'),
+    ]).then(([activitiesRes, trainsRes, airbnbsRes]) => {
+      if (activitiesRes.data) setDeckActivities(activitiesRes.data)
+      if (trainsRes.data)     setTrains(trainsRes.data)
+      if (airbnbsRes.data)    setAirbnbs(airbnbsRes.data)
+    })
   }, [])
 
   // Auto-scroll on new content
@@ -267,7 +274,7 @@ export default function Oracle() {
     for (const a of deckActivities) {
       if (activitiesByCity[a.city]) activitiesByCity[a.city].push(a)
     }
-    return { today: today(), currentCity, activitiesByCity }
+    return { today: today(), currentCity, activitiesByCity, trains, airbnbs }
   }
 
   async function handleSend(text) {

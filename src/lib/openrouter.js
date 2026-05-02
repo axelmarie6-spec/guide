@@ -1,4 +1,4 @@
-import { CITY_SCHEDULE } from './travel'
+import { CITY_SCHEDULE, EMERGENCY } from './travel'
 
 const BASE_URL = 'https://openrouter.ai/api/v1/chat/completions'
 const MODEL    = 'google/gemini-2.0-flash-001'
@@ -11,6 +11,18 @@ const CITY_LABELS = {
   budapest:  'Budapest 🇭🇺',
   vienne:    'Vienne 🇦🇹',
   geneve:    'Genève 🇨🇭',
+}
+
+function fmtTime(t) {
+  if (!t) return '—'
+  return t.slice(0, 5)
+}
+
+function fmtDate(d) {
+  if (!d) return '—'
+  const months = ['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc']
+  const [, m, day] = d.split('-')
+  return `${parseInt(day)} ${months[parseInt(m) - 1]}`
 }
 
 export const SUGGEST_ACTIVITY_TOOL = {
@@ -32,7 +44,7 @@ export const SUGGEST_ACTIVITY_TOOL = {
   },
 }
 
-export function buildSystemPrompt({ today, currentCity, activitiesByCity }) {
+export function buildSystemPrompt({ today, currentCity, activitiesByCity, trains, airbnbs }) {
   const schedule = CITY_SCHEDULE
     .map(c => `${CITY_LABELS[c.city]} : ${c.from} → ${c.to}`)
     .join('\n')
@@ -46,18 +58,69 @@ export function buildSystemPrompt({ today, currentCity, activitiesByCity }) {
     ? `${CITY_LABELS[currentCity.city]} (du ${currentCity.from} au ${currentCity.to})`
     : 'Hors itinéraire'
 
+  // ── Trains ──────────────────────────────────────────────────
+  const trainsSection = trains.length > 0
+    ? trains
+        .sort((a, b) => a.leg_order - b.leg_order)
+        .map(t => {
+          const parts = [
+            `${fmtDate(t.date)} · ${t.from_station} → ${t.to_station}`,
+            t.departure_time ? `  Départ : ${fmtTime(t.departure_time)}` : null,
+            t.arrival_time   ? `  Arrivée : ${fmtTime(t.arrival_time)}` : null,
+            t.train_number   ? `  Train : ${t.train_number}` : null,
+            t.platform_dep   ? `  Voie départ : ${t.platform_dep}` : null,
+            t.platform_arr   ? `  Voie arrivée : ${t.platform_arr}` : null,
+            t.is_connection  ? '  ⚠️ Correspondance' : null,
+            t.notes          ? `  Note : ${t.notes}` : null,
+          ].filter(Boolean)
+          return parts.join('\n')
+        })
+        .join('\n\n')
+    : 'Données non encore saisies'
+
+  // ── Hébergements ────────────────────────────────────────────
+  const airbnbsSection = airbnbs.length > 0
+    ? CITY_SCHEDULE.map(c => {
+        const a = airbnbs.find(x => x.city === c.city)
+        if (!a) return `${CITY_LABELS[c.city]} : non renseigné`
+        const parts = [`${CITY_LABELS[c.city]} (${c.from} → ${c.to})`]
+        if (a.address)       parts.push(`  Adresse : ${a.address}`)
+        if (a.checkin_time)  parts.push(`  Check-in : ${a.checkin_time}`)
+        if (a.checkout_time) parts.push(`  Check-out : ${a.checkout_time}`)
+        if (a.wifi_name)     parts.push(`  Wifi : ${a.wifi_name}`)
+        if (a.instructions)  parts.push(`  Instructions : ${a.instructions}`)
+        return parts.join('\n')
+      }).join('\n\n')
+    : 'Données non encore saisies'
+
+  // ── Urgences ────────────────────────────────────────────────
+  const emergencySection = CITY_SCHEDULE.map(c => {
+    const e = EMERGENCY[c.city]
+    if (!e) return null
+    return `${CITY_LABELS[c.city]} (${e.country}) : urgences ${e.general}, police ${e.police}, SAMU ${e.samu}`
+  }).filter(Boolean).join('\n')
+
   return `Tu es Oracle, l'assistant de voyage exclusif du groupe Travel Hub (5 amis).
 Ton domaine est UNIQUEMENT ce voyage en Europe : villes visitées, activités, restaurants, transports, histoire, culture, anecdotes, conseils pratiques liés au voyage.
-Decline poliment et brièvement toute demande sans rapport avec ce voyage.
+Décline poliment et brièvement toute demande sans rapport avec ce voyage.
 
-══ ITINÉRAIRE ══════════════════════════════
+══ ITINÉRAIRE ══════════════════════════════════
 ${schedule}
 
-══ AUJOURD'HUI ═════════════════════════════
+══ AUJOURD'HUI ═════════════════════════════════
 Date : ${today}
 Étape : ${stepLine}
 
-══ ACTIVITÉS DÉJÀ DANS LE DECK ════════════
+══ TRAJETS FERROVIAIRES ════════════════════════
+${trainsSection}
+
+══ HÉBERGEMENTS ════════════════════════════════
+${airbnbsSection}
+
+══ NUMÉROS D'URGENCE ═══════════════════════════
+${emergencySection}
+
+══ ACTIVITÉS DÉJÀ DANS LE DECK ════════════════
 (Ne propose pas ce qui existe déjà)
 ${deckLines}
 
