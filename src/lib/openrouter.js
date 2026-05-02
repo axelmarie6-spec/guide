@@ -44,7 +44,7 @@ export const SUGGEST_ACTIVITY_TOOL = {
   },
 }
 
-export function buildSystemPrompt({ today, currentCity, activitiesByCity, trains, airbnbs }) {
+export function buildSystemPrompt({ today, currentCity, activitiesByCity, trains, airbnbs, weather }) {
   const schedule = CITY_SCHEDULE
     .map(c => `${CITY_LABELS[c.city]} : ${c.from} → ${c.to}`)
     .join('\n')
@@ -93,6 +93,17 @@ export function buildSystemPrompt({ today, currentCity, activitiesByCity, trains
       }).join('\n\n')
     : 'Données non encore saisies'
 
+  // ── Météo ────────────────────────────────────────────────────
+  let weatherSection = 'Données non disponibles (ouvre le dashboard pour charger la météo)'
+  if (weather) {
+    const parts = [`${weather.temp}°C · ${weather.desc}`]
+    if (weather.min != null && weather.max != null) parts.push(`min ${weather.min}° / max ${weather.max}°`)
+    if (weather.forecast?.length) {
+      parts.push(`Prévisions : ${weather.forecast.map(f => `${f.time} ${f.emoji} ${f.temp}°`).join(' · ')}`)
+    }
+    weatherSection = parts.join(' · ')
+  }
+
   // ── Urgences ────────────────────────────────────────────────
   const emergencySection = CITY_SCHEDULE.map(c => {
     const e = EMERGENCY[c.city]
@@ -119,6 +130,9 @@ ${airbnbsSection}
 
 ══ NUMÉROS D'URGENCE ═══════════════════════════
 ${emergencySection}
+
+══ MÉTÉO AUJOURD'HUI ═══════════════════════════
+${weatherSection}
 
 ══ ACTIVITÉS DÉJÀ DANS LE DECK ════════════════
 (Ne propose pas ce qui existe déjà)

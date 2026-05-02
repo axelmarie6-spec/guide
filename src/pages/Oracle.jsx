@@ -246,6 +246,11 @@ export default function Oracle() {
   const [trains, setTrains]   = useState([])
   const [airbnbs, setAirbnbs] = useState([])
 
+  // Weather read directly from localStorage cache (written by the dashboard)
+  const weather = (() => {
+    try { return JSON.parse(localStorage.getItem('weather_cache_v6')) } catch { return null }
+  })()
+
   const bottomRef = useRef(null)
   const inputRef  = useRef(null)
   const currentCity = getCurrentCity()
@@ -274,7 +279,7 @@ export default function Oracle() {
     for (const a of deckActivities) {
       if (activitiesByCity[a.city]) activitiesByCity[a.city].push(a)
     }
-    return { today: today(), currentCity, activitiesByCity, trains, airbnbs }
+    return { today: today(), currentCity, activitiesByCity, trains, airbnbs, weather }
   }
 
   async function handleSend(text) {
