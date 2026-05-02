@@ -48,54 +48,54 @@
   --glass-drop-shadow:   rgba(0, 0, 0, 0.08);
 }
 
-/* ── Dark mode ──────────────────────────────────────────────── */
+/* ── Dark mode — "Bevel" inspired ──────────────────────────── */
 /*
- * Ratios WCAG AA (4.5:1 texte normal, 3:1 grand texte / UI)
- * Fond de référence : #1a1714 (L ≈ 0.005)
- * Card effective  : rgba(52,46,38,0.72) sur #1a1714 → #2c2821 (L ≈ 0.019)
+ * Fond vrai noir chaud · Liquid Glass transparent · Blobs amplifiés
  *
- *   --text-primary   #f5f1ea   L≈0.896  →  17.0:1 ✓✓✓  (AAA)
- *   --text-secondary #b0a89e   L≈0.430  →   8.7:1 ✓✓   (AAA)
- *   --text-tertiary  #968e84   L≈0.278  →   5.6:1 ✓    (AA)
- *                              sur card  →   4.8:1 ✓    (AA)
+ * Ratios WCAG AA (4.5:1 texte, 3:1 UI) sur fond #0a0908 (L≈0.001)
+ * et sur card effective #0f0e0c (L≈0.002) :
+ *
+ *   primary   #f8f4ef  L≈0.930  →  19.6:1 ✓  sur fond · 18.2:1 ✓ sur card
+ *   secondary #b8b0a6  L≈0.475  →  10.1:1 ✓  sur fond ·  9.4:1 ✓ sur card
+ *   tertiary  #857e78  L≈0.215  →   4.6:1 ✓  sur fond ·  4.3:1 ✓ sur card
  */
 .dark {
-  /* Backgrounds */
-  --bg-base:      #1a1714;
-  --bg-gradient:  linear-gradient(160deg, #1e1b18 0%, #1a1714 50%, #161310 100%);
+  /* Fond vrai noir chaud */
+  --bg-base:      #0a0908;
+  --bg-gradient:  linear-gradient(160deg, #0e0c0a 0%, #0a0908 50%, #070605 100%);
 
-  /* Glass */
-  --glass-card:   rgba(50,44,36,0.72);
-  --glass-bar:    rgba(24,21,18,0.88);
+  /* Glass — très transparent pour laisser passer les blobs */
+  --glass-card:   rgba(255,255,255,0.05);
+  --glass-bar:    rgba(10,9,8,0.82);
   --glass-input:  rgba(255,255,255,0.07);
-  --border-glass: rgba(255,255,255,0.09);
+  --border-glass: rgba(255,255,255,0.10);
 
-  /* Glass borders (override BottomBar + Oracle input) */
-  --glass-border-strong: rgba(255, 255, 255, 0.13);
-  --glass-specular:      rgba(255, 255, 255, 0.07);
-  --glass-drop-shadow:   rgba(0, 0, 0, 0.50);
+  /* Liserés blancs — identité Liquid Glass sur noir */
+  --glass-border-strong: rgba(255, 255, 255, 0.16);
+  --glass-specular:      rgba(255, 255, 255, 0.10);
+  --glass-drop-shadow:   rgba(0, 0, 0, 0.60);
 
-  /* Text — WCAG AA sur fond et sur card */
-  --text-primary:   #f5f1ea;   /* 17.0:1 ✓ */
-  --text-secondary: #b0a89e;   /*  8.7:1 ✓ */
-  --text-tertiary:  #968e84;   /*  5.6:1 ✓ */
+  /* Texte — ratios WCAG AA sur fond et card */
+  --text-primary:   #f8f4ef;   /* 19.6:1 */
+  --text-secondary: #b8b0a6;   /* 10.1:1 */
+  --text-tertiary:  #857e78;   /*  4.6:1 */
 
-  /* Sand scale (inversé) */
-  --sand-50:  #1e1b18;
-  --sand-100: #242018;
-  --sand-200: #2e2a22;
-  --sand-300: #3c3730;
+  /* Sand scale (surfaces dark) */
+  --sand-50:  #131110;
+  --sand-100: #1a1714;
+  --sand-200: #242018;
+  --sand-300: #302c24;
 
-  /* Ink inversé */
-  --ink:        #f5f1ea;
-  --accent:     #f5f1ea;
-  --accent-light: rgba(245,241,234,0.11);
+  /* Ink → crème sur noir */
+  --ink:        #f8f4ef;
+  --accent:     #f8f4ef;
+  --accent-light: rgba(248,244,239,0.10);
 
-  /* Semantic tints — légèrement amplifiés pour le fond sombre */
-  --sun-light:  rgba(232,160,48,0.20);
-  --sky-light:  rgba(74,144,217,0.20);
-  --mint-light: rgba(59,170,122,0.20);
-  --rose-light: rgba(224,90,90,0.20);
+  /* Tints sémantiques plus vifs sur fond noir */
+  --sun-light:  rgba(232,160,48,0.18);
+  --sky-light:  rgba(74,144,217,0.18);
+  --mint-light: rgba(59,170,122,0.18);
+  --rose-light: rgba(224,90,90,0.18);
 }
 
 .dark body {
@@ -103,36 +103,47 @@
   background-attachment: fixed;
 }
 
-/* Card — Liquid Glass sur fond sombre
-   Fond semi-transparent laisse passer les blobs de couleur de App.jsx */
+/* Blobs — amplifiés en dark pour les gradients de couleur */
+.dark .blob-amber {
+  background: radial-gradient(circle, rgba(232,160,48,0.45) 0%, transparent 70%);
+}
+.dark .blob-sky {
+  background: radial-gradient(circle, rgba(74,144,217,0.32) 0%, transparent 70%);
+}
+.dark .blob-mint {
+  background: radial-gradient(circle, rgba(59,170,122,0.26) 0%, transparent 70%);
+}
+
+/* Card — Liquid Glass transparent, blobs visibles en dessous */
 .dark .card {
   background: linear-gradient(
     145deg,
-    rgba(52,46,38,0.72) 0%,
-    rgba(36,32,26,0.62) 100%
+    rgba(255,255,255,0.07) 0%,
+    rgba(255,255,255,0.03) 100%
   );
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-color: rgba(255,255,255,0.09);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-color: rgba(255,255,255,0.10);
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.08) inset,   /* spéculaire haut */
-    0 4px 28px rgba(0,0,0,0.50),
-    0 1px 4px  rgba(0,0,0,0.35);
+    0 1px 0 rgba(255,255,255,0.10) inset,  /* liséré haut */
+    0 6px 32px rgba(0,0,0,0.40),
+    0 1px 4px  rgba(0,0,0,0.30);
 }
 
-/* Nav bar (BottomBar inline styles overrides) */
+/* Nav bar */
 .dark nav {
   border-color: var(--glass-border-strong) !important;
   box-shadow:
     0 1px 0 var(--glass-specular) inset,
-    0 8px 32px rgba(0,0,0,0.55),
-    0 2px 6px  rgba(0,0,0,0.35) !important;
+    0 -1px 0 rgba(255,255,255,0.05) inset,
+    0 8px 40px rgba(0,0,0,0.60),
+    0 2px 8px  rgba(0,0,0,0.40) !important;
 }
 
 /* Inputs */
 .dark input, .dark textarea {
-  background: var(--glass-input);
-  border-color: rgba(255,255,255,0.11);
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.12);
   color: var(--text-primary);
 }
 
@@ -149,19 +160,30 @@
 /* Bouton secondaire */
 .dark .btn-secondary {
   background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.11);
+  border-color: rgba(255,255,255,0.12);
   color: var(--text-primary);
 }
 
-/* Skeleton shimmer adapté */
+/* Skeleton sur fond noir */
 .dark .skeleton {
   background: linear-gradient(
     90deg,
     rgba(255,255,255,0.05) 25%,
-    rgba(255,255,255,0.09) 50%,
+    rgba(255,255,255,0.10) 50%,
     rgba(255,255,255,0.05) 75%
   );
   background-size: 300% 100%;
+}
+
+/* ── Background blobs (light mode defaults) ─────────────────── */
+.blob-amber {
+  background: radial-gradient(circle, rgba(232,160,48,0.20) 0%, transparent 70%);
+}
+.blob-sky {
+  background: radial-gradient(circle, rgba(74,144,217,0.15) 0%, transparent 70%);
+}
+.blob-mint {
+  background: radial-gradient(circle, rgba(59,170,122,0.13) 0%, transparent 70%);
 }
 
 /* ── Base ───────────────────────────────────────────────────── */

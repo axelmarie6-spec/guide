@@ -51,22 +51,19 @@ function WithNav({ children }) {
 function BackgroundBlobs() {
   return (
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
-      <div style={{
+      <div className="blob-amber" style={{
         position: 'absolute', top: '-20%', right: '-10%',
         width: '65vw', height: '65vw', maxWidth: 440,
-        background: 'radial-gradient(circle, rgba(232,160,48,0.20) 0%, transparent 70%)',
         borderRadius: '50%', filter: 'blur(48px)',
       }} />
-      <div style={{
+      <div className="blob-sky" style={{
         position: 'absolute', top: '35%', left: '-15%',
         width: '55vw', height: '55vw', maxWidth: 380,
-        background: 'radial-gradient(circle, rgba(74,144,217,0.15) 0%, transparent 70%)',
         borderRadius: '50%', filter: 'blur(48px)',
       }} />
-      <div style={{
+      <div className="blob-mint" style={{
         position: 'absolute', bottom: '-10%', right: '15%',
         width: '50vw', height: '50vw', maxWidth: 340,
-        background: 'radial-gradient(circle, rgba(59,170,122,0.13) 0%, transparent 70%)',
         borderRadius: '50%', filter: 'blur(48px)',
       }} />
     </div>
