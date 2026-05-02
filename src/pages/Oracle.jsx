@@ -268,9 +268,10 @@ export default function Oracle() {
     })
   }, [])
 
-  // Auto-scroll on new content
+  // Auto-scroll on new content — scroll page to absolute bottom
+  // so the last message is never hidden behind the fixed input bar
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
   }, [messages, streamText, pendingActivity])
 
   function buildContext() {
