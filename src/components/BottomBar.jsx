@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 
-const TABS = [
+const LEFT_TABS = [
   {
     path: '/',
     label: 'Auj.',
@@ -21,6 +21,9 @@ const TABS = [
       </svg>
     ),
   },
+]
+
+const RIGHT_TABS = [
   {
     path: '/voyage',
     label: 'Voyage',
@@ -43,6 +46,42 @@ const TABS = [
   },
 ]
 
+function OracleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width={22} height={22}>
+      <path d="M12 2.5L13.2 8.8L19.5 10L13.2 11.2L12 17.5L10.8 11.2L4.5 10L10.8 8.8L12 2.5Z"
+        fill="white"/>
+      <path d="M19.5 4L20.1 6.4L22.5 7L20.1 7.6L19.5 10L18.9 7.6L16.5 7L18.9 6.4L19.5 4Z"
+        fill="white" opacity={0.75}/>
+      <path d="M5 15L5.5 17L7.5 17.5L5.5 18L5 20L4.5 18L2.5 17.5L4.5 17L5 15Z"
+        fill="white" opacity={0.65}/>
+    </svg>
+  )
+}
+
+function TabItem({ path, label, icon }) {
+  return (
+    <NavLink
+      to={path}
+      end={path === '/'}
+      className="nav-tab"
+      style={({ isActive }) => ({
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', flex: 1, padding: '8px 2px', gap: '3px',
+        fontSize: '9px', fontWeight: isActive ? 600 : 400,
+        fontFamily: 'inherit',
+        color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+        borderRadius: '20px',
+        background: isActive ? 'var(--accent-light)' : 'transparent',
+        transition: 'all 0.18s', textDecoration: 'none',
+      })}
+    >
+      {icon}
+      <span>{label}</span>
+    </NavLink>
+  )
+}
+
 export default function BottomBar() {
   return (
     <nav style={{
@@ -57,28 +96,48 @@ export default function BottomBar() {
       display: 'flex',
       padding: '6px',
       zIndex: 50,
+      overflow: 'visible',
     }}>
-      {TABS.map(({ path, label, icon }) => (
-        <NavLink
-          key={path}
-          to={path}
-          end={path === '/'}
-          className="nav-tab"
-          style={({ isActive }) => ({
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', flex: 1, padding: '8px 2px', gap: '3px',
-            fontSize: '9px', fontWeight: isActive ? 600 : 400,
-            fontFamily: 'inherit',
-            color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-            borderRadius: '20px',
-            background: isActive ? 'var(--accent-light)' : 'transparent',
-            transition: 'all 0.18s', textDecoration: 'none',
-          })}
-        >
-          {icon}
-          <span>{label}</span>
-        </NavLink>
-      ))}
+      {LEFT_TABS.map(t => <TabItem key={t.path} {...t} />)}
+
+      {/* Oracle — bouton central qui sort de la barre */}
+      <NavLink
+        to="/oracle"
+        className="nav-tab"
+        style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', gap: 0 }}
+      >
+        {({ isActive }) => (
+          <>
+            <div style={{
+              width: 52, height: 52, borderRadius: '50%',
+              background: isActive
+                ? 'linear-gradient(145deg, #f5b535, #d4861a)'
+                : 'linear-gradient(145deg, #e8a030, #c87818)',
+              boxShadow: isActive
+                ? '0 0 0 3px rgba(232,160,48,0.30), 0 5px 20px rgba(232,160,48,0.55), 0 2px 6px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.35)'
+                : '0 4px 16px rgba(232,160,48,0.38), 0 2px 6px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.30)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transform: 'translateY(-20px)',
+              flexShrink: 0,
+              transition: 'box-shadow 0.18s',
+            }}>
+              <OracleIcon />
+            </div>
+            <span style={{
+              fontSize: '9px',
+              fontWeight: isActive ? 700 : 500,
+              color: isActive ? 'var(--sun)' : 'var(--text-secondary)',
+              marginTop: '-14px',
+              fontFamily: 'inherit',
+              letterSpacing: '0.01em',
+            }}>
+              Oracle
+            </span>
+          </>
+        )}
+      </NavLink>
+
+      {RIGHT_TABS.map(t => <TabItem key={t.path} {...t} />)}
     </nav>
   )
 }

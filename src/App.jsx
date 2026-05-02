@@ -16,6 +16,7 @@ const Profil     = lazy(() => import('./pages/Profil'))
 const Admin      = lazy(() => import('./pages/Admin'))
 const Login      = lazy(() => import('./pages/Login'))
 const Register   = lazy(() => import('./pages/Register'))
+const Oracle     = lazy(() => import('./pages/Oracle'))
 
 function AdminRoute({ children }) {
   const { profile, loading } = useAuth()
@@ -34,10 +35,12 @@ function PageLoader() {
 
 function WithNav({ children }) {
   const { pathname } = useLocation()
+  const isOracle = pathname === '/oracle'
   return (
     <>
       <div key={pathname} className="page-flash" />
-      <main className="pb-28 max-w-lg mx-auto">
+      {/* Oracle gère son propre padding bas (input bar fixe au-dessus de la BottomBar) */}
+      <main className={`${isOracle ? 'pb-40' : 'pb-28'} max-w-lg mx-auto`}>
         <Suspense fallback={<PageLoader />}>{children}</Suspense>
       </main>
       <BottomBar />
@@ -118,6 +121,9 @@ export default function App() {
           } />
           <Route path="/coffre-fort" element={
             <ProtectedRoute><WithNav><CoffreFort /></WithNav></ProtectedRoute>
+          } />
+          <Route path="/oracle" element={
+            <ProtectedRoute><WithNav><Oracle /></WithNav></ProtectedRoute>
           } />
           <Route path="/admin" element={
             <AuthRoute><AdminRoute><WithNav><Admin /></WithNav></AdminRoute></AuthRoute>
