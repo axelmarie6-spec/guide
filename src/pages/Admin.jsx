@@ -228,10 +228,14 @@ function ActivitiesTab() {
 
   async function deleteActivity(id) {
     setDeleteError('')
-    // Supprimer les votes liés d'abord (contrainte FK)
-    await supabase.from('votes').delete().eq('activity_id', id)
-    const { error } = await supabase.from('activities').delete().eq('id', id)
-    if (error) { setDeleteError('Erreur lors de la suppression : ' + error.message); return }
+    // votes supprimés automatiquement par ON DELETE CASCADE
+    const { data, error } = await supabase
+      .from('activities')
+      .delete()
+      .eq('id', id)
+      .select('id')
+    if (error) { setDeleteError('Erreur : ' + error.message); return }
+    if (!data?.length) { setDeleteError('Suppression bloquée par RLS — exécute fix_activities_delete_rls.sql dans Supabase.'); return }
     fetchActivities()
   }
 
