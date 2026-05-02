@@ -39,6 +39,8 @@ export const SUGGEST_ACTIVITY_TOOL = {
         category:    { type: 'string', enum: ['culture', 'nature', 'food', 'nightlife', 'shopping', 'sport', 'other'] },
         price_eur:   { type: 'number', description: 'Prix estimé en euros par personne. 0 si gratuit.' },
         city:        { type: 'string', enum: ['bruxelles', 'amsterdam', 'berlin', 'prague', 'budapest', 'vienne', 'geneve'] },
+        latitude:    { type: 'number', description: 'Latitude GPS exacte (ex: 52.3702). À inclure UNIQUEMENT si tu es certain à 100% de la localisation précise. Omets si le moindre doute.' },
+        longitude:   { type: 'number', description: 'Longitude GPS exacte (ex: 4.8952). À inclure UNIQUEMENT si tu es certain à 100% de la localisation précise. Omets si le moindre doute.' },
       },
     },
   },

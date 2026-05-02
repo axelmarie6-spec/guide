@@ -49,6 +49,22 @@ function Row({ label, value, blur }) {
 
 // ── Formulaire d'édition (onboarding + modification) ─────────
 
+function formatPhone(raw) {
+  let digits = raw.replace(/\D/g, '')
+  if (digits.startsWith('0033')) digits = digits.slice(4)
+  else if (digits.startsWith('33') && digits.length > 9) digits = digits.slice(2)
+  else if (digits.startsWith('0')) digits = digits.slice(1)
+  digits = digits.slice(0, 9)
+  if (!digits) return ''
+  let out = '+33'
+  out += ' ' + digits.slice(0, 1)
+  if (digits.length > 1) out += ' ' + digits.slice(1, 3)
+  if (digits.length > 3) out += ' ' + digits.slice(3, 5)
+  if (digits.length > 5) out += ' ' + digits.slice(5, 7)
+  if (digits.length > 7) out += ' ' + digits.slice(7, 9)
+  return out
+}
+
 function ProfileForm({ profile, onSuccess, onCancel, isOnboarding }) {
   const { user } = useAuth()
   const [form, setForm] = useState({
@@ -152,8 +168,9 @@ function ProfileForm({ profile, onSuccess, onCancel, isOnboarding }) {
         </Field>
 
         <Field label="Contact d'urgence — Téléphone" required>
-          <input value={form.emergency_phone} onChange={e => set('emergency_phone', e.target.value)}
-            placeholder="+33 6 12 34 56 78" type="tel" />
+          <input value={form.emergency_phone}
+            onChange={e => set('emergency_phone', formatPhone(e.target.value))}
+            placeholder="+33 6 12 34 56 78" type="tel" inputMode="numeric" />
         </Field>
 
         <Field label="N° passeport ou carte d'identité" required>
@@ -207,6 +224,39 @@ function ReplayTutorialButton() {
 }
 
 // ── Vue profil complet ────────────────────────────────────────
+
+function DarkModeToggle() {
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
+  function toggle() {
+    const next = !dark
+    setDark(next)
+    document.documentElement.classList.toggle('dark', next)
+    localStorage.setItem('theme', next ? 'dark' : 'light')
+  }
+  return (
+    <button onClick={toggle} style={{
+      width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+    }}>
+      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+        {dark ? '🌙 Mode sombre' : '☀️ Mode clair'}
+      </span>
+      <div style={{
+        width: 44, height: 26, borderRadius: 13, position: 'relative', flexShrink: 0,
+        background: dark ? 'var(--ink)' : 'rgba(26,23,20,0.15)',
+        transition: 'background 0.2s',
+      }}>
+        <div style={{
+          position: 'absolute', top: 3, left: dark ? 21 : 3,
+          width: 20, height: 20, borderRadius: '50%',
+          background: dark ? 'var(--sand-50)' : 'white',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+          transition: 'left 0.2s, background 0.2s',
+        }} />
+      </div>
+    </button>
+  )
+}
 
 function ProfileView({ profile, isAdmin, onEdit, onSignOut }) {
   const [inviteLabel, setInviteLabel] = useState('')
@@ -295,6 +345,10 @@ function ProfileView({ profile, isAdmin, onEdit, onSignOut }) {
           </div>
         </Section>
       )}
+
+      <Section title="Préférences">
+        <DarkModeToggle />
+      </Section>
 
       <ReplayTutorialButton />
 

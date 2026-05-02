@@ -276,6 +276,26 @@ function useNextTrain() {
   return train
 }
 
+// Nearest-neighbor sort by GPS — minimise la distance de marche entre activités
+function nearestNeighborSort(acts) {
+  const withCoords = acts.filter(a => a.latitude != null && a.longitude != null)
+  const noCoords   = acts.filter(a => a.latitude == null || a.longitude == null)
+  if (withCoords.length <= 1) return [...withCoords, ...noCoords]
+  const sq = (a, b) => {
+    const dlat = a.latitude - b.latitude, dlon = a.longitude - b.longitude
+    return dlat * dlat + dlon * dlon
+  }
+  const rem = [...withCoords]
+  const out = [rem.splice(0, 1)[0]]
+  while (rem.length) {
+    const last = out[out.length - 1]
+    let bi = 0, bd = Infinity
+    for (let i = 0; i < rem.length; i++) { const d = sq(last, rem[i]); if (d < bd) { bd = d; bi = i } }
+    out.push(rem.splice(bi, 1)[0])
+  }
+  return [...out, ...noCoords]
+}
+
 function useTimeline(city) {
   const [items, setItems] = useState(null)
 
@@ -297,14 +317,16 @@ function useTimeline(city) {
         if (actIds.has(v.activity_id) && v.vote === 'match')
           matchCounts[v.activity_id] = (matchCounts[v.activity_id] || 0) + 1
       })
-      const validated = acts
-        .filter(a => (matchCounts[a.id] || 0) >= threshold)
-        .sort((a, b) => {
-          if (a.plan_order != null && b.plan_order != null) return a.plan_order - b.plan_order
-          if (a.plan_order != null) return -1
-          if (b.plan_order != null) return 1
-          return a.name.localeCompare(b.name)
-        })
+      const matched = acts.filter(a => (matchCounts[a.id] || 0) >= threshold)
+      const hasPlanOrder = matched.some(a => a.plan_order != null)
+      const validated = hasPlanOrder
+        ? [...matched].sort((a, b) => {
+            if (a.plan_order != null && b.plan_order != null) return a.plan_order - b.plan_order
+            if (a.plan_order != null) return -1
+            if (b.plan_order != null) return 1
+            return a.name.localeCompare(b.name)
+          })
+        : nearestNeighborSort(matched)
       setItems(validated)
     } catch (err) {
       console.error('[useTimeline]', err)

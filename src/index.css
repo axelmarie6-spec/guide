@@ -43,6 +43,64 @@
   --trash:  #e05a5a;
 }
 
+/* ── Dark mode ──────────────────────────────────────────────── */
+.dark {
+  --bg-base:      #1c1917;
+  --bg-gradient:  linear-gradient(160deg, #1e1b18 0%, #1a1714 50%, #161310 100%);
+  --glass-card:   rgba(36,32,28,0.92);
+  --glass-bar:    rgba(26,22,18,0.92);
+  --glass-input:  rgba(255,255,255,0.06);
+  --border-glass: rgba(255,255,255,0.10);
+  --text-primary:   #f0ece4;
+  --text-secondary: #9a938c;
+  --text-tertiary:  #5e5850;
+  --sand-50:  #1e1b18;
+  --sand-100: #242018;
+  --sand-200: #2e2a22;
+  --sand-300: #3a3530;
+  --ink:        #f0ece4;
+  --accent:     #f0ece4;
+  --accent-light: rgba(240,236,228,0.10);
+  --sun-light:  rgba(232,160,48,0.15);
+  --sky-light:  rgba(74,144,217,0.15);
+  --mint-light: rgba(59,170,122,0.15);
+  --rose-light: rgba(224,90,90,0.15);
+}
+
+.dark body {
+  background: var(--bg-gradient);
+}
+
+.dark .card {
+  background: linear-gradient(145deg, rgba(42,38,32,0.96) 0%, rgba(32,28,24,0.90) 100%);
+  border-color: rgba(255,255,255,0.07);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.04) inset,
+    0 2px 16px rgba(0,0,0,0.40),
+    0 1px 3px rgba(0,0,0,0.30);
+}
+
+.dark input, .dark textarea {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.10);
+  color: var(--text-primary);
+}
+
+.dark input:focus, .dark textarea:focus {
+  background: rgba(74,144,217,0.08);
+  border-color: var(--sky);
+}
+
+.dark input::placeholder, .dark textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.dark .btn-secondary {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.10);
+  color: var(--text-primary);
+}
+
 /* ── Base ───────────────────────────────────────────────────── */
 * {
   -webkit-tap-highlight-color: transparent;

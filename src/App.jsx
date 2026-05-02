@@ -77,6 +77,13 @@ export default function App() {
   const { user } = useAuth()
   const [showRouteAnim, setShowRouteAnim] = useState(false)
 
+  // Restore dark mode preference before first paint
+  useEffect(() => {
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark')
+    }
+  }, [])
+
   useEffect(() => {
     if (user && !localStorage.getItem(ROUTE_INTRO_KEY)) {
       setShowRouteAnim(true)
