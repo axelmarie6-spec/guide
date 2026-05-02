@@ -208,6 +208,49 @@ function ExplorerDemo({ onComplete }) {
   )
 }
 
+// ── Démo Oracle ────────────────────────────────────────────────
+
+function OracleDemo() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 0 8px' }}>
+      {/* Message utilisateur */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{
+          maxWidth: '78%', padding: '9px 13px',
+          borderRadius: '18px 18px 4px 18px',
+          background: 'linear-gradient(135deg, #e8a030, #c87818)',
+          color: 'white', fontSize: '0.82rem', lineHeight: 1.45,
+        }}>
+          Que faire à Prague demain ?
+        </div>
+      </div>
+      {/* Réponse Oracle */}
+      <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+        <div style={{
+          maxWidth: '88%', padding: '9px 13px',
+          borderRadius: '4px 18px 18px 18px',
+          background: 'rgba(255,255,255,0.85)',
+          border: '1px solid rgba(255,255,255,0.9)',
+          boxShadow: '0 2px 10px rgba(26,23,20,0.07)',
+          fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--text-primary)',
+        }}>
+          Demain à Prague je te suggère le <strong>Château de Prague</strong> le matin (entrée ~15€), puis le quartier de <strong>Malá Strana</strong> à pied — c'est gratuit et magnifique !
+        </div>
+      </div>
+      {/* Chip suggestion activité */}
+      <div style={{
+        alignSelf: 'flex-start',
+        background: 'rgba(232,160,48,0.10)', border: '1px solid rgba(232,160,48,0.30)',
+        borderRadius: '12px', padding: '6px 10px',
+        fontSize: '0.74rem', fontWeight: 600, color: 'var(--sun)',
+        display: 'flex', alignItems: 'center', gap: 5,
+      }}>
+        <span>✦</span> Oracle peut aussi ajouter des activités dans le deck de votes
+      </div>
+    </div>
+  )
+}
+
 // ── Overlay principal ──────────────────────────────────────────
 
 export default function TutorialOverlay() {
@@ -234,6 +277,7 @@ export default function TutorialOverlay() {
   const isModal = currentStep.type === 'modal'
   const navStepIndex = NAV_STEPS.indexOf(currentStep)
   const isExplorer = currentStep.id === 'explorer'
+  const isOracle  = currentStep.id === 'oracle'
   const canAdvance = !isExplorer || demoComplete
 
   function handleSkip() {
@@ -284,8 +328,8 @@ export default function TutorialOverlay() {
   }
 
   // Position précise de l'onglet cible dans la nav
-  // Nav: width = 100vw - 32px, padding 6px, 4 tabs égaux
-  const tabCenterExpr = `calc(22px + (100vw - 44px) * ${(currentStep.tabIndex * 2 + 1) / 8})`
+  // Nav: width = 100vw - 32px, padding 6px, 5 items flex-1 égaux
+  const tabCenterExpr = `calc(22px + (100vw - 44px) * ${(currentStep.tabIndex * 2 + 1) / 10})`
 
   // ── Navigate phase ─────────────────────────────────────────────
   if (phase === 'navigate') {
@@ -329,18 +373,25 @@ export default function TutorialOverlay() {
           </div>
 
           {/* Hauteur dynamique : suit le bottom de la BottomBar (safe-area + 10px) */}
-          <div style={{ height: 'calc(env(safe-area-inset-bottom, 0px) + 110px)', position: 'relative' }}>
+          {/* Oracle est surélevé de 20px → container plus grand + ring circulaire */}
+          <div style={{ height: `calc(env(safe-area-inset-bottom, 0px) + ${isOracle ? 140 : 110}px)`, position: 'relative' }}>
             <div style={{
               position: 'absolute',
-              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 15px)',
+              bottom: isOracle
+                ? 'calc(env(safe-area-inset-bottom, 0px) + 36px)'
+                : 'calc(env(safe-area-inset-bottom, 0px) + 15px)',
               left: tabCenterExpr,
               transform: 'translateX(-50%)',
-              width: 54, height: 54, borderRadius: '18px',
-              border: '2.5px solid rgba(26,23,20,0.80)',
+              width: isOracle ? 62 : 54,
+              height: isOracle ? 62 : 54,
+              borderRadius: isOracle ? '50%' : '18px',
+              border: isOracle
+                ? '2.5px solid rgba(232,160,48,0.90)'
+                : '2.5px solid rgba(26,23,20,0.80)',
               animation: 'tutoPulse 1.4s ease-in-out infinite',
             }} />
             <div style={{
-              position: 'absolute', top: 4, left: tabCenterExpr,
+              position: 'absolute', top: isOracle ? 0 : 4, left: tabCenterExpr,
               transform: 'translateX(-50%)',
               fontSize: '1.4rem', color: 'white',
               animation: 'tutoBounce 0.8s ease-in-out infinite', lineHeight: 1,
@@ -375,7 +426,9 @@ export default function TutorialOverlay() {
             <ExplorerDemo onComplete={() => setDemoComplete(true)} />
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: isExplorer ? 12 : 0 }}>
+          {isOracle && <OracleDemo />}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: (isExplorer || isOracle) ? 12 : 0 }}>
             <button
               onClick={() => canAdvance && advance(location.pathname)}
               className="btn-primary"
