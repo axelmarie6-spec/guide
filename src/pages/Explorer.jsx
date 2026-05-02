@@ -413,7 +413,7 @@ function ClosedView({ isAdmin, city, onOpen }) {
   )
 }
 
-function DoneView({ matchCount, doneCount, groupSize }) {
+function DoneView({ matchCount, doneCount, groupSize, onUndo, lastVoteName }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 24px', gap: 12, textAlign: 'center' }}>
       <p style={{ fontSize: '3rem', margin: 0 }}>🎉</p>
@@ -424,6 +424,23 @@ function DoneView({ matchCount, doneCount, groupSize }) {
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
         En attente des autres… {doneCount}/{groupSize} ont terminé
       </p>
+      {onUndo && (
+        <button onClick={onUndo} style={{
+          marginTop: 8,
+          background: 'rgba(255,255,255,0.68)', backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.82)',
+          boxShadow: '0 2px 16px rgba(26,23,20,0.06)', borderRadius: 20,
+          padding: '8px 18px', display: 'flex', alignItems: 'center', gap: 6,
+          fontSize: '0.82rem', fontWeight: 600, color: '#6b6560',
+          cursor: 'pointer', fontFamily: 'inherit',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M9 14L4 9l5-5" stroke="#6b6560" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M4 9h10a6 6 0 0 1 0 12h-3" stroke="#6b6560" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Annuler ({lastVoteName && lastVoteName.length > 18 ? lastVoteName.slice(0, 18) + '…' : lastVoteName})
+        </button>
+      )}
     </div>
   )
 }
@@ -586,6 +603,7 @@ export default function Explorer() {
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [secondTour, setSecondTour] = useState(false)
+  const [lastVote, setLastVote] = useState(null) // { activity, voteType }
 
   const fetchAll = useCallback(async () => {
     if (!user) return
@@ -646,6 +664,7 @@ export default function Explorer() {
 
   async function vote(activity, voteType) {
     navigator.vibrate?.(10)
+    setLastVote({ activity, voteType })
     const snooze_date = voteType === 'snooze'
       ? new Date(Date.now() + 86400000).toISOString().slice(0, 10)
       : null
@@ -656,6 +675,24 @@ export default function Explorer() {
     )
     const { data, error: vErr } = await supabase.from('votes').select('*')
     if (vErr) { console.error('[Explorer] vote re-fetch:', vErr); return }
+    if (data) {
+      setAllVotes(data)
+      const actIds = new Set(activities.map(a => a.id))
+      const today = new Date().toISOString().slice(0, 10)
+      setDoneCount(computeDoneCount(data, actIds, activities.length, today))
+    }
+  }
+
+  async function undoVote() {
+    if (!lastVote) return
+    const { activity } = lastVote
+    setLastVote(null)
+    setMyVotes(v => v.filter(x => x.activity_id !== activity.id))
+    await supabase.from('votes').delete()
+      .eq('activity_id', activity.id)
+      .eq('user_id', user.id)
+    const { data, error: vErr } = await supabase.from('votes').select('*')
+    if (vErr) { console.error('[Explorer] undo re-fetch:', vErr); return }
     if (data) {
       setAllVotes(data)
       const actIds = new Set(activities.map(a => a.id))
@@ -904,6 +941,24 @@ export default function Explorer() {
                     </svg>
                   </button>
                 </div>
+
+                {/* Undo last vote */}
+                {lastVote && (
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <button onClick={undoVote} style={{
+                      ...glass, border: 'none', borderRadius: 20, padding: '7px 16px',
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      fontSize: '0.78rem', fontWeight: 600, color: '#6b6560',
+                      cursor: 'pointer', fontFamily: 'inherit',
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 14L4 9l5-5" stroke="#6b6560" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M4 9h10a6 6 0 0 1 0 12h-3" stroke="#6b6560" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      Annuler ({lastVote.activity.name.length > 18 ? lastVote.activity.name.slice(0, 18) + '…' : lastVote.activity.name})
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               /* No cards in this category filter, but global deck still has cards */
@@ -923,7 +978,7 @@ export default function Explorer() {
             )}
           </div>
         ) : view === 'done' ? (
-          <DoneView matchCount={myMatchCount} doneCount={doneCount} groupSize={groupSize} />
+          <DoneView matchCount={myMatchCount} doneCount={doneCount} groupSize={groupSize} onUndo={lastVote ? undoVote : null} lastVoteName={lastVote?.activity?.name} />
         ) : view === 'results' ? (
           secondTour ? (
             <SecondTourView candidates={validated} maxActivities={maxActivities} onDone={saveSecondTour} />
