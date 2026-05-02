@@ -103,31 +103,32 @@
   background-attachment: fixed;
 }
 
-/* Blobs — amplifiés en dark pour les gradients de couleur */
+/* Blobs — présence subtile, pas envahissante */
 .dark .blob-amber {
-  background: radial-gradient(circle, rgba(232,160,48,0.45) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(232,160,48,0.28) 0%, transparent 70%);
 }
 .dark .blob-sky {
-  background: radial-gradient(circle, rgba(74,144,217,0.32) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(74,144,217,0.20) 0%, transparent 70%);
 }
 .dark .blob-mint {
-  background: radial-gradient(circle, rgba(59,170,122,0.26) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(59,170,122,0.16) 0%, transparent 70%);
 }
 
-/* Card — Liquid Glass transparent, blobs visibles en dessous */
+/* Card — verre SOMBRE (pas blanc) : fond lisible, liséré blanc comme
+   détail Liquid Glass, légère teinte ambiante des blobs */
 .dark .card {
   background: linear-gradient(
     145deg,
-    rgba(255,255,255,0.07) 0%,
-    rgba(255,255,255,0.03) 100%
+    rgba(22,19,16,0.88) 0%,
+    rgba(16,14,11,0.82) 100%
   );
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border-color: rgba(255,255,255,0.10);
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  border-color: rgba(255,255,255,0.09);
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.10) inset,  /* liséré haut */
-    0 6px 32px rgba(0,0,0,0.40),
-    0 1px 4px  rgba(0,0,0,0.30);
+    0 1px 0 rgba(255,255,255,0.09) inset,   /* liséré haut */
+    0 6px 32px rgba(0,0,0,0.55),
+    0 1px 4px  rgba(0,0,0,0.40);
 }
 
 /* Nav bar */
