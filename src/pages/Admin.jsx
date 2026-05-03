@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useTutorial } from '../context/TutorialContext'
+import { useT } from '../context/ThemeContext'
 
 const CITY_ORDER = ['bruxelles','amsterdam','berlin','prague','budapest','vienne','geneve']
 const CITY_LABELS = {
@@ -203,6 +204,7 @@ function ResetTutorialButton({ currentUserId }) {
 // ── Section activités ──────────────────────────────────────────
 
 function ActivitiesTab() {
+  const { T } = useT()
   const [city, setCity] = useState('bruxelles')
   const [activities, setActivities] = useState([])
   const [loading, setLoading] = useState(true)
@@ -252,8 +254,8 @@ function ActivitiesTab() {
           <button key={c} onClick={() => setCity(c)} style={{
             flexShrink: 0, borderRadius: '20px', padding: '5px 12px',
             fontSize: '0.75rem', fontWeight: 600, border: 'none', cursor: 'pointer',
-            backgroundColor: city === c ? 'var(--accent)' : 'rgba(0,0,0,0.05)',
-            color: city === c ? 'white' : 'var(--text-secondary)',
+            background: city === c ? T.p : T.surf1,
+            color: city === c ? T.bodyBg : T.s,
           }}>
             {CITY_LABELS[c]}
           </button>
@@ -297,6 +299,7 @@ function ActivitiesTab() {
 // ── Section votes ──────────────────────────────────────────────
 
 function VotesTab() {
+  const { T } = useT()
   const [city, setCity] = useState('bruxelles')
   const [votes, setVotes] = useState([])
   const [profiles, setProfiles] = useState([])
@@ -357,8 +360,8 @@ function VotesTab() {
           <button key={c} onClick={() => setCity(c)} style={{
             flexShrink: 0, borderRadius: '20px', padding: '5px 12px',
             fontSize: '0.75rem', fontWeight: 600, border: 'none', cursor: 'pointer',
-            backgroundColor: city === c ? 'var(--accent)' : 'rgba(0,0,0,0.05)',
-            color: city === c ? 'white' : 'var(--text-secondary)',
+            background: city === c ? T.p : T.surf1,
+            color: city === c ? T.bodyBg : T.s,
           }}>
             {CITY_LABELS[c]}
           </button>
@@ -448,6 +451,7 @@ const TABS = [
 ]
 
 export default function Admin() {
+  const { T } = useT()
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
   const initialTab = ['users', 'activities', 'votes'].includes(searchParams.get('tab'))
@@ -469,8 +473,8 @@ export default function Admin() {
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             flexShrink: 0, borderRadius: '20px', padding: '7px 14px',
             fontSize: '0.82rem', fontWeight: 600, border: 'none', cursor: 'pointer',
-            backgroundColor: tab === t.key ? 'var(--accent)' : 'rgba(0,0,0,0.05)',
-            color: tab === t.key ? 'white' : 'var(--text-secondary)',
+            background: tab === t.key ? T.p : T.surf1,
+            color: tab === t.key ? T.bodyBg : T.s,
             transition: 'all 0.15s',
           }}>
             {t.label}
