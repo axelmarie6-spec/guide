@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import HeaderAvatar from '../components/HeaderAvatar'
 import { readCache, writeCache } from '../lib/dbCache'
+import { useT, G } from '../context/ThemeContext'
 
 const CATEGORY_META = {
   culture:   { label: 'Culture',     emoji: '🏛️', color: '#4a90d9', bg: 'rgba(74,144,217,0.12)'  },
@@ -37,14 +38,6 @@ const CAT_PILLS = [
 
 function getCategoryMeta(cat) {
   return CATEGORY_META[cat] ?? { label: cat, emoji: '✨', color: '#b0aaa3', bg: 'rgba(176,170,163,0.12)' }
-}
-
-const glass = {
-  background: 'rgba(255,255,255,0.68)',
-  backdropFilter: 'blur(20px) saturate(1.6)',
-  WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
-  border: '1px solid rgba(255,255,255,0.82)',
-  boxShadow: '0 2px 16px rgba(26,23,20,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
 }
 
 // ── Swipe hook ─────────────────────────────────────────────────
@@ -123,6 +116,7 @@ function useSwipe({ onLeft, onRight, onDown, disabled }) {
 // ── ActivityCard ───────────────────────────────────────────────
 
 function ActivityCard({ activity, onMatch, onSnooze, onTrash, matchCount, trashCount }) {
+  const { T } = useT()
   const [trashConfirm, setTrashConfirm] = useState(false)
   const meta = getCategoryMeta(activity.category)
 
@@ -137,11 +131,11 @@ function ActivityCard({ activity, onMatch, onSnooze, onTrash, matchCount, trashC
     <div ref={swipeRef} style={{ touchAction: 'pan-y', userSelect: 'none', height: '100%', position: 'relative' }}>
       <div style={{
         height: '100%', borderRadius: 28, overflow: 'hidden', display: 'flex', flexDirection: 'column',
-        background: 'rgba(255,255,255,0.82)',
+        background: T.cardBg,
         backdropFilter: 'blur(24px) saturate(1.8)',
         WebkitBackdropFilter: 'blur(24px) saturate(1.8)',
-        border: '1px solid rgba(255,255,255,0.90)',
-        boxShadow: '0 8px 40px rgba(26,23,20,0.12), inset 0 1px 0 rgba(255,255,255,0.95)',
+        border: '1px solid ' + T.cardBorder,
+        boxShadow: T.glassShadow,
       }}>
         {/* Illustration area */}
         <div style={{
@@ -207,12 +201,12 @@ function ActivityCard({ activity, onMatch, onSnooze, onTrash, matchCount, trashC
         {/* Info */}
         <div style={{ flex: 1, padding: '16px 20px 14px', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
           <div style={{ flex: 1, minHeight: 0 }}>
-            <h3 style={{ fontSize: '1.18rem', fontWeight: 800, color: '#1a1714', lineHeight: 1.25, margin: 0 }}>
+            <h3 style={{ fontSize: '1.18rem', fontWeight: 800, color: T.p, lineHeight: 1.25, margin: 0 }}>
               {activity.name}
             </h3>
             {activity.description && (
               <p style={{
-                color: '#6b6560', fontSize: '0.82rem', margin: '5px 0 0', lineHeight: 1.5,
+                color: T.s, fontSize: '0.82rem', margin: '5px 0 0', lineHeight: 1.5,
                 display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
               }}>
                 {activity.description}
@@ -220,10 +214,10 @@ function ActivityCard({ activity, onMatch, onSnooze, onTrash, matchCount, trashC
             )}
           </div>
           <div style={{
-            paddingTop: 10, borderTop: '1px solid rgba(26,23,20,0.07)',
+            paddingTop: 10, borderTop: '1px solid ' + T.divider,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
-            <p style={{ fontSize: '0.70rem', color: '#b0aaa3', margin: 0 }}>← Trash · ↓ Snooze · → Match</p>
+            <p style={{ fontSize: '0.70rem', color: T.t, margin: 0 }}>← Trash · ↓ Snooze · → Match</p>
             <div style={{ display: 'flex', gap: 10 }}>
               <span style={{ color: '#3baa7a', fontWeight: 700, fontSize: '0.82rem' }}>{matchCount} ✓</span>
               <span style={{ color: '#e05a5a', fontWeight: 700, fontSize: '0.82rem' }}>{trashCount} ✕</span>
@@ -414,6 +408,7 @@ function ClosedView({ isAdmin, city, onOpen }) {
 }
 
 function DoneView({ matchCount, doneCount, groupSize, onUndo, lastVoteName }) {
+  const { T } = useT()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 24px', gap: 12, textAlign: 'center' }}>
       <p style={{ fontSize: '3rem', margin: 0 }}>🎉</p>
@@ -426,17 +421,14 @@ function DoneView({ matchCount, doneCount, groupSize, onUndo, lastVoteName }) {
       </p>
       {onUndo && (
         <button onClick={onUndo} style={{
-          marginTop: 8,
-          background: 'rgba(255,255,255,0.68)', backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.82)',
-          boxShadow: '0 2px 16px rgba(26,23,20,0.06)', borderRadius: 20,
+          marginTop: 8, ...G(T), borderRadius: 20,
           padding: '8px 18px', display: 'flex', alignItems: 'center', gap: 6,
-          fontSize: '0.82rem', fontWeight: 600, color: '#6b6560',
-          cursor: 'pointer', fontFamily: 'inherit',
+          fontSize: '0.82rem', fontWeight: 600, color: T.s,
+          cursor: 'pointer', fontFamily: 'inherit', border: 'none',
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M9 14L4 9l5-5" stroke="#6b6560" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M4 9h10a6 6 0 0 1 0 12h-3" stroke="#6b6560" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M9 14L4 9l5-5" stroke={T.s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M4 9h10a6 6 0 0 1 0 12h-3" stroke={T.s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           Annuler ({lastVoteName && lastVoteName.length > 18 ? lastVoteName.slice(0, 18) + '…' : lastVoteName})
         </button>
@@ -446,12 +438,13 @@ function DoneView({ matchCount, doneCount, groupSize, onUndo, lastVoteName }) {
 }
 
 function ResultsView({ validated, maxActivities, isAdmin, onSecondTour, onClose }) {
+  const { T } = useT()
   const needSecondTour = validated.length > maxActivities
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ fontWeight: 800, fontSize: '1.3rem', margin: 0, color: '#1a1714' }}>Résultats</h2>
+        <h2 style={{ fontWeight: 800, fontSize: '1.3rem', margin: 0, color: T.p }}>Résultats</h2>
         {isAdmin && (
           <button onClick={onClose} style={{
             fontSize: '0.78rem', padding: '6px 14px', borderRadius: 20,
@@ -462,7 +455,7 @@ function ResultsView({ validated, maxActivities, isAdmin, onSecondTour, onClose 
       </div>
 
       {needSecondTour && (
-        <div style={{ ...glass, borderRadius: 16, padding: '12px 14px', borderColor: 'rgba(232,160,48,0.3)' }}>
+        <div style={{ ...G(T), borderRadius: 16, padding: '12px 14px', borderColor: 'rgba(232,160,48,0.3)' }}>
           <p style={{ color: '#e8a030', fontWeight: 600, fontSize: '0.85rem', margin: 0 }}>
             {validated.length} validées pour {maxActivities} places — 2e tour requis !
           </p>
@@ -474,13 +467,13 @@ function ResultsView({ validated, maxActivities, isAdmin, onSecondTour, onClose 
         const validated_slot = i < maxActivities
         return (
           <div key={a.id} style={{
-            ...glass, borderRadius: 20, padding: '14px 16px',
+            ...G(T), borderRadius: 20, padding: '14px 16px',
             display: 'flex', alignItems: 'center', gap: 12,
             border: validated_slot ? '1.5px solid rgba(59,170,122,0.28)' : undefined,
           }}>
             <div style={{
               width: 34, height: 34, borderRadius: 12, flexShrink: 0,
-              background: 'rgba(26,23,20,0.07)', color: '#6b6560',
+              background: T.surf2, color: T.s,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: 800, fontSize: '0.88rem',
             }}>{i + 1}</div>
@@ -493,7 +486,7 @@ function ResultsView({ validated, maxActivities, isAdmin, onSecondTour, onClose 
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <p style={{ fontWeight: 700, fontSize: '0.9rem', margin: 0, color: '#1a1714' }}>{a.name}</p>
+                <p style={{ fontWeight: 700, fontSize: '0.9rem', margin: 0, color: T.p }}>{a.name}</p>
                 {validated_slot && (
                   <span style={{
                     fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: 9999,
@@ -527,6 +520,7 @@ function ResultsView({ validated, maxActivities, isAdmin, onSecondTour, onClose 
 }
 
 function SecondTourView({ candidates, maxActivities, onDone }) {
+  const { T } = useT()
   const [selected, setSelected] = useState([])
 
   function toggle(id) {
@@ -548,7 +542,7 @@ function SecondTourView({ candidates, maxActivities, onDone }) {
         const sel = selected.includes(a.id)
         return (
           <div key={a.id} onClick={() => toggle(a.id)} style={{
-            ...glass, borderRadius: 20, padding: '14px 16px',
+            ...G(T), borderRadius: 20, padding: '14px 16px',
             display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
             outline: sel ? '2px solid #3baa7a' : 'none', outlineOffset: -2,
           }}>
@@ -590,6 +584,7 @@ function computeDoneCount(votes, actIds, actsLength, today) {
 
 export default function Explorer() {
   const { user, profile } = useAuth()
+  const { T } = useT()
   const isAdmin = profile?.role === 'admin'
 
   const [city, setCity] = useState('bruxelles')
@@ -765,18 +760,18 @@ export default function Explorer() {
       {/* Header */}
       <div style={{ padding: '20px 20px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
-          <p style={{ fontSize: '0.72rem', fontWeight: 500, color: '#b0aaa3', margin: 0 }}>
+          <p style={{ fontSize: '0.72rem', fontWeight: 500, color: T.t, margin: 0 }}>
             {CITY_LABELS[city]} · {activities.length} activités
           </p>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#1a1714', margin: '2px 0 0', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: T.p, margin: '2px 0 0', letterSpacing: '-0.02em' }}>
             Explorer
           </h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
           <button onClick={() => setShowAdd(true)} style={{
-            ...glass, borderRadius: 20, padding: '7px 14px',
+            ...G(T), borderRadius: 20, padding: '7px 14px',
             fontWeight: 600, fontSize: '0.8rem', border: 'none',
-            cursor: 'pointer', color: '#1a1714', fontFamily: 'inherit',
+            cursor: 'pointer', color: T.p, fontFamily: 'inherit',
           }}>
             + Activité
           </button>
@@ -790,9 +785,9 @@ export default function Explorer() {
           <button key={c} onClick={() => { setCity(c); setSecondTour(false); setCatFilter('all') }} style={{
             flexShrink: 0, borderRadius: 20, padding: '6px 14px',
             fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-            border: city === c ? 'none' : '1px solid rgba(255,255,255,0.75)',
-            background: city === c ? '#1a1714' : 'rgba(255,255,255,0.55)',
-            color: city === c ? '#faf9f7' : '#6b6560',
+            border: city === c ? 'none' : '1px solid ' + T.glassBorder,
+            background: city === c ? T.p : T.surf1,
+            color: city === c ? T.bodyBg : T.s,
             boxShadow: city === c ? '0 2px 8px rgba(26,23,20,0.2)' : 'none',
             transition: 'all 0.15s',
           }}>
@@ -811,9 +806,9 @@ export default function Explorer() {
             <button key={p.id} onClick={() => setCatFilter(p.id)} style={{
               flexShrink: 0, borderRadius: 20, padding: '5px 12px',
               fontSize: '0.73rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-              border: catFilter === p.id ? 'none' : '1px solid rgba(26,23,20,0.08)',
-              background: catFilter === p.id ? 'rgba(26,23,20,0.10)' : 'rgba(255,255,255,0.48)',
-              color: catFilter === p.id ? '#1a1714' : '#6b6560',
+              border: catFilter === p.id ? 'none' : '1px solid ' + T.divider,
+              background: catFilter === p.id ? T.surf2 : T.surf1,
+              color: catFilter === p.id ? T.p : T.s,
               transition: 'all 0.15s',
             }}>
               {p.label}
@@ -826,11 +821,11 @@ export default function Explorer() {
       {view === 'voting' && activities.length > 0 && (
         <div style={{ padding: '10px 20px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-            <p style={{ fontSize: '0.72rem', color: '#b0aaa3', margin: 0 }}>{totalVoted}/{activities.length} vus</p>
-            <p style={{ fontSize: '0.72rem', color: '#b0aaa3', margin: 0 }}>{globalDeck.length} restant{globalDeck.length > 1 ? 's' : ''}</p>
+            <p style={{ fontSize: '0.72rem', color: T.t, margin: 0 }}>{totalVoted}/{activities.length} vus</p>
+            <p style={{ fontSize: '0.72rem', color: T.t, margin: 0 }}>{globalDeck.length} restant{globalDeck.length > 1 ? 's' : ''}</p>
           </div>
-          <div style={{ height: 3, borderRadius: 2, background: 'rgba(26,23,20,0.08)', overflow: 'hidden' }}>
-            <div style={{ height: '100%', borderRadius: 2, background: '#1a1714', width: `${pct}%`, transition: 'width 0.3s' }} />
+          <div style={{ height: 3, borderRadius: 2, background: T.surf1, overflow: 'hidden' }}>
+            <div style={{ height: '100%', borderRadius: 2, background: T.p, width: `${pct}%`, transition: 'width 0.3s' }} />
           </div>
         </div>
       )}
@@ -841,10 +836,10 @@ export default function Explorer() {
           {Array.from({ length: groupSize }).map((_, i) => (
             <div key={i} style={{
               width: 7, height: 7, borderRadius: '50%',
-              background: i < doneCount ? '#3baa7a' : 'rgba(26,23,20,0.12)',
+              background: i < doneCount ? '#3baa7a' : T.surf3,
             }} />
           ))}
-          <p style={{ fontSize: '0.72rem', color: '#b0aaa3', margin: 0 }}>
+          <p style={{ fontSize: '0.72rem', color: T.t, margin: 0 }}>
             {doneCount}/{groupSize} ont terminé
           </p>
         </div>
@@ -852,7 +847,7 @@ export default function Explorer() {
 
       {/* Rappel (votes fermés) */}
       {dayConfig === null && !loading && (
-        <p style={{ padding: '6px 20px 0', fontSize: '0.72rem', color: '#b0aaa3', margin: 0 }}>
+        <p style={{ padding: '6px 20px 0', fontSize: '0.72rem', color: T.t, margin: 0 }}>
           1 vote par jour · {CITY_NIGHTS[city] ?? '?'} nuits prévues
         </p>
       )}
@@ -863,7 +858,7 @@ export default function Explorer() {
           <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
             <div style={{
               width: 28, height: 28, borderRadius: '50%',
-              border: '2.5px solid #1a1714', borderTopColor: 'transparent',
+              border: '2.5px solid ' + T.p, borderTopColor: 'transparent',
               animation: 'spin 0.7s linear infinite',
             }} />
           </div>
@@ -878,7 +873,7 @@ export default function Explorer() {
                   {nextCard && (
                     <div style={{
                       position: 'absolute', top: 8, left: 12, right: 12, bottom: 0, zIndex: 1,
-                      ...glass, borderRadius: 28,
+                      ...G(T), borderRadius: 28,
                     }} />
                   )}
                   <div style={{ position: 'absolute', inset: 0, zIndex: 2 }}>
@@ -902,8 +897,8 @@ export default function Explorer() {
                     style={{
                       width: 64, height: 64, borderRadius: '50%', border: 'none', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
-                      ...glass,
-                      boxShadow: '0 4px 20px rgba(224,90,90,0.22), inset 0 1px 0 rgba(255,255,255,0.9)',
+                      ...G(T),
+                      boxShadow: '0 4px 20px rgba(224,90,90,0.22)',
                     }}
                   >
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -917,7 +912,7 @@ export default function Explorer() {
                     style={{
                       width: 46, height: 46, borderRadius: '50%', border: 'none', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
-                      ...glass,
+                      ...G(T),
                     }}
                   >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -932,8 +927,8 @@ export default function Explorer() {
                     style={{
                       width: 64, height: 64, borderRadius: '50%', border: 'none', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
-                      ...glass,
-                      boxShadow: '0 4px 20px rgba(59,170,122,0.26), inset 0 1px 0 rgba(255,255,255,0.9)',
+                      ...G(T),
+                      boxShadow: '0 4px 20px rgba(59,170,122,0.26)',
                     }}
                   >
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -946,14 +941,14 @@ export default function Explorer() {
                 {lastVote && (
                   <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <button onClick={undoVote} style={{
-                      ...glass, border: 'none', borderRadius: 20, padding: '7px 16px',
+                      ...G(T), border: 'none', borderRadius: 20, padding: '7px 16px',
                       display: 'flex', alignItems: 'center', gap: 6,
-                      fontSize: '0.78rem', fontWeight: 600, color: '#6b6560',
+                      fontSize: '0.78rem', fontWeight: 600, color: T.s,
                       cursor: 'pointer', fontFamily: 'inherit',
                     }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path d="M9 14L4 9l5-5" stroke="#6b6560" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M4 9h10a6 6 0 0 1 0 12h-3" stroke="#6b6560" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M9 14L4 9l5-5" stroke={T.s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M4 9h10a6 6 0 0 1 0 12h-3" stroke={T.s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                       Annuler ({lastVote.activity.name.length > 18 ? lastVote.activity.name.slice(0, 18) + '…' : lastVote.activity.name})
                     </button>
@@ -967,11 +962,11 @@ export default function Explorer() {
                 alignItems: 'center', justifyContent: 'center', gap: 10, textAlign: 'center',
               }}>
                 <p style={{ fontSize: '2rem', margin: 0 }}>🔍</p>
-                <p style={{ fontWeight: 700, fontSize: '0.95rem', margin: 0, color: '#1a1714' }}>
+                <p style={{ fontWeight: 700, fontSize: '0.95rem', margin: 0, color: T.p }}>
                   Tout voté dans cette catégorie
                 </p>
                 <button onClick={() => setCatFilter('all')} style={{
-                  ...glass, borderRadius: 16, padding: '8px 18px',
+                  ...G(T), borderRadius: 16, padding: '8px 18px',
                   fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
                 }}>Voir tout</button>
               </div>

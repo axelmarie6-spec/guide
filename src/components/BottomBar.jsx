@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useT } from '../context/ThemeContext'
 
 const LEFT_TABS = [
   {
@@ -60,6 +61,7 @@ function OracleIcon() {
 }
 
 function TabItem({ path, label, icon }) {
+  const { T } = useT()
   return (
     <NavLink
       to={path}
@@ -70,9 +72,9 @@ function TabItem({ path, label, icon }) {
         justifyContent: 'center', flex: 1, padding: '8px 2px', gap: '3px',
         fontSize: '9px', fontWeight: isActive ? 600 : 400,
         fontFamily: 'inherit',
-        color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+        color: isActive ? T.p : T.t,
         borderRadius: '20px',
-        background: isActive ? 'var(--accent-light)' : 'transparent',
+        background: isActive ? T.navActive : 'transparent',
         transition: 'all 0.18s', textDecoration: 'none',
       })}
     >
@@ -83,16 +85,17 @@ function TabItem({ path, label, icon }) {
 }
 
 export default function BottomBar() {
+  const { T } = useT()
   return (
     <nav style={{
       position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)', left: '50%', transform: 'translateX(-50%)',
       width: 'calc(100% - 32px)', maxWidth: '480px',
-      background: 'var(--glass-bar)',
-      backdropFilter: 'blur(32px) saturate(180%)',
-      WebkitBackdropFilter: 'blur(32px) saturate(180%)',
+      background: T.navBg,
+      backdropFilter: 'blur(32px) saturate(1.8)',
+      WebkitBackdropFilter: 'blur(32px) saturate(1.8)',
       borderRadius: '26px',
-      border: '1px solid var(--glass-border-strong)',
-      boxShadow: '0 1px 0 var(--glass-specular) inset, 0 8px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)',
+      border: '1px solid ' + T.navBorder,
+      boxShadow: T.navShadow,
       display: 'flex',
       padding: '6px',
       zIndex: 50,
@@ -126,7 +129,7 @@ export default function BottomBar() {
             <span style={{
               fontSize: '9px',
               fontWeight: isActive ? 700 : 500,
-              color: isActive ? 'var(--sun)' : 'var(--text-secondary)',
+              color: isActive ? 'var(--sun)' : T.t,
               marginTop: '-14px',
               fontFamily: 'inherit',
               letterSpacing: '0.01em',

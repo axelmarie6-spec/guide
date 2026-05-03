@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { getCurrentCity, CITY_SCHEDULE } from '../lib/travel'
 import HeaderAvatar from '../components/HeaderAvatar'
 import { readCache, writeCache } from '../lib/dbCache'
+import { useT } from '../context/ThemeContext'
 
 const TRIP_START = new Date('2026-08-01T00:00:00')
 const TRIP_DAYS = 22
@@ -429,6 +430,7 @@ function WeatherSlide({ weather, label, offline }) {
 // ── WeatherCard (carousel) ─────────────────────────────────────
 
 function WeatherCard({ lat, lon, gpsLoading, gpsDenied }) {
+  const { dm } = useT()
   const { weather: currentWeather, loading, offline, apiError } = useWeather({ lat, lon, gpsLoading, gpsDenied })
   const [slide, setSlide] = useState(0)
   const touchStartX = useRef(null)
@@ -468,7 +470,9 @@ function WeatherCard({ lat, lon, gpsLoading, gpsDenied }) {
     else if (dx > 50) setSlide(s => Math.max(s - 1, 0))
   }
 
-  const bg = 'linear-gradient(135deg, rgba(232,160,48,0.10) 0%, rgba(255,255,255,0.85) 60%)'
+  const bg = dm
+    ? 'linear-gradient(135deg, rgba(232,160,48,0.16) 0%, rgba(8,6,4,0.94) 100%)'
+    : 'linear-gradient(135deg, rgba(232,160,48,0.10) 0%, rgba(255,255,255,0.85) 60%)'
 
   if (!OWM_KEY) return (
     <Card style={{ background: bg }}>
@@ -531,6 +535,7 @@ function WeatherCard({ lat, lon, gpsLoading, gpsDenied }) {
 // ── TrainCard ──────────────────────────────────────────────────
 
 function TrainCard({ train, onClick }) {
+  const { dm } = useT()
   if (train === undefined) return (
     <Card>
       <CardLabel>Prochain train</CardLabel>
@@ -561,7 +566,7 @@ function TrainCard({ train, onClick }) {
   })
 
   return (
-    <Card onClick={onClick} style={{ background: 'linear-gradient(135deg, rgba(74,144,217,0.08) 0%, rgba(255,255,255,0.85) 60%)' }}>
+    <Card onClick={onClick} style={{ background: dm ? 'linear-gradient(135deg, rgba(74,144,217,0.16) 0%, rgba(8,6,4,0.94) 100%)' : 'linear-gradient(135deg, rgba(74,144,217,0.08) 0%, rgba(255,255,255,0.85) 60%)' }}>
       <div className="fade-in">
       <CardLabel>Prochain train</CardLabel>
       <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 10 }}>{dateStr}</p>
@@ -613,6 +618,7 @@ const PAIRS = [
 ]
 
 function CurrencyCard({ rates, offline, currentCurrency }) {
+  const { dm } = useT()
   const defaultCurr = ['CZK', 'HUF', 'CHF'].includes(currentCurrency) ? currentCurrency : 'CZK'
   const [convCurr, setConvCurr] = useState(defaultCurr)
   const [convAmount, setConvAmount] = useState('')
@@ -621,7 +627,7 @@ function CurrencyCard({ rates, offline, currentCurrency }) {
   const result = rate && convAmount !== '' ? (parseFloat(convAmount) / rate).toFixed(2) : null
 
   return (
-    <Card style={{ background: 'linear-gradient(135deg, rgba(224,90,90,0.08) 0%, rgba(255,255,255,0.85) 60%)' }}>
+    <Card style={{ background: dm ? 'linear-gradient(135deg, rgba(224,90,90,0.16) 0%, rgba(8,6,4,0.94) 100%)' : 'linear-gradient(135deg, rgba(224,90,90,0.08) 0%, rgba(255,255,255,0.85) 60%)' }}>
       <CardLabel>Devises · 1 EUR =</CardLabel>
       {offline && (
         <p style={{ fontSize: '0.72rem', color: 'var(--snooze)', marginBottom: 8 }}>
@@ -691,6 +697,7 @@ function CurrencyCard({ rates, offline, currentCurrency }) {
 // ── TimelineCard ───────────────────────────────────────────────
 
 function TimelineCard({ city, train, isPreview = false }) {
+  const { dm, T } = useT()
   const { profile } = useAuth()
   const { items, setItems } = useTimeline(city)
   const isAdmin = profile?.role === 'admin'
@@ -809,7 +816,7 @@ function TimelineCard({ city, train, isPreview = false }) {
   const doneCount = scheduled.filter(it => done.has(it.id)).length
 
   return (
-    <Card style={{ background: 'linear-gradient(135deg, rgba(59,170,122,0.09) 0%, rgba(255,255,255,0.85) 60%)' }}>
+    <Card style={{ background: dm ? 'linear-gradient(135deg, rgba(59,170,122,0.16) 0%, rgba(8,6,4,0.94) 100%)' : 'linear-gradient(135deg, rgba(59,170,122,0.09) 0%, rgba(255,255,255,0.85) 60%)' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -834,7 +841,7 @@ function TimelineCard({ city, train, isPreview = false }) {
         {/* Ligne verticale */}
         <div style={{
           position: 'absolute', left: 19, top: 12, bottom: 12,
-          width: 2, background: 'rgba(26,23,20,0.08)', borderRadius: 1,
+          width: 2, background: T.surf2, borderRadius: 1,
         }} />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -873,15 +880,15 @@ function TimelineCard({ city, train, isPreview = false }) {
                     width: 38, height: 38, borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: isAdmin ? 'grab' : 'pointer', touchAction: isAdmin ? 'none' : 'auto',
-                    background: isDone ? 'rgba(26,23,20,0.10)' : 'white',
-                    border: `2px solid ${isDone ? 'rgba(26,23,20,0.10)' : 'rgba(26,23,20,0.08)'}`,
+                    background: isDone ? T.surf2 : T.cardBg,
+                    border: `2px solid ${isDone ? T.surf2 : T.cardBorder}`,
                     boxShadow: isDone ? 'none' : '0 1px 3px rgba(26,23,20,0.08)',
                   }}>
                   {isDone
                     ? <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                        <path d="M3 8.5l3.5 3.5 6.5-7" stroke="#6b6560" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M3 8.5l3.5 3.5 6.5-7" stroke={T.s} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
-                    : <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b6560', lineHeight: 1 }}>
+                    : <span style={{ fontSize: '0.72rem', fontWeight: 700, color: T.s, lineHeight: 1 }}>
                         {Math.floor(item._startMin / 60)}
                       </span>
                   }
@@ -891,10 +898,10 @@ function TimelineCard({ city, train, isPreview = false }) {
                 <div
                   onClick={() => toggleDone(item.id)}
                   style={{
-                    flex: 1, minWidth: 0, background: 'white', borderRadius: 16,
+                    flex: 1, minWidth: 0, background: T.cardBg, borderRadius: 16,
                     padding: '10px 12px', cursor: 'pointer',
-                    border: '1px solid rgba(26,23,20,0.06)',
-                    boxShadow: '0 1px 3px rgba(26,23,20,0.05)',
+                    border: '1px solid ' + T.cardBorder,
+                    boxShadow: T.glassShadow,
                   }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minWidth: 0 }}>
                     <p style={{
@@ -903,14 +910,14 @@ function TimelineCard({ city, train, isPreview = false }) {
                       color: 'var(--text-primary)',
                       textDecoration: isDone ? 'line-through' : 'none',
                     }}>{item.name}</p>
-                    <span style={{ fontSize: '0.72rem', color: '#b0aaa3', fontWeight: 500, flexShrink: 0, marginLeft: 8 }}>
+                    <span style={{ fontSize: '0.72rem', color: T.t, fontWeight: 500, flexShrink: 0, marginLeft: 8 }}>
                       {minToTime(item._startMin)}
                     </span>
                   </div>
 
                   {item.description && (
                     <p style={{
-                      fontSize: '0.72rem', color: '#6b6560', margin: '3px 0 0',
+                      fontSize: '0.72rem', color: T.s, margin: '3px 0 0',
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>{item.description}</p>
                   )}
@@ -928,7 +935,7 @@ function TimelineCard({ city, train, isPreview = false }) {
                     {item.price_eur != null && (
                       <span style={{
                         fontSize: '0.65rem', fontWeight: 600, padding: '2px 7px',
-                        borderRadius: 20, background: 'rgba(26,23,20,0.05)', color: '#6b6560',
+                        borderRadius: 20, background: T.surf1, color: T.s,
                       }}>{item.price_eur === 0 ? 'Gratuit' : `${item.price_eur} €`}</span>
                     )}
                   </div>

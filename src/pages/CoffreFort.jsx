@@ -5,23 +5,17 @@ import { EMERGENCY, CITY_SCHEDULE } from '../lib/travel'
 import HeaderAvatar from '../components/HeaderAvatar'
 import PdfViewer from '../components/PdfViewer'
 import { readCache, writeCache } from '../lib/dbCache'
+import { useT, G } from '../context/ThemeContext'
 
 const MEMBER_COLORS = ['#6b6560', '#4a90d9', '#3baa7a', '#e8a030', '#a78bfa']
-
-const glass = {
-  background: 'rgba(255,255,255,0.72)',
-  backdropFilter: 'blur(20px) saturate(1.6)',
-  WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
-  border: '1px solid rgba(255,255,255,0.85)',
-  boxShadow: '0 2px 16px rgba(26,23,20,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
-}
 
 // ── Collapsible section ────────────────────────────────────────
 
 function Section({ title, icon, badge, accent, children, defaultOpen = false }) {
+  const { T } = useT()
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <div style={{ ...glass, borderRadius: '22px', overflow: 'hidden' }}>
+    <div style={{ ...G(T), borderRadius: '22px', overflow: 'hidden' }}>
       <button
         onClick={() => setOpen(o => !o)}
         style={{
@@ -81,10 +75,10 @@ function UploadSheet({ trains, onUpload, onClose }) {
       <div style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: 500, zIndex: 251,
-        background: 'rgba(250,249,247,0.97)',
+        background: 'var(--bg-base)',
         backdropFilter: 'blur(40px)',
         borderRadius: '28px 28px 0 0',
-        border: '1px solid rgba(255,255,255,0.85)',
+        border: '1px solid var(--border-glass)',
         padding: '20px 20px',
         paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
       }}>

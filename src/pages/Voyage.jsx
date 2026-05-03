@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import HeaderAvatar from '../components/HeaderAvatar'
 import PdfViewer from '../components/PdfViewer'
 import { readCache, writeCache } from '../lib/dbCache'
+import { useT, G } from '../context/ThemeContext'
 
 // ── Constants ─────────────────────────────────────────────────
 
@@ -15,14 +16,6 @@ const CITY_COLORS = {
 }
 
 const MEMBER_COLORS = ['#6b6560', '#4a90d9', '#3baa7a', '#e8a030', '#a78bfa']
-
-const glass = {
-  background: 'rgba(255,255,255,0.68)',
-  backdropFilter: 'blur(20px) saturate(1.6)',
-  WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
-  border: '1px solid rgba(255,255,255,0.82)',
-  boxShadow: '0 2px 16px rgba(26,23,20,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
-}
 
 // ── Helpers ───────────────────────────────────────────────────
 
@@ -75,7 +68,7 @@ function CopyChip({ label, value, last }) {
       </div>
       <span style={{
         fontSize: '0.7rem', fontWeight: 700, padding: '4px 10px', borderRadius: '20px', flexShrink: 0,
-        background: copied ? 'rgba(59,170,122,0.15)' : 'rgba(26,23,20,0.07)',
+        background: copied ? 'rgba(59,170,122,0.15)' : 'var(--chip-bg)',
         color: copied ? 'var(--mint)' : 'var(--text-secondary)',
         transition: 'all 0.2s',
       }}>{copied ? '✓ Copié' : 'Copier'}</span>
@@ -86,12 +79,13 @@ function CopyChip({ label, value, last }) {
 // ── Route Strip ───────────────────────────────────────────────
 
 function RouteStrip({ cities }) {
+  const { dm, T } = useT()
   const done = cities.filter(c => c.status === 'past').length
   const active = cities.findIndex(c => c.status === 'active')
   const progress = (done + (active >= 0 ? 0.5 : 0)) / cities.length
 
   return (
-    <div style={{ ...glass, borderRadius: '20px', padding: '16px 18px', marginBottom: 0 }}>
+    <div style={{ ...G(T), borderRadius: '20px', padding: '16px 18px', marginBottom: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <p style={{ fontWeight: 700, fontSize: '0.875rem', margin: 0 }}>22 jours · 7 étapes</p>
         <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', margin: 0 }}>Août 2026</p>
@@ -106,8 +100,8 @@ function RouteStrip({ cities }) {
             <div style={{
               width: 28, height: 28, borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: c.status === 'past' ? 'var(--ink)' : c.status === 'active' ? c.color : 'rgba(255,255,255,0.9)',
-              border: `2px solid ${c.status === 'past' ? 'var(--ink)' : c.status === 'active' ? c.color : 'rgba(26,23,20,0.12)'}`,
+              background: c.status === 'past' ? 'var(--ink)' : c.status === 'active' ? c.color : 'var(--dot-upcoming)',
+              border: `2px solid ${c.status === 'past' ? 'var(--ink)' : c.status === 'active' ? c.color : dm ? 'rgba(255,255,255,0.15)' : 'rgba(26,23,20,0.12)'}`,
               fontSize: '0.6rem',
             }}>
               {c.status === 'past'
@@ -127,6 +121,7 @@ function RouteStrip({ cities }) {
 // ── Train Detail Sheet ────────────────────────────────────────
 
 function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
+  const { T } = useT()
   const myPdfs = pdfs.filter(p => p.leg_order === train.leg_order)
   const stationMapUrl = getStationMapUrl(train.from_station)
 
@@ -215,7 +210,7 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px', display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', zIndex: 1 }}>
 
           {/* Main card: times */}
-          <div style={{ ...glass, borderRadius: '22px', padding: '22px 20px' }}>
+          <div style={{ ...G(T), borderRadius: '22px', padding: '22px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
               <div style={{ textAlign: 'center' }}>
                 <p style={{ fontSize: '2.6rem', fontWeight: 800, lineHeight: 1, margin: 0, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>{fmtTime(train.departure_time)}</p>
@@ -300,14 +295,14 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
 
           {/* Notes */}
           {train.notes && (
-            <div style={{ ...glass, borderRadius: '18px', padding: '14px 18px' }}>
+            <div style={{ ...G(T), borderRadius: '18px', padding: '14px 18px' }}>
               <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 6px' }}>Notes</p>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{train.notes}</p>
             </div>
           )}
 
           {/* Billets */}
-          <div style={{ ...glass, borderRadius: '18px', padding: '16px 18px' }}>
+          <div style={{ ...G(T), borderRadius: '18px', padding: '16px 18px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: myPdfs.length > 0 || showUpload ? 12 : 0 }}>
               <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase', margin: 0 }}>Billets</p>
               {isAdmin && !showUpload && (
@@ -351,8 +346,8 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
           {/* Plan de gare */}
           {stationMapUrl && (
             <a href={stationMapUrl} target="_blank" rel="noopener noreferrer" style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              ...glass, borderRadius: '16px', padding: '14px 18px', textDecoration: 'none',
+              ...G(T), display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              borderRadius: '16px', padding: '14px 18px', textDecoration: 'none',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: '1.1rem' }}>🗺️</span>
@@ -373,10 +368,12 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
 // ── Train Card ────────────────────────────────────────────────
 
 function TrainCard({ train, onClick }) {
+  const { dm, T } = useT()
+
   if (train.status === 'past') {
     return (
       <button onClick={onClick} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-        <div style={{ background: 'rgba(255,255,255,0.28)', border: '1px solid rgba(26,23,20,0.07)', borderRadius: '18px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ background: 'var(--glass-subtle)', border: '1px solid rgba(26,23,20,0.07)', borderRadius: '18px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
               <p style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', margin: 0 }}>
@@ -398,26 +395,32 @@ function TrainCard({ train, onClick }) {
   }
 
   if (train.status === 'next') {
-    const color = 'var(--sky)'
     return (
       <button onClick={onClick} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
         <div style={{
-          background: 'linear-gradient(135deg, rgba(74,144,217,0.12) 0%, rgba(255,255,255,0.80) 100%)',
-          backdropFilter: 'blur(20px) saturate(1.6)', WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
-          border: '1.5px solid rgba(74,144,217,0.35)', borderRadius: '22px', padding: '18px',
-          boxShadow: '0 6px 28px rgba(74,144,217,0.18)',
+          background: dm
+            ? 'linear-gradient(135deg, rgba(74,144,217,0.22) 0%, rgba(8,6,4,0.94) 100%)'
+            : 'linear-gradient(135deg, rgba(74,144,217,0.12) 0%, rgba(255,255,255,0.80) 100%)',
+          backdropFilter: 'blur(28px) saturate(140%)', WebkitBackdropFilter: 'blur(28px) saturate(140%)',
+          border: `1.5px solid ${dm ? 'rgba(74,144,217,0.20)' : 'rgba(74,144,217,0.35)'}`,
+          borderRadius: '22px', padding: '18px',
+          boxShadow: dm
+            ? '0 6px 28px rgba(74,144,217,0.12), 0 1px 0 rgba(255,255,255,0.06) inset'
+            : '0 6px 28px rgba(74,144,217,0.18)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--sky)' }} />
-              <p style={{ fontWeight: 700, fontSize: '0.72rem', margin: 0 }}>Prochain train · {fmtDate(train.date)}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, marginRight: 8 }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--sky)', flexShrink: 0 }} />
+              <p style={{ fontWeight: 700, fontSize: '0.72rem', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Prochain train · {fmtDate(train.date)}</p>
             </div>
-            {train.train_number && (
-              <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: 'rgba(74,144,217,0.15)', color: 'var(--sky)' }}>{train.train_number}</span>
-            )}
-            {train.is_connection && (
-              <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: 'rgba(232,160,48,0.15)', color: 'var(--snooze)' }}>Correspondance</span>
-            )}
+            <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+              {train.train_number && (
+                <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: 'rgba(74,144,217,0.15)', color: 'var(--sky)' }}>{train.train_number}</span>
+              )}
+              {train.is_connection && (
+                <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: 'rgba(232,160,48,0.15)', color: 'var(--snooze)' }}>Correspondance</span>
+              )}
+            </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
             <div>
@@ -437,7 +440,7 @@ function TrainCard({ train, onClick }) {
               <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)', margin: '6px 0 0' }}>{train.to_station?.split(' ')[0]}</p>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(26,23,20,0.04)', borderRadius: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'var(--tint-bg)', borderRadius: '14px' }}>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: 0 }}>
               {train.from_station} → {train.to_station}
             </p>
@@ -451,7 +454,7 @@ function TrainCard({ train, onClick }) {
   // Upcoming
   return (
     <button onClick={onClick} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-      <div style={{ ...glass, borderRadius: '18px', padding: '14px 16px' }}>
+      <div style={{ ...G(T), borderRadius: '18px', padding: '14px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <p style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', margin: 0 }}>
             {fmtDate(train.date)}{train.train_number ? ` · ${train.train_number}` : ''}
@@ -487,6 +490,7 @@ function TrainCard({ train, onClick }) {
 // ── Hotel Detail Sheet ────────────────────────────────────────
 
 function HotelDetailSheet({ city, airbnb, isAdmin, onClose, onSaved }) {
+  const { T } = useT()
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({
     address: airbnb?.address || '', entry_code: airbnb?.entry_code || '',
@@ -545,7 +549,7 @@ function HotelDetailSheet({ city, airbnb, isAdmin, onClose, onSaved }) {
         {!editing ? (
           <>
             {/* Airbnb card */}
-            <div style={{ ...glass, borderRadius: '22px', padding: '18px 20px' }}>
+            <div style={{ ...G(T), borderRadius: '22px', padding: '18px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ width: 34, height: 34, borderRadius: '11px', background: 'rgba(232,160,48,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>🏠</div>
@@ -591,7 +595,7 @@ function HotelDetailSheet({ city, airbnb, isAdmin, onClose, onSaved }) {
           </>
         ) : (
           /* Edit form */
-          <div style={{ ...glass, borderRadius: '22px', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ ...G(T), borderRadius: '22px', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             <p style={{ fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>Modifier l'hébergement</p>
             {[
               { field: 'address', label: 'Adresse', placeholder: '123 Rue…' },
@@ -625,12 +629,13 @@ function HotelDetailSheet({ city, airbnb, isAdmin, onClose, onSaved }) {
 // ── Hotel Card ────────────────────────────────────────────────
 
 function HotelCard({ city, airbnb, onClick }) {
+  const { dm, T } = useT()
   const hasData = !!airbnb?.address
 
   if (city.status === 'past') {
     return (
       <button onClick={onClick} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-        <div style={{ background: 'rgba(255,255,255,0.28)', border: '1px solid rgba(26,23,20,0.07)', borderRadius: '18px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ background: 'var(--glass-subtle)', border: '1px solid rgba(26,23,20,0.07)', borderRadius: '18px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: '12px', background: 'rgba(26,23,20,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', filter: 'grayscale(0.7)', flexShrink: 0 }}>{city.flag}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-tertiary)', textDecoration: 'line-through', margin: 0 }}>{city.label}</p>
@@ -648,9 +653,11 @@ function HotelCard({ city, airbnb, onClick }) {
     return (
       <button onClick={onClick} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
         <div style={{
-          background: `linear-gradient(135deg, ${city.color}18 0%, rgba(255,255,255,0.82) 100%)`,
-          backdropFilter: 'blur(20px) saturate(1.6)', WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
-          border: `1.5px solid ${city.color}35`, borderRadius: '22px', padding: '18px',
+          background: dm
+            ? `linear-gradient(135deg, ${city.color}28 0%, rgba(8,6,4,0.94) 100%)`
+            : `linear-gradient(135deg, ${city.color}18 0%, rgba(255,255,255,0.82) 100%)`,
+          backdropFilter: 'blur(28px) saturate(140%)', WebkitBackdropFilter: 'blur(28px) saturate(140%)',
+          border: `1.5px solid ${dm ? city.color + '20' : city.color + '35'}`, borderRadius: '22px', padding: '18px',
           boxShadow: `0 6px 28px ${city.color}18`,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -679,10 +686,10 @@ function HotelCard({ city, airbnb, onClick }) {
   if (city.status === 'next') {
     return (
       <button onClick={onClick} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-        <div style={{ ...glass, borderRadius: '18px', padding: '14px 16px', border: `1.5px solid ${city.color}30`, display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ ...G(T), borderRadius: '18px', padding: '14px 16px', border: `1.5px solid ${dm ? city.color + '18' : city.color + '30'}`, display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <div style={{ width: 48, height: 48, borderRadius: '16px', background: `${city.color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>{city.flag}</div>
-            <div style={{ position: 'absolute', top: -4, right: -4, width: 14, height: 14, borderRadius: '50%', background: city.color, border: '2px solid white' }} />
+            <div style={{ position: 'absolute', top: -4, right: -4, width: 14, height: 14, borderRadius: '50%', background: city.color, border: '2px solid var(--bg-base)' }} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
@@ -701,7 +708,7 @@ function HotelCard({ city, airbnb, onClick }) {
   // Upcoming
   return (
     <button onClick={onClick} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-      <div style={{ ...glass, borderRadius: '18px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div style={{ ...G(T), borderRadius: '18px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
         <div style={{ width: 48, height: 48, borderRadius: '16px', background: `${city.color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>{city.flag}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontWeight: 700, fontSize: '0.95rem', margin: '0 0 3px' }}>{city.label}</p>
@@ -794,11 +801,11 @@ export default function Voyage() {
 
         {/* Tab switcher */}
         <div style={{ padding: '0 16px 14px' }}>
-          <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: '18px', background: 'rgba(26,23,20,0.07)', border: '1px solid rgba(255,255,255,0.5)' }}>
+          <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: '18px', background: 'rgba(26,23,20,0.07)', border: '1px solid var(--tab-border)' }}>
             {[{ id: 'trains', label: '🚄 Trains' }, { id: 'hebergements', label: '🏠 Hébergements' }].map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
                 flex: 1, padding: '11px 0', borderRadius: '14px', fontSize: '0.875rem', fontWeight: 700,
-                background: tab === t.id ? 'rgba(255,255,255,0.78)' : 'transparent',
+                background: tab === t.id ? 'var(--tab-active-bg)' : 'transparent',
                 color: tab === t.id ? 'var(--text-primary)' : 'var(--text-tertiary)',
                 boxShadow: tab === t.id ? '0 1px 8px rgba(26,23,20,0.09)' : 'none',
                 border: 'none', cursor: 'pointer', fontFamily: 'inherit',

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { getCurrentCity, CITY_SCHEDULE } from '../lib/travel'
 import { buildSystemPrompt, streamChat } from '../lib/openrouter'
+import { useT } from '../context/ThemeContext'
 
 const CATEGORY_META = {
   culture:   { emoji: '🏛️', label: 'Culture' },
@@ -47,6 +48,7 @@ function formatText(text) {
 // ── Sub-components ─────────────────────────────────────────────
 
 function MessageBubble({ message, live }) {
+  const { T } = useT()
   const isUser = message.role === 'user'
   return (
     <div style={{
@@ -60,12 +62,12 @@ function MessageBubble({ message, live }) {
         borderRadius: isUser ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
         background: isUser
           ? 'linear-gradient(135deg, var(--sun), #c87818)'
-          : 'rgba(255,255,255,0.88)',
+          : T.cardBg,
         backdropFilter: isUser ? 'none' : 'blur(16px)',
-        border: isUser ? 'none' : '1px solid rgba(255,255,255,0.9)',
+        border: isUser ? 'none' : '1px solid ' + T.cardBorder,
         boxShadow: isUser
           ? '0 2px 10px rgba(200,120,24,0.28)'
-          : '0 2px 12px rgba(26,23,20,0.07)',
+          : T.glassShadow,
         color: isUser ? 'white' : 'var(--text-primary)',
         fontSize: '0.9375rem',
         lineHeight: 1.55,
@@ -87,12 +89,13 @@ function MessageBubble({ message, live }) {
 }
 
 function TypingIndicator() {
+  const { T } = useT()
   return (
     <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
       <div style={{
         padding: '12px 16px', borderRadius: '4px 18px 18px 18px',
-        background: 'rgba(255,255,255,0.88)', border: '1px solid rgba(255,255,255,0.9)',
-        boxShadow: '0 2px 12px rgba(26,23,20,0.07)',
+        background: T.cardBg, border: '1px solid ' + T.cardBorder,
+        boxShadow: T.glassShadow,
         display: 'flex', gap: 5, alignItems: 'center',
       }}>
         {[0, 1, 2].map(i => (
@@ -108,12 +111,13 @@ function TypingIndicator() {
 }
 
 function ActivityCard({ activity, onConfirm, onDismiss, loading }) {
+  const { T } = useT()
   const meta = CATEGORY_META[activity.category] ?? CATEGORY_META.other
   const cityLabel = CITY_LABELS[activity.city] ?? activity.city
 
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)',
+      background: T.cardBg, backdropFilter: 'blur(20px)',
       border: '1.5px solid rgba(232,160,48,0.35)',
       borderRadius: '16px', padding: '14px 16px',
       boxShadow: '0 2px 16px rgba(232,160,48,0.12), 0 2px 8px rgba(26,23,20,0.06)',
@@ -185,6 +189,7 @@ function ActivityCard({ activity, onConfirm, onDismiss, loading }) {
 }
 
 function WelcomeScreen({ currentCity, onSuggestion }) {
+  const { T } = useT()
   const cityName = currentCity ? `${currentCity.flag} ${currentCity.label}` : 'le voyage'
 
   return (
@@ -219,7 +224,7 @@ function WelcomeScreen({ currentCity, onSuggestion }) {
             style={{
               textAlign: 'left', padding: '11px 14px',
               borderRadius: '14px', border: '1px solid rgba(26,23,20,0.08)',
-              background: 'rgba(255,255,255,0.7)', color: 'var(--text-primary)',
+              background: T.glassBg, color: 'var(--text-primary)',
               fontSize: '0.875rem', fontFamily: 'inherit', cursor: 'pointer',
               transition: 'background 0.12s',
             }}

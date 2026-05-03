@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useTutorial } from '../context/TutorialContext'
 import { supabase } from '../lib/supabase'
+import { useT, G } from '../context/ThemeContext'
 
 function Field({ label, required, hint, children }) {
   return (
@@ -18,13 +19,14 @@ function Field({ label, required, hint, children }) {
 }
 
 function Section({ title, children }) {
+  const { T } = useT()
   return (
     <div className="mb-5">
       <h2 className="text-xs font-semibold uppercase tracking-wider mb-2.5"
-        style={{ color: 'var(--text-secondary)' }}>
+        style={{ color: T.s }}>
         {title}
       </h2>
-      <div className="card">
+      <div style={{ ...G(T), borderRadius: '20px', overflow: 'hidden' }}>
         {children}
       </div>
     </div>
@@ -226,30 +228,24 @@ function ReplayTutorialButton() {
 // ── Vue profil complet ────────────────────────────────────────
 
 function DarkModeToggle() {
-  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
-  function toggle() {
-    const next = !dark
-    setDark(next)
-    document.documentElement.classList.toggle('dark', next)
-    localStorage.setItem('theme', next ? 'dark' : 'light')
-  }
+  const { dm, T, toggle } = useT()
   return (
     <button onClick={toggle} style={{
       width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
     }}>
-      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-        {dark ? '🌙 Mode sombre' : '☀️ Mode clair'}
+      <span className="text-sm" style={{ color: T.s }}>
+        {dm ? '🌙 Mode sombre' : '☀️ Mode clair'}
       </span>
       <div style={{
         width: 44, height: 26, borderRadius: 13, position: 'relative', flexShrink: 0,
-        background: dark ? 'var(--ink)' : 'rgba(26,23,20,0.15)',
+        background: dm ? T.p : 'rgba(26,23,20,0.15)',
         transition: 'background 0.2s',
       }}>
         <div style={{
-          position: 'absolute', top: 3, left: dark ? 21 : 3,
+          position: 'absolute', top: 3, left: dm ? 21 : 3,
           width: 20, height: 20, borderRadius: '50%',
-          background: dark ? 'var(--sand-50)' : 'white',
+          background: dm ? T.bodyBg : 'white',
           boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
           transition: 'left 0.2s, background 0.2s',
         }} />

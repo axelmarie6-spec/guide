@@ -8,6 +8,7 @@ import { useAuth } from './context/AuthContext'
 import { prefetchAllPdfs } from './lib/pdfCache'
 import TutorialOverlay from './components/TutorialOverlay'
 import RouteAnimation, { ROUTE_INTRO_KEY } from './components/RouteAnimation'
+import { ThemeProvider, useT } from './context/ThemeContext'
 
 const Explorer   = lazy(() => import('./pages/Explorer'))
 const Voyage     = lazy(() => import('./pages/Voyage'))
@@ -49,22 +50,26 @@ function WithNav({ children }) {
 }
 
 function BackgroundBlobs() {
+  const { T } = useT()
   return (
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
-      <div className="blob-amber" style={{
+      <div style={{
         position: 'absolute', top: '-20%', right: '-10%',
         width: '65vw', height: '65vw', maxWidth: 440,
         borderRadius: '50%', filter: 'blur(48px)',
+        background: T.b1, opacity: 0.22,
       }} />
-      <div className="blob-sky" style={{
+      <div style={{
         position: 'absolute', top: '35%', left: '-15%',
         width: '55vw', height: '55vw', maxWidth: 380,
         borderRadius: '50%', filter: 'blur(48px)',
+        background: T.b2, opacity: 0.18,
       }} />
-      <div className="blob-mint" style={{
+      <div style={{
         position: 'absolute', bottom: '-10%', right: '15%',
         width: '50vw', height: '50vw', maxWidth: 340,
         borderRadius: '50%', filter: 'blur(48px)',
+        background: T.b3, opacity: 0.15,
       }} />
     </div>
   )
@@ -73,13 +78,6 @@ function BackgroundBlobs() {
 export default function App() {
   const { user } = useAuth()
   const [showRouteAnim, setShowRouteAnim] = useState(false)
-
-  // Restore dark mode preference before first paint
-  useEffect(() => {
-    if (localStorage.getItem('theme') === 'dark') {
-      document.documentElement.classList.add('dark')
-    }
-  }, [])
 
   useEffect(() => {
     if (user && !localStorage.getItem(ROUTE_INTRO_KEY)) {
@@ -100,6 +98,7 @@ export default function App() {
   }, [user])
 
   return (
+    <ThemeProvider>
     <div style={{ minHeight: '100dvh', color: 'var(--text-primary)', position: 'relative' }}>
       {showRouteAnim && <RouteAnimation onDone={() => setShowRouteAnim(false)} />}
       <OfflineBanner />
@@ -135,5 +134,6 @@ export default function App() {
         </Routes>
       </div>
     </div>
+    </ThemeProvider>
   )
 }
