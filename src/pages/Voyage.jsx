@@ -7,6 +7,7 @@ import HeaderAvatar from '../components/HeaderAvatar'
 import PdfViewer from '../components/PdfViewer'
 import { readCache, writeCache } from '../lib/dbCache'
 import { useT, G } from '../context/ThemeContext'
+import { useTrainStatus } from '../lib/trainStatus'
 
 // ── Constants ─────────────────────────────────────────────────
 
@@ -365,10 +366,20 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
   )
 }
 
+// ── Delay Badge ───────────────────────────────────────────────
+
+function DelayBadge({ s }) {
+  if (!s || s.unavailable || s.delayMin === null) return null
+  if (s.cancelled) return <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: 'rgba(220,38,38,0.12)', color: '#dc2626' }}>Supprimé</span>
+  if (s.delayMin <= 2) return <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: 'rgba(59,170,122,0.12)', color: 'var(--mint)' }}>À l'heure</span>
+  return <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: 'rgba(232,160,48,0.15)', color: 'var(--sun)' }}>+{s.delayMin} min</span>
+}
+
 // ── Train Card ────────────────────────────────────────────────
 
 function TrainCard({ train, onClick }) {
   const { dm, T } = useT()
+  const status = useTrainStatus(train)
 
   if (train.status === 'past') {
     return (
@@ -420,6 +431,7 @@ function TrainCard({ train, onClick }) {
               {train.is_connection && (
                 <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '3px 10px', borderRadius: '20px', background: 'rgba(232,160,48,0.15)', color: 'var(--snooze)' }}>Correspondance</span>
               )}
+              <DelayBadge s={status} />
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
@@ -461,6 +473,7 @@ function TrainCard({ train, onClick }) {
           </p>
           <div style={{ display: 'flex', gap: 4 }}>
             {train.is_connection && <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: 'rgba(232,160,48,0.12)', color: 'var(--snooze)' }}>Correspondance</span>}
+            <DelayBadge s={status} />
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

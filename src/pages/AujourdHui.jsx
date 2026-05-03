@@ -6,6 +6,7 @@ import { getCurrentCity, CITY_SCHEDULE } from '../lib/travel'
 import HeaderAvatar from '../components/HeaderAvatar'
 import { readCache, writeCache } from '../lib/dbCache'
 import { useT } from '../context/ThemeContext'
+import { useTrainStatus } from '../lib/trainStatus'
 
 const TRIP_START = new Date('2026-08-01T00:00:00')
 const TRIP_DAYS = 22
@@ -532,10 +533,20 @@ function WeatherCard({ lat, lon, gpsLoading, gpsDenied }) {
   )
 }
 
+// ── Delay Badge ───────────────────────────────────────────────
+
+function DelayBadge({ s }) {
+  if (!s || s.unavailable || s.delayMin === null) return null
+  if (s.cancelled) return <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(220,38,38,0.12)', color: '#dc2626', display: 'inline-block' }}>Supprimé</span>
+  if (s.delayMin <= 2) return <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(59,170,122,0.12)', color: 'var(--mint)', display: 'inline-block' }}>À l'heure</span>
+  return <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(232,160,48,0.15)', color: 'var(--sun)', display: 'inline-block' }}>+{s.delayMin} min</span>
+}
+
 // ── TrainCard ──────────────────────────────────────────────────
 
 function TrainCard({ train, onClick }) {
   const { dm } = useT()
+  const status = useTrainStatus(train)
   if (train === undefined) return (
     <Card>
       <CardLabel>Prochain train</CardLabel>
@@ -594,12 +605,13 @@ function TrainCard({ train, onClick }) {
           )}
         </div>
       </div>
-      {train.platform && (
-        <p style={{
-          marginTop: 12, fontSize: '0.75rem', fontWeight: 600, color: 'var(--sky)',
-          background: 'rgba(74,144,217,0.10)', display: 'inline-block',
-          padding: '3px 10px', borderRadius: '20px',
-        }}>Voie {train.platform}</p>
+      {(train.platform || status) && (
+        <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+          {train.platform && (
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--sky)', background: 'rgba(74,144,217,0.10)', padding: '3px 10px', borderRadius: '20px' }}>Voie {train.platform}</span>
+          )}
+          <DelayBadge s={status} />
+        </div>
       )}
       {train.notes && (
         <p style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{train.notes}</p>
