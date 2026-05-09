@@ -445,72 +445,77 @@ function CatalogueView({ activities, allVotes, isAdmin, city, onOpen }) {
             return (
               <div key={a.id}
                 onClick={() => setExpanded(isOpen ? null : a.id)}
-                style={{ ...G(T), borderRadius: 18, overflow: 'hidden', cursor: 'pointer', transition: 'box-shadow 0.15s' }}
+                style={{ ...G(T), borderRadius: 18, overflow: 'hidden', cursor: 'pointer' }}
               >
-                {/* Collapsed row */}
-                {!isOpen && (
-                  <div style={{ display: 'flex' }}>
-                    <div style={{
-                      width: 76, flexShrink: 0,
-                      background: a.photo_url
-                        ? `url(${a.photo_url}) center/cover`
-                        : `linear-gradient(135deg, ${meta.color}22 0%, ${meta.color}08 100%)`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.7rem',
-                    }}>
-                      {!a.photo_url && meta.emoji}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0, padding: '11px 14px' }}>
-                      <p style={{ fontWeight: 700, fontSize: '0.9rem', margin: '0 0 3px', color: T.p, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {a.name}
-                      </p>
-                      {a.description && (
-                        <p style={{ color: T.s, fontSize: '0.76rem', margin: '0 0 5px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {a.description}
-                        </p>
-                      )}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: '0.65rem', padding: '2px 7px', borderRadius: 9999, background: meta.bg, color: meta.color, fontWeight: 600 }}>
-                          {meta.emoji} {meta.label}
-                        </span>
-                        {a.price_eur !== null && a.price_eur !== undefined && (
-                          <span style={{ fontSize: '0.7rem', color: T.s, fontWeight: 600 }}>
-                            {a.price_eur === 0 ? 'Gratuit' : `${a.price_eur} €`}
-                          </span>
-                        )}
-                        {matches > 0 && (
-                          <span style={{ fontSize: '0.68rem', color: '#3baa7a', fontWeight: 700 }}>
-                            {matches} ✓
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', paddingRight: 14, color: T.t, fontSize: '0.75rem' }}>▸</div>
+                {/* Always-visible header row */}
+                <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                  <div style={{
+                    width: 76, flexShrink: 0,
+                    background: a.photo_url
+                      ? `url(${a.photo_url}) center/cover`
+                      : `linear-gradient(135deg, ${meta.color}22 0%, ${meta.color}08 100%)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.7rem',
+                  }}>
+                    {!a.photo_url && meta.emoji}
                   </div>
-                )}
+                  <div style={{ flex: 1, minWidth: 0, padding: '11px 14px' }}>
+                    <p style={{ fontWeight: 700, fontSize: '0.9rem', margin: '0 0 3px', color: T.p, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {a.name}
+                    </p>
+                    {a.description && (
+                      <p style={{ color: T.s, fontSize: '0.76rem', margin: '0 0 5px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {a.description}
+                      </p>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: '0.65rem', padding: '2px 7px', borderRadius: 9999, background: meta.bg, color: meta.color, fontWeight: 600 }}>
+                        {meta.emoji} {meta.label}
+                      </span>
+                      {a.price_eur !== null && a.price_eur !== undefined && (
+                        <span style={{ fontSize: '0.7rem', color: T.s, fontWeight: 600 }}>
+                          {a.price_eur === 0 ? 'Gratuit' : `${a.price_eur} €`}
+                        </span>
+                      )}
+                      {matches > 0 && (
+                        <span style={{ fontSize: '0.68rem', color: '#3baa7a', fontWeight: 700 }}>
+                          {matches} ✓
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {/* Rotating chevron */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', paddingRight: 14,
+                    color: T.t, fontSize: '0.8rem',
+                    transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+                  }}>▸</div>
+                </div>
 
-                {/* Expanded view */}
-                {isOpen && (
-                  <div>
-                    {/* Photo banner or emoji banner */}
+                {/* Animated expandable panel — CSS grid trick for smooth height */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateRows: isOpen ? '1fr' : '0fr',
+                  transition: 'grid-template-rows 0.35s cubic-bezier(0.4,0,0.2,1)',
+                }}>
+                  <div style={{ overflow: 'hidden' }}>
+                    {/* Divider */}
+                    <div style={{ height: 1, background: T.divider, margin: '0 16px' }} />
+                    {/* Photo banner */}
                     <div style={{
-                      height: 180,
+                      height: 160, margin: '14px 14px 0',
+                      borderRadius: 12,
                       background: a.photo_url
                         ? `url(${a.photo_url}) center/cover`
                         : `linear-gradient(135deg, ${meta.color}33 0%, ${meta.color}11 100%)`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3.5rem',
-                      position: 'relative',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem',
                     }}>
                       {!a.photo_url && meta.emoji}
-                      {/* Close chevron */}
-                      <div style={{ position: 'absolute', top: 12, right: 14, fontSize: '0.75rem', color: a.photo_url ? 'rgba(255,255,255,0.7)' : T.t }}>▾</div>
                     </div>
                     {/* Details */}
-                    <div style={{ padding: '14px 16px 16px' }}>
-                      <p style={{ fontWeight: 700, fontSize: '1rem', margin: '0 0 6px', color: T.p }}>
-                        {a.name}
-                      </p>
+                    <div style={{ padding: '12px 16px 16px' }}>
                       {a.description && (
-                        <p style={{ color: T.s, fontSize: '0.82rem', margin: '0 0 12px', lineHeight: 1.5 }}>
+                        <p style={{ color: T.s, fontSize: '0.82rem', margin: '0 0 12px', lineHeight: 1.55 }}>
                           {a.description}
                         </p>
                       )}
@@ -531,7 +536,7 @@ function CatalogueView({ activities, allVotes, isAdmin, city, onOpen }) {
                       </div>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             )
           })}
