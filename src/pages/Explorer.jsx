@@ -371,6 +371,7 @@ function CatalogueView({ activities, allVotes, isAdmin, city, onOpen }) {
   const [cat, setCat] = useState('all')
   const [maxAct, setMaxAct] = useState('3')
   const [opening, setOpening] = useState(false)
+  const [expanded, setExpanded] = useState(null)
 
   const matchCounts = {}
   for (const v of allVotes) {
@@ -440,45 +441,97 @@ function CatalogueView({ activities, allVotes, isAdmin, city, onOpen }) {
           {filtered.map(a => {
             const meta = getCategoryMeta(a.category)
             const matches = matchCounts[a.id] ?? 0
+            const isOpen = expanded === a.id
             return (
-              <div key={a.id} style={{ ...G(T), borderRadius: 18, overflow: 'hidden', display: 'flex' }}>
-                {/* Thumbnail */}
-                <div style={{
-                  width: 76, flexShrink: 0,
-                  background: a.photo_url
-                    ? `url(${a.photo_url}) center/cover`
-                    : `linear-gradient(135deg, ${meta.color}22 0%, ${meta.color}08 100%)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.7rem',
-                }}>
-                  {!a.photo_url && meta.emoji}
-                </div>
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0, padding: '11px 14px' }}>
-                  <p style={{ fontWeight: 700, fontSize: '0.9rem', margin: '0 0 3px', color: T.p, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {a.name}
-                  </p>
-                  {a.description && (
-                    <p style={{ color: T.s, fontSize: '0.76rem', margin: '0 0 5px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                      {a.description}
-                    </p>
-                  )}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: '0.65rem', padding: '2px 7px', borderRadius: 9999, background: meta.bg, color: meta.color, fontWeight: 600 }}>
-                      {meta.emoji} {meta.label}
-                    </span>
-                    {a.price_eur !== null && a.price_eur !== undefined && (
-                      <span style={{ fontSize: '0.7rem', color: T.s, fontWeight: 600 }}>
-                        {a.price_eur === 0 ? 'Gratuit' : `${a.price_eur} €`}
-                      </span>
-                    )}
-                    {matches > 0 && (
-                      <span style={{ fontSize: '0.68rem', color: '#3baa7a', fontWeight: 700 }}>
-                        {matches} ✓
-                      </span>
-                    )}
+              <div key={a.id}
+                onClick={() => setExpanded(isOpen ? null : a.id)}
+                style={{ ...G(T), borderRadius: 18, overflow: 'hidden', cursor: 'pointer', transition: 'box-shadow 0.15s' }}
+              >
+                {/* Collapsed row */}
+                {!isOpen && (
+                  <div style={{ display: 'flex' }}>
+                    <div style={{
+                      width: 76, flexShrink: 0,
+                      background: a.photo_url
+                        ? `url(${a.photo_url}) center/cover`
+                        : `linear-gradient(135deg, ${meta.color}22 0%, ${meta.color}08 100%)`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.7rem',
+                    }}>
+                      {!a.photo_url && meta.emoji}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, padding: '11px 14px' }}>
+                      <p style={{ fontWeight: 700, fontSize: '0.9rem', margin: '0 0 3px', color: T.p, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {a.name}
+                      </p>
+                      {a.description && (
+                        <p style={{ color: T.s, fontSize: '0.76rem', margin: '0 0 5px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {a.description}
+                        </p>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: '0.65rem', padding: '2px 7px', borderRadius: 9999, background: meta.bg, color: meta.color, fontWeight: 600 }}>
+                          {meta.emoji} {meta.label}
+                        </span>
+                        {a.price_eur !== null && a.price_eur !== undefined && (
+                          <span style={{ fontSize: '0.7rem', color: T.s, fontWeight: 600 }}>
+                            {a.price_eur === 0 ? 'Gratuit' : `${a.price_eur} €`}
+                          </span>
+                        )}
+                        {matches > 0 && (
+                          <span style={{ fontSize: '0.68rem', color: '#3baa7a', fontWeight: 700 }}>
+                            {matches} ✓
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', paddingRight: 14, color: T.t, fontSize: '0.75rem' }}>▸</div>
                   </div>
-                </div>
+                )}
+
+                {/* Expanded view */}
+                {isOpen && (
+                  <div>
+                    {/* Photo banner or emoji banner */}
+                    <div style={{
+                      height: 180,
+                      background: a.photo_url
+                        ? `url(${a.photo_url}) center/cover`
+                        : `linear-gradient(135deg, ${meta.color}33 0%, ${meta.color}11 100%)`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3.5rem',
+                      position: 'relative',
+                    }}>
+                      {!a.photo_url && meta.emoji}
+                      {/* Close chevron */}
+                      <div style={{ position: 'absolute', top: 12, right: 14, fontSize: '0.75rem', color: a.photo_url ? 'rgba(255,255,255,0.7)' : T.t }}>▾</div>
+                    </div>
+                    {/* Details */}
+                    <div style={{ padding: '14px 16px 16px' }}>
+                      <p style={{ fontWeight: 700, fontSize: '1rem', margin: '0 0 6px', color: T.p }}>
+                        {a.name}
+                      </p>
+                      {a.description && (
+                        <p style={{ color: T.s, fontSize: '0.82rem', margin: '0 0 12px', lineHeight: 1.5 }}>
+                          {a.description}
+                        </p>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.7rem', padding: '3px 9px', borderRadius: 9999, background: meta.bg, color: meta.color, fontWeight: 600 }}>
+                          {meta.emoji} {meta.label}
+                        </span>
+                        {a.price_eur !== null && a.price_eur !== undefined && (
+                          <span style={{ fontSize: '0.78rem', color: T.p, fontWeight: 700 }}>
+                            {a.price_eur === 0 ? '🎟 Gratuit' : `💶 ${a.price_eur} € / pers.`}
+                          </span>
+                        )}
+                        {matches > 0 && (
+                          <span style={{ fontSize: '0.75rem', color: '#3baa7a', fontWeight: 700 }}>
+                            ✓ {matches} match{matches > 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}
