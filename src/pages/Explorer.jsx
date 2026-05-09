@@ -366,12 +366,21 @@ function AddActivityModal({ city, userId, onClose, onAdded }) {
 
 // ── Sub-views ──────────────────────────────────────────────────
 
-function ClosedView({ isAdmin, city, onOpen }) {
+function CatalogueView({ activities, allVotes, isAdmin, city, onOpen }) {
+  const { T } = useT()
+  const [cat, setCat] = useState('all')
   const [maxAct, setMaxAct] = useState('3')
-  const [loading, setLoading] = useState(false)
+  const [opening, setOpening] = useState(false)
+
+  const matchCounts = {}
+  for (const v of allVotes) {
+    if (v.vote === 'match') matchCounts[v.activity_id] = (matchCounts[v.activity_id] ?? 0) + 1
+  }
+
+  const filtered = cat === 'all' ? activities : activities.filter(a => a.category === cat)
 
   async function openVotes() {
-    setLoading(true)
+    setOpening(true)
     const today = new Date().toISOString().slice(0, 10)
     await supabase.from('day_config').upsert(
       { city, date: today, max_activities: parseInt(maxAct) || 3, votes_open: true },
@@ -380,29 +389,101 @@ function ClosedView({ isAdmin, city, onOpen }) {
     onOpen()
   }
 
-  if (!isAdmin) return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 24px', gap: 12, textAlign: 'center' }}>
-      <p style={{ fontSize: '3rem', margin: 0 }}>⏳</p>
-      <p style={{ fontWeight: 700, fontSize: '1.05rem', margin: 0 }}>Les votes n'ont pas encore ouvert</p>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
-        Attends qu'Axel ouvre le deck du jour.
-      </p>
-    </div>
-  )
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <p style={{ fontWeight: 700, fontSize: '1.05rem', margin: 0 }}>Ouvrir les votes du jour</p>
-      <div>
-        <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
-          Activités à valider
-        </p>
-        <input value={maxAct} onChange={e => setMaxAct(e.target.value)} type="number" min="1" max="10"
-          style={{ textAlign: 'center', maxWidth: 120 }} />
+
+      {/* Admin controls */}
+      {isAdmin && (
+        <div style={{ ...G(T), borderRadius: 20, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: '0.68rem', fontWeight: 700, color: T.s, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>
+              Activités max
+            </p>
+            <input value={maxAct} onChange={e => setMaxAct(e.target.value)} type="number" min="1" max="10"
+              style={{ textAlign: 'center', width: '100%' }} />
+          </div>
+          <button onClick={openVotes} disabled={opening} className="btn-primary"
+            style={{ flex: 2, paddingTop: 22 }}>
+            {opening ? 'Ouverture…' : '🗳️ Ouvrir les votes'}
+          </button>
+        </div>
+      )}
+
+      {/* Category filter */}
+      <div style={{ overflowX: 'auto', display: 'flex', gap: 7, scrollbarWidth: 'none', paddingBottom: 2 }}>
+        {CAT_PILLS.map(p => (
+          <button key={p.id} onClick={() => setCat(p.id)} style={{
+            flexShrink: 0, borderRadius: 20, padding: '5px 12px',
+            fontSize: '0.73rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+            border: cat === p.id ? 'none' : '1px solid ' + T.divider,
+            background: cat === p.id ? T.surf2 : T.surf1,
+            color: cat === p.id ? T.p : T.s, transition: 'all 0.15s',
+          }}>
+            {p.label}
+          </button>
+        ))}
       </div>
-      <button onClick={openVotes} disabled={loading} className="btn-primary">
-        {loading ? 'Ouverture…' : '🗳️ Ouvrir les votes'}
-      </button>
+
+      {/* Count */}
+      <p style={{ fontSize: '0.78rem', color: T.s, margin: 0 }}>
+        {filtered.length} activité{filtered.length !== 1 ? 's' : ''} enregistrée{filtered.length !== 1 ? 's' : ''} à {city.charAt(0).toUpperCase() + city.slice(1)}
+      </p>
+
+      {/* List */}
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 0' }}>
+          <p style={{ fontSize: '2rem', margin: '0 0 10px' }}>🗂️</p>
+          <p style={{ color: T.s, fontSize: '0.85rem', margin: 0 }}>Aucune activité dans cette catégorie</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtered.map(a => {
+            const meta = getCategoryMeta(a.category)
+            const matches = matchCounts[a.id] ?? 0
+            return (
+              <div key={a.id} style={{ ...G(T), borderRadius: 18, overflow: 'hidden', display: 'flex' }}>
+                {/* Thumbnail */}
+                <div style={{
+                  width: 76, flexShrink: 0,
+                  background: a.photo_url
+                    ? `url(${a.photo_url}) center/cover`
+                    : `linear-gradient(135deg, ${meta.color}22 0%, ${meta.color}08 100%)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.7rem',
+                }}>
+                  {!a.photo_url && meta.emoji}
+                </div>
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0, padding: '11px 14px' }}>
+                  <p style={{ fontWeight: 700, fontSize: '0.9rem', margin: '0 0 3px', color: T.p, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {a.name}
+                  </p>
+                  {a.description && (
+                    <p style={{ color: T.s, fontSize: '0.76rem', margin: '0 0 5px', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {a.description}
+                    </p>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: '0.65rem', padding: '2px 7px', borderRadius: 9999, background: meta.bg, color: meta.color, fontWeight: 600 }}>
+                      {meta.emoji} {meta.label}
+                    </span>
+                    {a.price_eur !== null && a.price_eur !== undefined && (
+                      <span style={{ fontSize: '0.7rem', color: T.s, fontWeight: 600 }}>
+                        {a.price_eur === 0 ? 'Gratuit' : `${a.price_eur} €`}
+                      </span>
+                    )}
+                    {matches > 0 && (
+                      <span style={{ fontSize: '0.68rem', color: '#3baa7a', fontWeight: 700 }}>
+                        {matches} ✓
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -863,7 +944,7 @@ export default function Explorer() {
             }} />
           </div>
         ) : view === 'closed' ? (
-          <ClosedView isAdmin={isAdmin} city={city} onOpen={fetchAll} />
+          <CatalogueView activities={activities} allVotes={allVotes} isAdmin={isAdmin} city={city} onOpen={fetchAll} />
         ) : view === 'voting' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {currentCard ? (
