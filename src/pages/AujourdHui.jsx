@@ -73,13 +73,15 @@ function getDayInfo() {
 // ── Hooks ──────────────────────────────────────────────────────
 
 function useGPS() {
-  const [state, setState] = useState({ lat: null, lon: null, loading: false, denied: false })
+  const [state, setState] = useState({ lat: null, lon: null, loading: true, denied: false })
 
   useEffect(() => {
-    if (!navigator.geolocation) return
+    if (!navigator.geolocation) {
+      setState({ lat: null, lon: null, loading: false, denied: true })
+      return
+    }
 
     function request() {
-      setState(s => ({ ...s, loading: true }))
       navigator.geolocation.getCurrentPosition(
         pos => setState({ lat: pos.coords.latitude, lon: pos.coords.longitude, loading: false, denied: false }),
         () => setState({ lat: null, lon: null, loading: false, denied: true }),
@@ -87,20 +89,30 @@ function useGPS() {
       )
     }
 
+    function skip() {
+      setState({ lat: null, lon: null, loading: false, denied: false })
+    }
+
     if (navigator.permissions) {
-      navigator.permissions.query({ name: 'geolocation' }).then(({ state: perm }) => {
-        if (perm === 'granted') {
-          request() // déjà accordé — silencieux, aucun dialog
-        } else if (perm === 'denied') {
-          setState({ lat: null, lon: null, loading: false, denied: true })
-        } else if (!localStorage.getItem(GPS_ASKED_KEY)) {
-          localStorage.setItem(GPS_ASKED_KEY, '1')
-          request() // dialog affiché une seule fois
-        }
-      })
+      navigator.permissions.query({ name: 'geolocation' })
+        .then(({ state: perm }) => {
+          if (perm === 'granted') {
+            request()
+          } else if (perm === 'denied') {
+            setState({ lat: null, lon: null, loading: false, denied: true })
+          } else if (!localStorage.getItem(GPS_ASKED_KEY)) {
+            localStorage.setItem(GPS_ASKED_KEY, '1')
+            request()
+          } else {
+            skip() // déjà demandé, l'utilisateur a ignoré
+          }
+        })
+        .catch(skip)
     } else if (!localStorage.getItem(GPS_ASKED_KEY)) {
       localStorage.setItem(GPS_ASKED_KEY, '1')
       request()
+    } else {
+      skip()
     }
   }, [])
 
