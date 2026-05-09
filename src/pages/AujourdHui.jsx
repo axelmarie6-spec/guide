@@ -12,8 +12,6 @@ const TRIP_START = new Date('2026-08-01T00:00:00')
 const TRIP_DAYS = 22
 const OWM_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
 const WEATHER_CACHE_KEY = 'weather_cache_v6'
-const GPS_ASKED_KEY = 'gps_asked_v1'
-
 // OWM city query fallback (GPS denied)
 const CITY_OWM_QUERY = {
   bruxelles: 'Brussels,BE',
@@ -80,40 +78,11 @@ function useGPS() {
       setState({ lat: null, lon: null, loading: false, denied: true })
       return
     }
-
-    function request() {
-      navigator.geolocation.getCurrentPosition(
-        pos => setState({ lat: pos.coords.latitude, lon: pos.coords.longitude, loading: false, denied: false }),
-        () => setState({ lat: null, lon: null, loading: false, denied: true }),
-        { timeout: 8000, maximumAge: 5 * 60 * 1000 },
-      )
-    }
-
-    function skip() {
-      setState({ lat: null, lon: null, loading: false, denied: false })
-    }
-
-    if (navigator.permissions) {
-      navigator.permissions.query({ name: 'geolocation' })
-        .then(({ state: perm }) => {
-          if (perm === 'granted') {
-            request()
-          } else if (perm === 'denied') {
-            setState({ lat: null, lon: null, loading: false, denied: true })
-          } else if (!localStorage.getItem(GPS_ASKED_KEY)) {
-            localStorage.setItem(GPS_ASKED_KEY, '1')
-            request()
-          } else {
-            skip() // déjà demandé, l'utilisateur a ignoré
-          }
-        })
-        .catch(skip)
-    } else if (!localStorage.getItem(GPS_ASKED_KEY)) {
-      localStorage.setItem(GPS_ASKED_KEY, '1')
-      request()
-    } else {
-      skip()
-    }
+    navigator.geolocation.getCurrentPosition(
+      pos => setState({ lat: pos.coords.latitude, lon: pos.coords.longitude, loading: false, denied: false }),
+      () => setState({ lat: null, lon: null, loading: false, denied: true }),
+      { timeout: 8000, maximumAge: 5 * 60 * 1000 },
+    )
   }, [])
 
   return state
