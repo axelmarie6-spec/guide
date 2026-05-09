@@ -12,16 +12,7 @@ const TRIP_START = new Date('2026-08-01T00:00:00')
 const TRIP_DAYS = 22
 const OWM_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
 const WEATHER_CACHE_KEY = 'weather_cache_v6'
-const GPS_CACHE_KEY = 'gps_pos_v1'
-const GPS_TTL = 30 * 60 * 1000
-
-function readGPSCache() {
-  try {
-    const c = JSON.parse(localStorage.getItem(GPS_CACHE_KEY))
-    if (c && Date.now() - c.ts < GPS_TTL) return c
-  } catch {}
-  return null
-}
+const GPS_ASKED_KEY = 'gps_asked_v1'
 
 // OWM city query fallback (GPS denied)
 const CITY_OWM_QUERY = {
@@ -82,27 +73,35 @@ function getDayInfo() {
 // ── Hooks ──────────────────────────────────────────────────────
 
 function useGPS() {
-  const [state, setState] = useState(() => {
-    const c = readGPSCache()
-    if (c) return { lat: c.lat, lon: c.lon, loading: false, denied: false }
-    return { lat: null, lon: null, loading: true, denied: false }
-  })
+  const [state, setState] = useState({ lat: null, lon: null, loading: false, denied: false })
 
   useEffect(() => {
-    if (readGPSCache()) return
-    if (!navigator.geolocation) {
-      setState({ lat: null, lon: null, loading: false, denied: true })
-      return
+    if (!navigator.geolocation) return
+
+    function request() {
+      setState(s => ({ ...s, loading: true }))
+      navigator.geolocation.getCurrentPosition(
+        pos => setState({ lat: pos.coords.latitude, lon: pos.coords.longitude, loading: false, denied: false }),
+        () => setState({ lat: null, lon: null, loading: false, denied: true }),
+        { timeout: 8000, maximumAge: 5 * 60 * 1000 },
+      )
     }
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const { latitude: lat, longitude: lon } = pos.coords
-        try { localStorage.setItem(GPS_CACHE_KEY, JSON.stringify({ lat, lon, ts: Date.now() })) } catch {}
-        setState({ lat, lon, loading: false, denied: false })
-      },
-      () => setState({ lat: null, lon: null, loading: false, denied: true }),
-      { timeout: 8000, maximumAge: 5 * 60 * 1000 }
-    )
+
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: 'geolocation' }).then(({ state: perm }) => {
+        if (perm === 'granted') {
+          request() // déjà accordé — silencieux, aucun dialog
+        } else if (perm === 'denied') {
+          setState({ lat: null, lon: null, loading: false, denied: true })
+        } else if (!localStorage.getItem(GPS_ASKED_KEY)) {
+          localStorage.setItem(GPS_ASKED_KEY, '1')
+          request() // dialog affiché une seule fois
+        }
+      })
+    } else if (!localStorage.getItem(GPS_ASKED_KEY)) {
+      localStorage.setItem(GPS_ASKED_KEY, '1')
+      request()
+    }
   }, [])
 
   return state
