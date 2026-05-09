@@ -371,10 +371,13 @@ function Card({ children, style, onClick, onTouchStart, onTouchEnd }) {
 }
 
 function CardLabel({ children }) {
+  const { dm } = useT()
   return (
     <p style={{
       fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.07em',
-      textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 10,
+      textTransform: 'uppercase',
+      color: dm ? 'rgba(255,255,255,0.45)' : 'var(--text-tertiary)',
+      marginBottom: 10,
     }}>{children}</p>
   )
 }

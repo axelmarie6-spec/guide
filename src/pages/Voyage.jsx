@@ -122,7 +122,7 @@ function RouteStrip({ cities }) {
 // ── Train Detail Sheet ────────────────────────────────────────
 
 function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
-  const { T } = useT()
+  const { dm, T } = useT()
   const myPdfs = pdfs.filter(p => p.leg_order === train.leg_order)
   const stationMapUrl = getStationMapUrl(train.from_station)
 
@@ -317,21 +317,26 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
               <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', margin: 0, padding: '4px 0' }}>Billets à venir</p>
             )}
 
-            {myPdfs.map((pdf, i) => (
-              <button key={pdf.id} onClick={() => setViewerPdf(pdf)} style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderRadius: '14px',
-                background: i === 0 ? 'var(--ink)' : 'rgba(26,23,20,0.05)',
-                border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', marginBottom: 6,
-                boxShadow: i === 0 ? '0 4px 12px rgba(26,23,20,0.18)' : 'none',
-              }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke={i === 0 ? 'white' : 'var(--text-primary)'} strokeWidth="2" />
-                  <polyline points="14,2 14,8 20,8" stroke={i === 0 ? 'white' : 'var(--text-primary)'} strokeWidth="2" strokeLinecap="round" />
-                </svg>
-                <span style={{ flex: 1, fontWeight: 700, fontSize: '0.875rem', color: i === 0 ? 'white' : 'var(--text-primary)' }}>{pdf.label}</span>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke={i === 0 ? 'rgba(255,255,255,0.5)' : 'var(--text-tertiary)'} strokeWidth="2" strokeLinecap="round" /></svg>
-              </button>
-            ))}
+            {myPdfs.map((pdf, i) => {
+              const bold = i % 2 === 0
+              const bg = bold ? T.p : T.surf1
+              const fg = bold ? T.bodyBg : T.p
+              const fgMuted = bold ? (dm ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.5)') : T.s
+              return (
+                <button key={pdf.id} onClick={() => setViewerPdf(pdf)} style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderRadius: '14px',
+                  background: bg, border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', marginBottom: 6,
+                  boxShadow: bold ? '0 4px 12px rgba(26,23,20,0.18)' : 'none',
+                }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke={fg} strokeWidth="2" />
+                    <polyline points="14,2 14,8 20,8" stroke={fg} strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  <span style={{ flex: 1, fontWeight: 700, fontSize: '0.875rem', color: fg }}>{pdf.label}</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke={fgMuted} strokeWidth="2" strokeLinecap="round" /></svg>
+                </button>
+              )
+            })}
 
             {showUpload && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
