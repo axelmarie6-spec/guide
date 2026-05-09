@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useT } from '../context/ThemeContext'
 
 export default function AdminPopup({ onClose }) {
   const { initials, displayName } = useAuth()
   const navigate = useNavigate()
+  const { dm } = useT()
 
   function go(path) {
     onClose()
@@ -21,17 +23,17 @@ export default function AdminPopup({ onClose }) {
       <div style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: 500, zIndex: 201,
-        background: 'rgba(250,249,247,0.97)',
+        background: dm ? 'rgba(20,18,16,0.97)' : 'rgba(250,249,247,0.97)',
         backdropFilter: 'blur(40px) saturate(180%)',
         WebkitBackdropFilter: 'blur(40px) saturate(180%)',
         borderRadius: '28px 28px 0 0',
-        border: '1px solid rgba(255,255,255,0.85)',
+        border: dm ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.85)',
         borderBottom: 'none',
-        boxShadow: '0 -4px 32px rgba(26,23,20,0.10)',
+        boxShadow: dm ? '0 -4px 32px rgba(0,0,0,0.40)' : '0 -4px 32px rgba(26,23,20,0.10)',
         padding: '16px 20px',
         paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
       }}>
-        <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(0,0,0,0.14)', margin: '0 auto 20px' }} />
+        <div style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: dm ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.14)', margin: '0 auto 20px' }} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
           <div style={{
@@ -67,7 +69,7 @@ export default function AdminPopup({ onClose }) {
           ))}
         </div>
 
-        <div style={{ height: '1px', backgroundColor: 'rgba(0,0,0,0.07)', margin: '4px 0 12px' }} />
+        <div style={{ height: '1px', backgroundColor: dm ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)', margin: '4px 0 12px' }} />
 
         <button onClick={() => go('/profil')} style={{
           width: '100%', textAlign: 'left', padding: '13px 16px', borderRadius: '16px',

@@ -212,30 +212,32 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
 
           {/* Main card: times */}
           <div style={{ ...G(T), borderRadius: '22px', padding: '22px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <div style={{ textAlign: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: train.is_connection ? 10 : 20 }}>
+              <div style={{ textAlign: 'center', flexShrink: 0 }}>
                 <p style={{ fontSize: '2.6rem', fontWeight: 800, lineHeight: 1, margin: 0, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>{fmtTime(train.departure_time)}</p>
                 <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)', margin: '6px 0 0' }}>
                   {train.from_station?.split(' ')[0]}
                 </p>
               </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '0 14px' }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 14px' }}>
                 <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sky)', flexShrink: 0 }} />
                   <div style={{ flex: 1, height: 1.5, background: 'rgba(26,23,20,0.12)', borderRadius: 2 }} />
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="var(--text-tertiary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </div>
-                {train.is_connection && (
-                  <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: 'rgba(232,160,48,0.15)', color: 'var(--snooze)' }}>Correspondance</span>
-                )}
               </div>
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ textAlign: 'center', flexShrink: 0 }}>
                 <p style={{ fontSize: '2.6rem', fontWeight: 800, lineHeight: 1, margin: 0, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>{fmtTime(train.arrival_time)}</p>
                 <p style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)', margin: '6px 0 0' }}>
                   {train.to_station?.split(' ')[0]}
                 </p>
               </div>
             </div>
+            {train.is_connection && (
+              <div style={{ textAlign: 'center', marginBottom: 14 }}>
+                <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 10px', borderRadius: '20px', background: 'rgba(232,160,48,0.15)', color: 'var(--snooze)' }}>Correspondance</span>
+              </div>
+            )}
 
             {/* Info grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
