@@ -1061,58 +1061,83 @@ function RouteMapCard() {
     ? cities.slice(0, doneUpTo + 1).map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x},${c.y}`).join(' ')
     : null
 
-  const routeColor  = dm ? 'rgba(255,255,255,0.12)' : 'rgba(26,23,20,0.12)'
-  const futureDot   = dm ? 'rgba(255,255,255,0.18)' : 'rgba(26,23,20,0.12)'
-  const dotBorder   = dm ? 'rgba(255,255,255,0.22)' : 'rgba(26,23,20,0.20)'
-  const landFill    = dm ? 'rgba(255,255,255,0.05)' : 'rgba(26,23,20,0.05)'
-  const landStroke  = dm ? 'rgba(255,255,255,0.14)' : 'rgba(26,23,20,0.13)'
+  // colours
+  const mapBg      = dm ? '#0d0b09'             : '#e8e0d0'
+  const seaFill    = dm ? 'rgba(74,144,217,0.06)': 'rgba(74,144,217,0.10)'
+  const landFill   = dm ? 'rgba(255,255,255,0.07)': 'rgba(26,23,20,0.08)'
+  const landStroke = dm ? 'rgba(255,255,255,0.18)': 'rgba(26,23,20,0.22)'
+  const dashColor  = dm ? 'rgba(255,255,255,0.22)': 'rgba(26,23,20,0.22)'
+  const pinBg      = mapBg   // "punch-through" ring behind each dot
+  const accent     = '#e8603a'
 
   return (
-    <Card>
-      <CardLabel>Itinéraire</CardLabel>
-      <svg viewBox="0 0 320 210" style={{ width: '100%', display: 'block', overflow: 'visible' }}>
+    <Card style={{ padding: 0, overflow: 'hidden' }}>
+      {/* Title sits above the map */}
+      <div style={{ padding: '14px 16px 10px' }}>
+        <CardLabel>Itinéraire</CardLabel>
+      </div>
 
-        {/* Country outlines */}
+      {/* Map full-bleed inside card */}
+      <svg viewBox="0 0 320 210" style={{ width: '100%', display: 'block' }}>
+
+        {/* Sea background */}
+        <rect x="0" y="0" width="320" height="210" fill={seaFill} />
+
+        {/* Map paper background — clips to the land area via countries */}
+        <rect x="0" y="0" width="320" height="210" fill={mapBg} opacity="0.55" />
+
+        {/* Country fills */}
         {EUROPE_PATHS.map((d, i) => (
-          <path key={i} d={d} fill={landFill} stroke={landStroke} strokeWidth="0.8" strokeLinejoin="round" />
+          <path key={i} d={d} fill={landFill} stroke={landStroke}
+            strokeWidth="0.85" strokeLinejoin="round" />
         ))}
 
-        {/* Full route — dashed */}
+        {/* Future route — dashed */}
         <polyline points={pts} fill="none"
-          stroke={routeColor} strokeWidth="1.5"
-          strokeDasharray="4 3" strokeLinejoin="round" strokeLinecap="round" />
+          stroke={dashColor} strokeWidth="1.5"
+          strokeDasharray="5 4" strokeLinejoin="round" strokeLinecap="round" />
 
-        {/* Completed route — solid */}
-        {donePath && (
-          <path d={donePath} fill="none"
-            stroke={T.p} strokeWidth="2.5"
+        {/* Completed route — glow layer + solid */}
+        {donePath && (<>
+          <path d={donePath} fill="none" stroke={accent}
+            strokeWidth="7" opacity="0.18"
             strokeLinejoin="round" strokeLinecap="round" />
-        )}
+          <path d={donePath} fill="none" stroke={accent}
+            strokeWidth="2.5"
+            strokeLinejoin="round" strokeLinecap="round" />
+        </>)}
 
-        {/* Cities */}
+        {/* City dots */}
         {cities.map(c => {
-          const fill   = c.isPast    ? T.t : c.isCurrent ? T.p : futureDot
-          const stroke = c.isCurrent ? T.p : dotBorder
-          const lc     = c.isPast    ? T.t : c.isCurrent ? T.p : T.s
-          const fw     = c.isCurrent ? '700' : '500'
+          const isFuture  = !c.isPast && !c.isCurrent
+          const dotColor  = c.isCurrent ? accent : c.isPast ? (dm ? 'rgba(255,255,255,0.55)' : 'rgba(26,23,20,0.45)') : (dm ? 'rgba(255,255,255,0.22)' : 'rgba(26,23,20,0.18)')
+          const labelColor = c.isCurrent ? accent : c.isPast ? T.p : T.s
           return (
             <g key={c.city}>
+              {/* Pulse ring for current city */}
               {c.isCurrent && (
-                <circle cx={c.x} cy={c.y} r="8" fill="none" stroke={T.p} strokeWidth="1.5" opacity="0.3">
-                  <animate attributeName="r"       values="6;14;6"     dur="2.5s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" values="0.4;0;0.4"  dur="2.5s" repeatCount="indefinite" />
+                <circle cx={c.x} cy={c.y} r="9" fill="none" stroke={accent} strokeWidth="1.5" opacity="0.3">
+                  <animate attributeName="r"       values="7;15;7"     dur="2.5s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.45;0;0.45" dur="2.5s" repeatCount="indefinite" />
                 </circle>
               )}
-              <circle cx={c.x} cy={c.y} r="4.5" fill={fill} stroke={stroke} strokeWidth="1.5" />
+              {/* White/dark ring — punches through map bg for legibility */}
+              <circle cx={c.x} cy={c.y} r="6"   fill={pinBg} />
+              <circle cx={c.x} cy={c.y} r="4.5" fill={dotColor} />
+              {/* Label */}
               <text x={c.x + c.dx} y={c.y + c.dy}
-                textAnchor={c.anchor} fontSize="7.5" fontWeight={fw}
-                fill={lc} fontFamily="inherit">
+                textAnchor={c.anchor} fontSize="8"
+                fontWeight={c.isCurrent ? '700' : isFuture ? '400' : '600'}
+                fill={labelColor} fontFamily="inherit" opacity={isFuture ? 0.7 : 1}>
                 {c.flag} {c.label}
               </text>
             </g>
           )
         })}
       </svg>
+
+      {/* Bottom padding inside card */}
+      <div style={{ height: 14 }} />
     </Card>
   )
 }
