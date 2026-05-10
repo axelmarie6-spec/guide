@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useTutorial } from '../context/TutorialContext'
 import { supabase } from '../lib/supabase'
 import { useT, G } from '../context/ThemeContext'
+import { CITY_SCHEDULE, EMERGENCY } from '../lib/travel'
 
 function Field({ label, required, hint, children }) {
   return (
@@ -346,6 +347,8 @@ function ProfileView({ profile, isAdmin, onEdit, onSignOut }) {
         <DarkModeToggle />
       </Section>
 
+      <TravelPromptSection profile={profile} />
+
       <ReplayTutorialButton />
 
       <button onClick={onSignOut} className="btn-secondary mt-2"
@@ -353,6 +356,101 @@ function ProfileView({ profile, isAdmin, onEdit, onSignOut }) {
         Se déconnecter
       </button>
     </div>
+  )
+}
+
+// ── Prompt IA ─────────────────────────────────────────────────
+
+function buildPrompt(profile) {
+  const name = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.pseudo || 'Voyageur'
+  const lines = []
+
+  lines.push(`Je m'appelle ${name} et je participe à un voyage en train à travers l'Europe avec un groupe de 5 amis en août 2026 (22 jours, 7 villes). Voici toutes les informations sur notre voyage pour que tu puisses m'aider au mieux.\n`)
+
+  lines.push(`## Itinéraire`)
+  for (const c of CITY_SCHEDULE) {
+    const from = new Date(c.from + 'T12:00:00')
+    const to   = new Date(c.to   + 'T12:00:00')
+    const days = Math.round((to - from) / 86400000) + 1
+    const fStr = from.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+    const tStr = to.toLocaleDateString('fr-FR',   { day: 'numeric', month: 'long' })
+    const emg  = EMERGENCY[c.city]
+    lines.push(`\n### ${c.flag} ${c.label} — ${fStr} au ${tStr} (${days} jours)`)
+    lines.push(`- Pays : ${emg.country}`)
+    lines.push(`- Monnaie : ${c.currency}`)
+    lines.push(`- Urgences : ${emg.general} (général) · Police : ${emg.police} · SAMU : ${emg.samu} · Pompiers : ${emg.pompiers}`)
+    lines.push(`- Ambassade de France : ${emg.embassy} · ${emg.embassyAddress}`)
+  }
+
+  lines.push(`\n## Mon profil`)
+  lines.push(`- Prénom & nom : ${name}`)
+  lines.push(`- Allergies / restrictions alimentaires : ${profile.allergies || 'Aucune'}`)
+  lines.push(`- Contact d'urgence : ${profile.emergency_name || '—'} — ${profile.emergency_phone || '—'}`)
+  lines.push(`- N° Passeport / CNI : ${profile.passport_number || '—'}`)
+  lines.push(`- N° CEAM : ${profile.ceam_number || '—'}`)
+
+  return lines.join('\n')
+}
+
+function TravelPromptSection({ profile }) {
+  const { T } = useT()
+  const [copied, setCopied] = useState(false)
+  const prompt = useMemo(() => buildPrompt(profile), [profile])
+
+  async function copy() {
+    await navigator.clipboard.writeText(prompt)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2500)
+  }
+
+  return (
+    <Section title="Prompt IA">
+      <div style={{ padding: '14px 16px 16px' }}>
+        <p style={{ fontSize: '0.78rem', color: T.s, margin: '0 0 12px', lineHeight: 1.5 }}>
+          Copie ce contexte et colle-le au début d'une conversation avec n'importe quelle IA pour qu'elle connaisse tout ton voyage.
+        </p>
+
+        {/* Scrollable prompt box */}
+        <div style={{
+          background: T.surf1,
+          border: '1px solid ' + T.divider,
+          borderRadius: 12,
+          padding: '12px 14px',
+          maxHeight: 180,
+          overflowY: 'auto',
+          marginBottom: 12,
+          WebkitOverflowScrolling: 'touch',
+        }}>
+          <pre style={{
+            margin: 0,
+            fontSize: '0.72rem',
+            lineHeight: 1.65,
+            color: T.p,
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            fontFamily: 'inherit',
+          }}>
+            {prompt}
+          </pre>
+        </div>
+
+        <button onClick={copy} style={{
+          width: '100%',
+          padding: '11px 0',
+          borderRadius: 12,
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          fontSize: '0.9rem',
+          fontWeight: 700,
+          background: copied ? 'rgba(22,163,74,0.12)' : 'rgba(232,160,48,0.12)',
+          color: copied ? 'var(--match)' : 'var(--accent)',
+          transition: 'background 0.2s, color 0.2s',
+        }}>
+          {copied ? '✓ Copié dans le presse-papier !' : 'Copier le prompt'}
+        </button>
+      </div>
+    </Section>
   )
 }
 
