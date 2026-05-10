@@ -1000,6 +1000,25 @@ function TimelineCard({ city, train, isPreview = false }) {
 
 // ── RouteMapCard ───────────────────────────────────────────────
 
+// Simplified country outlines — each point computed via toSvg(lat, lon)
+// lon 3.5–20.0 → x 20–300 | lat 45.5–53.5 → y 20–190 (N=top)
+const EUROPE_PATHS = [
+  // Belgium
+  'M 12,71 L 25,63 L 57,77 L 64,92 L 54,105 L 12,105 Z',
+  // Netherlands
+  'M 25,63 L 29,46 L 40,33 L 46,26 L 52,22 L 83,24 L 83,52 L 57,77 L 25,63 Z',
+  // Germany
+  'M 81,28 L 108,12 L 164,7 L 202,11 L 215,83 L 190,143 L 122,143 L 88,137 L 68,88 L 71,56 L 81,28 Z',
+  // Czech Republic
+  'M 173,84 L 224,80 L 275,90 L 279,116 L 241,126 L 173,126 Z',
+  // Austria
+  'M 122,152 L 164,131 L 181,137 L 207,126 L 252,131 L 252,158 L 207,169 L 130,169 Z',
+  // Hungary (clips at right edge)
+  'M 249,126 L 275,128 L 320,131 L 320,185 L 262,185 L 241,179 L 241,148 Z',
+  // Switzerland
+  'M 56,179 L 90,143 L 105,141 L 135,141 L 139,162 L 130,184 L 79,184 L 56,179 Z',
+]
+
 // Label anchor + offset per city (hand-tuned to avoid overlaps)
 const MAP_LABEL = {
   bruxelles: { dx: 0,  dy: 15, anchor: 'middle' },
@@ -1045,11 +1064,18 @@ function RouteMapCard() {
   const routeColor  = dm ? 'rgba(255,255,255,0.12)' : 'rgba(26,23,20,0.12)'
   const futureDot   = dm ? 'rgba(255,255,255,0.18)' : 'rgba(26,23,20,0.12)'
   const dotBorder   = dm ? 'rgba(255,255,255,0.22)' : 'rgba(26,23,20,0.20)'
+  const landFill    = dm ? 'rgba(255,255,255,0.05)' : 'rgba(26,23,20,0.05)'
+  const landStroke  = dm ? 'rgba(255,255,255,0.14)' : 'rgba(26,23,20,0.13)'
 
   return (
     <Card>
       <CardLabel>Itinéraire</CardLabel>
       <svg viewBox="0 0 320 210" style={{ width: '100%', display: 'block', overflow: 'visible' }}>
+
+        {/* Country outlines */}
+        {EUROPE_PATHS.map((d, i) => (
+          <path key={i} d={d} fill={landFill} stroke={landStroke} strokeWidth="0.8" strokeLinejoin="round" />
+        ))}
 
         {/* Full route — dashed */}
         <polyline points={pts} fill="none"
