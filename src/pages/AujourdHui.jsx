@@ -998,6 +998,99 @@ function TimelineCard({ city, train, isPreview = false }) {
   )
 }
 
+// ── RouteMapCard ───────────────────────────────────────────────
+
+// Label anchor + offset per city (hand-tuned to avoid overlaps)
+const MAP_LABEL = {
+  bruxelles: { dx: 0,  dy: 15, anchor: 'middle' },
+  amsterdam: { dx: 0,  dy: -9, anchor: 'middle' },
+  berlin:    { dx: 0,  dy: -9, anchor: 'middle' },
+  prague:    { dx: 9,  dy: 3,  anchor: 'start'  },
+  budapest:  { dx: -4, dy: 14, anchor: 'end'    },
+  vienne:    { dx: -8, dy: -6, anchor: 'end'    },
+  geneve:    { dx: 0,  dy: 14, anchor: 'middle' },
+}
+
+function toSvg(lat, lon) {
+  // lon 3.5–20.0 → x 20–300 ; lat 45.5–53.5 → y 20–190 (inverted)
+  return {
+    x: Math.round((lon - 3.5) / 16.5 * 280 + 20),
+    y: Math.round((53.5 - lat) / 8.0  * 170 + 20),
+  }
+}
+
+function RouteMapCard() {
+  const { dm, T } = useT()
+  const today = new Date().toISOString().slice(0, 10)
+
+  const cities = CITY_SCHEDULE.map(c => {
+    const { x, y } = toSvg(CITY_COORDS[c.city].lat, CITY_COORDS[c.city].lon)
+    const lbl = MAP_LABEL[c.city]
+    return {
+      ...c, x, y, ...lbl,
+      isPast:    today > c.to,
+      isCurrent: today >= c.from && today <= c.to,
+    }
+  })
+
+  const currentIdx = cities.findIndex(c => c.isCurrent)
+  const tripOver   = today > CITY_SCHEDULE.at(-1).to
+  const doneUpTo   = tripOver ? cities.length - 1 : currentIdx
+
+  const pts     = cities.map(c => `${c.x},${c.y}`).join(' ')
+  const donePath = doneUpTo >= 0
+    ? cities.slice(0, doneUpTo + 1).map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x},${c.y}`).join(' ')
+    : null
+
+  const routeColor  = dm ? 'rgba(255,255,255,0.12)' : 'rgba(26,23,20,0.12)'
+  const futureDot   = dm ? 'rgba(255,255,255,0.18)' : 'rgba(26,23,20,0.12)'
+  const dotBorder   = dm ? 'rgba(255,255,255,0.22)' : 'rgba(26,23,20,0.20)'
+
+  return (
+    <Card>
+      <CardLabel>Itinéraire</CardLabel>
+      <svg viewBox="0 0 320 210" style={{ width: '100%', display: 'block', overflow: 'visible' }}>
+
+        {/* Full route — dashed */}
+        <polyline points={pts} fill="none"
+          stroke={routeColor} strokeWidth="1.5"
+          strokeDasharray="4 3" strokeLinejoin="round" strokeLinecap="round" />
+
+        {/* Completed route — solid */}
+        {donePath && (
+          <path d={donePath} fill="none"
+            stroke={T.p} strokeWidth="2.5"
+            strokeLinejoin="round" strokeLinecap="round" />
+        )}
+
+        {/* Cities */}
+        {cities.map(c => {
+          const fill   = c.isPast    ? T.t : c.isCurrent ? T.p : futureDot
+          const stroke = c.isCurrent ? T.p : dotBorder
+          const lc     = c.isPast    ? T.t : c.isCurrent ? T.p : T.s
+          const fw     = c.isCurrent ? '700' : '500'
+          return (
+            <g key={c.city}>
+              {c.isCurrent && (
+                <circle cx={c.x} cy={c.y} r="8" fill="none" stroke={T.p} strokeWidth="1.5" opacity="0.3">
+                  <animate attributeName="r"       values="6;14;6"     dur="2.5s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.4;0;0.4"  dur="2.5s" repeatCount="indefinite" />
+                </circle>
+              )}
+              <circle cx={c.x} cy={c.y} r="4.5" fill={fill} stroke={stroke} strokeWidth="1.5" />
+              <text x={c.x + c.dx} y={c.y + c.dy}
+                textAnchor={c.anchor} fontSize="7.5" fontWeight={fw}
+                fill={lc} fontFamily="inherit">
+                {c.flag} {c.label}
+              </text>
+            </g>
+          )
+        })}
+      </svg>
+    </Card>
+  )
+}
+
 // ── Composant principal ────────────────────────────────────────
 
 export default function AujourdHui() {
@@ -1037,6 +1130,7 @@ export default function AujourdHui() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <WeatherCard lat={gps.lat} lon={gps.lon} gpsLoading={gps.loading} gpsDenied={gps.denied} />
         <TrainCard train={train} onClick={train?.id ? () => navigate('/voyage', { state: { openTrainId: train.id } }) : undefined} />
+        <RouteMapCard />
         <CurrencyCard rates={rates} offline={ratesOffline} currentCurrency={currentCurrency} />
         <TimelineCard city={timelineCity} train={train} isPreview={!currentCity} />
       </div>
