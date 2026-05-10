@@ -140,6 +140,7 @@ function UsersTab({ currentUserId }) {
       </p>
       <ResetTutorialButton currentUserId={currentUserId} />
       <ReplayIntroButton />
+      <ArrivalAnimTestBlock />
     </div>
   )
 }
@@ -197,6 +198,44 @@ function ResetTutorialButton({ currentUserId }) {
       }}>
         {done ? '✓ Tuto relancé !' : '▶ Rejouer le tutoriel'}
       </button>
+    </div>
+  )
+}
+
+function ArrivalAnimTestBlock() {
+  const [done, setDone] = useState(null)
+  function test(n) {
+    const fn = window[`__testArrival${n}`]
+    if (typeof fn === 'function') {
+      fn('berlin')
+      setDone(n)
+      setTimeout(() => setDone(null), 2500)
+    }
+  }
+  return (
+    <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: '16px', background: 'rgba(167,139,250,0.06)', border: '1px dashed rgba(167,139,250,0.25)' }}>
+      <p style={{ fontSize: '0.72rem', fontWeight: 700, color: '#a78bfa', margin: '0 0 8px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+        Animation d'arrivée
+      </p>
+      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0 0 10px' }}>
+        Se déclenche automatiquement à l'heure d'arrivée du train dans la BDD.
+      </p>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {[
+          { n: 1, label: '🎉 Confetti' },
+          { n: 2, label: '🔴 Tampon' },
+          { n: 3, label: '📮 Carte postale' },
+        ].map(({ n, label }) => (
+          <button key={n} onClick={() => test(n)} style={{
+            fontSize: '0.8rem', fontWeight: 700, padding: '7px 14px', borderRadius: '12px',
+            background: done === n ? 'rgba(22,163,74,0.1)' : 'rgba(167,139,250,0.12)',
+            color: done === n ? 'var(--match)' : '#a78bfa',
+            border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+          }}>
+            {done === n ? '✓ Lancée !' : label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

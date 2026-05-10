@@ -8,6 +8,7 @@ import { useAuth } from './context/AuthContext'
 import { prefetchAllPdfs } from './lib/pdfCache'
 import TutorialOverlay from './components/TutorialOverlay'
 import RouteAnimation, { ROUTE_INTRO_KEY } from './components/RouteAnimation'
+import ArrivalAnimManager from './components/ArrivalAnimation'
 import { ThemeProvider, useT } from './context/ThemeContext'
 
 const Explorer   = lazy(() => import('./pages/Explorer'))
@@ -101,6 +102,7 @@ export default function App() {
     <ThemeProvider>
     <div style={{ minHeight: '100dvh', color: 'var(--text-primary)', position: 'relative' }}>
       {showRouteAnim && <RouteAnimation onDone={() => setShowRouteAnim(false)} />}
+      <ArrivalAnimManager />
       <OfflineBanner />
       <BackgroundBlobs />
       <TutorialOverlay />
