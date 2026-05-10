@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { CITY_SCHEDULE } from '../lib/travel'
+import { useAuth } from '../context/AuthContext'
 
 // ── Full-screen arrival screen ─────────────────────────────────
 function ArrivalScreen({ city, onDone }) {
@@ -155,6 +156,7 @@ function ArrivalScreen({ city, onDone }) {
 
 // ── Manager ────────────────────────────────────────────────────
 export default function ArrivalAnimManager() {
+  const { user } = useAuth()
   const [activeCity, setActiveCity] = useState(null)
 
   const trigger = useCallback((city) => {
@@ -171,6 +173,7 @@ export default function ArrivalAnimManager() {
 
   // Real trigger: fires at train arrival_time, once per day
   useEffect(() => {
+    if (!user) return
     let cancelled = false
     let timer = null
 
@@ -213,7 +216,7 @@ export default function ArrivalAnimManager() {
       cancelled = true
       if (timer) clearTimeout(timer)
     }
-  }, [trigger])
+  }, [trigger, user])
 
   if (!activeCity) return null
   return <ArrivalScreen city={activeCity} onDone={dismiss} />
