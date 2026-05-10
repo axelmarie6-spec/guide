@@ -1,52 +1,121 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <rect width="100" height="100" rx="16" fill="#f5f1ea"/>
   <defs>
-    <filter id="ts" x="-8%" y="-8%" width="122%" height="135%">
-      <feDropShadow dx="0" dy="5" stdDeviation="10" flood-color="#1a1714" flood-opacity="0.13"/>
-    </filter>
+    <clipPath id="flag-be"><circle cx="40" cy="69" r="3.5"/></clipPath>
+    <clipPath id="flag-nl"><circle cx="47" cy="69" r="3.5"/></clipPath>
+    <clipPath id="flag-de"><circle cx="54" cy="69" r="3.5"/></clipPath>
+    <clipPath id="flag-cz"><circle cx="61" cy="69" r="3.5"/></clipPath>
+    <clipPath id="flag-hu"><circle cx="68" cy="69" r="3.5"/></clipPath>
+    <clipPath id="flag-at"><circle cx="75" cy="69" r="3.5"/></clipPath>
+    <clipPath id="flag-ch"><circle cx="82" cy="69" r="3.5"/></clipPath>
   </defs>
 
-  <!-- App background (warm sand) -->
-  <rect width="512" height="512" rx="80" fill="#f5f1ea"/>
-
-  <g filter="url(#ts)">
-    <!-- Main body + aerodynamic nose (left) -->
-    <path d="M132,170 C104,170 78,181 62,204 C48,224 46,250 56,270 C66,289 88,298 116,298 L448,298 Q464,298 464,282 L464,186 Q464,170 448,170 Z" fill="white"/>
-
-    <!-- Windshield glass (front cab) -->
-    <polygon points="88,175 132,172 132,253 84,249 62,238 55,222 68,198 88,175" fill="rgba(26,23,20,0.13)"/>
-
-    <!-- Cab post (A-pillar) -->
-    <line x1="132" y1="170" x2="132" y2="298" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
-
-    <!-- Passenger window strip -->
-    <rect x="140" y="180" width="294" height="53" rx="7" fill="rgba(26,23,20,0.09)"/>
-
-    <!-- Window dividers -->
-    <line x1="220" y1="180" x2="220" y2="233" stroke="white" stroke-width="4.5" stroke-opacity="0.65"/>
-    <line x1="300" y1="180" x2="300" y2="233" stroke="white" stroke-width="4.5" stroke-opacity="0.65"/>
-    <line x1="380" y1="180" x2="380" y2="233" stroke="white" stroke-width="4.5" stroke-opacity="0.65"/>
-
-    <!-- Amber accent stripe (brand colour) -->
-    <line x1="58" y1="253" x2="464" y2="253" stroke="#e8a030" stroke-width="8" stroke-linecap="round"/>
-
-    <!-- Undercarriage plate -->
-    <rect x="108" y="298" width="358" height="14" rx="5" fill="rgba(255,255,255,0.55)"/>
-
-    <!-- Front bogie -->
-    <rect x="120" y="310" width="66" height="7" rx="3" fill="rgba(255,255,255,0.45)"/>
-    <circle cx="136" cy="328" r="20" fill="white"/>
-    <circle cx="136" cy="328" r="9"  fill="#ddd8cf"/>
-    <circle cx="170" cy="328" r="20" fill="white"/>
-    <circle cx="170" cy="328" r="9"  fill="#ddd8cf"/>
-
-    <!-- Rear bogie -->
-    <rect x="330" y="310" width="66" height="7" rx="3" fill="rgba(255,255,255,0.45)"/>
-    <circle cx="343" cy="328" r="20" fill="white"/>
-    <circle cx="343" cy="328" r="9"  fill="#ddd8cf"/>
-    <circle cx="377" cy="328" r="20" fill="white"/>
-    <circle cx="377" cy="328" r="9"  fill="#ddd8cf"/>
+  <!-- ── Rails ──────────────────────────────────────────── -->
+  <g id="rails" stroke="#b8a888" stroke-linecap="round">
+    <line x1="10" y1="59.5" x2="90" y2="59.5" stroke-width="1.2"/>
+    <line x1="10" y1="61.5" x2="90" y2="61.5" stroke-width="1.2"/>
+    <line x1="43" y1="58.5" x2="43" y2="62.5" stroke-width="1"/>
+    <line x1="50" y1="58.5" x2="50" y2="62.5" stroke-width="1"/>
+    <line x1="57" y1="58.5" x2="57" y2="62.5" stroke-width="1"/>
+    <line x1="64" y1="58.5" x2="64" y2="62.5" stroke-width="1"/>
+    <line x1="71" y1="58.5" x2="71" y2="62.5" stroke-width="1"/>
+    <line x1="78" y1="58.5" x2="78" y2="62.5" stroke-width="1"/>
+    <line x1="85" y1="58.5" x2="85" y2="62.5" stroke-width="1"/>
   </g>
 
-  <!-- Rail / ground line -->
-  <rect x="44" y="352" width="426" height="5" rx="2.5" fill="rgba(26,23,20,0.07)"/>
+  <!-- ── Train ──────────────────────────────────────────── -->
+  <g id="train" stroke="#1a1714" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Body outline — angled nose gives 3/4 perspective -->
+    <path d="M24,57 L29,44 L85,44 L85,57 Z" stroke-width="1.5"/>
+    <!-- Cab / body separator -->
+    <line x1="40" y1="44" x2="40" y2="57" stroke-width="1" stroke-opacity="0.65"/>
+    <!-- Windshield hint (two sides of the angled cab face) -->
+    <path d="M26,54 L30,46.5 L39,46.5" stroke-width="0.9" stroke-opacity="0.6"/>
+    <!-- Side windows -->
+    <rect x="43" y="46" width="7" height="5.5" rx="1" stroke-width="1"/>
+    <rect x="52" y="46" width="7" height="5.5" rx="1" stroke-width="1"/>
+    <rect x="61" y="46" width="7" height="5.5" rx="1" stroke-width="1"/>
+    <rect x="70" y="46" width="7" height="5.5" rx="1" stroke-width="1"/>
+    <!-- Lower-body trim -->
+    <line x1="40" y1="55.5" x2="85" y2="55.5" stroke-width="0.7" stroke-opacity="0.4"/>
+  </g>
+
+  <!-- ── Orange accent ──────────────────────────────────── -->
+  <g id="accent" stroke="#e8603a" stroke-linecap="round">
+    <!-- Nose face highlight -->
+    <path d="M24,57 L29,44" stroke-width="1.8"/>
+    <!-- Speed lines — decreasing length = acceleration effect -->
+    <line x1="42" y1="52.5" x2="75" y2="52.5" stroke-width="1.3"/>
+    <line x1="42" y1="54.5" x2="67" y2="54.5" stroke-width="1"/>
+    <line x1="42" y1="56.5" x2="59" y2="56.5" stroke-width="0.7"/>
+  </g>
+
+  <!-- ── Tunnel arch (drawn over train front) ───────────── -->
+  <g id="tunnel" stroke="#1a1714" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Outer arch -->
+    <path d="M16,61.5 L16,43 A13,13 0 0 0 42,43 L42,61.5" stroke-width="1.5"/>
+    <!-- Inner arch — depth illusion -->
+    <path d="M19,61.5 L19,45 A10,10 0 0 0 39,45 L39,61.5" stroke-width="1" stroke-opacity="0.45"/>
+  </g>
+
+  <!-- ── Flag pastilles (7 countries) ──────────────────── -->
+  <g id="drapeaux">
+
+    <!-- 🇧🇪 Belgium : vertical black | yellow | red -->
+    <g clip-path="url(#flag-be)">
+      <rect x="36.5" y="65.5" width="2.34" height="7" fill="#000"/>
+      <rect x="38.84" y="65.5" width="2.33" height="7" fill="#FAE042"/>
+      <rect x="41.17" y="65.5" width="2.33" height="7" fill="#EF0000"/>
+    </g>
+    <circle cx="40" cy="69" r="3.5" stroke="#b8a888" stroke-width="0.6"/>
+
+    <!-- 🇳🇱 Netherlands : horizontal red | white | blue -->
+    <g clip-path="url(#flag-nl)">
+      <rect x="43.5" y="65.5" width="7" height="2.34" fill="#AE1C28"/>
+      <rect x="43.5" y="67.84" width="7" height="2.33" fill="#fff"/>
+      <rect x="43.5" y="70.17" width="7" height="2.33" fill="#21468B"/>
+    </g>
+    <circle cx="47" cy="69" r="3.5" stroke="#b8a888" stroke-width="0.6"/>
+
+    <!-- 🇩🇪 Germany : horizontal black | red | gold -->
+    <g clip-path="url(#flag-de)">
+      <rect x="50.5" y="65.5" width="7" height="2.34" fill="#000"/>
+      <rect x="50.5" y="67.84" width="7" height="2.33" fill="#DD0000"/>
+      <rect x="50.5" y="70.17" width="7" height="2.33" fill="#FFCE00"/>
+    </g>
+    <circle cx="54" cy="69" r="3.5" stroke="#b8a888" stroke-width="0.6"/>
+
+    <!-- 🇨🇿 Czech Republic : white top | red bottom | blue hoist triangle -->
+    <g clip-path="url(#flag-cz)">
+      <rect x="57.5" y="65.5" width="7" height="3.5" fill="#fff"/>
+      <rect x="57.5" y="69"   width="7" height="3.5" fill="#D7141A"/>
+      <polygon points="57.5,65.5 62,69 57.5,72.5" fill="#11457E"/>
+    </g>
+    <circle cx="61" cy="69" r="3.5" stroke="#b8a888" stroke-width="0.6"/>
+
+    <!-- 🇭🇺 Hungary : horizontal red | white | green -->
+    <g clip-path="url(#flag-hu)">
+      <rect x="64.5" y="65.5" width="7" height="2.34" fill="#CE2939"/>
+      <rect x="64.5" y="67.84" width="7" height="2.33" fill="#fff"/>
+      <rect x="64.5" y="70.17" width="7" height="2.33" fill="#477050"/>
+    </g>
+    <circle cx="68" cy="69" r="3.5" stroke="#b8a888" stroke-width="0.6"/>
+
+    <!-- 🇦🇹 Austria : horizontal red | white | red -->
+    <g clip-path="url(#flag-at)">
+      <rect x="71.5" y="65.5" width="7" height="2.34" fill="#ED2939"/>
+      <rect x="71.5" y="67.84" width="7" height="2.33" fill="#fff"/>
+      <rect x="71.5" y="70.17" width="7" height="2.33" fill="#ED2939"/>
+    </g>
+    <circle cx="75" cy="69" r="3.5" stroke="#b8a888" stroke-width="0.6"/>
+
+    <!-- 🇨🇭 Switzerland : red + white cross -->
+    <g clip-path="url(#flag-ch)">
+      <rect x="78.5" y="65.5" width="7" height="7" fill="#FF0000"/>
+      <rect x="81.2" y="66.5" width="1.6" height="5"   fill="#fff"/>
+      <rect x="79.5" y="68.2" width="5"   height="1.6" fill="#fff"/>
+    </g>
+    <circle cx="82" cy="69" r="3.5" stroke="#b8a888" stroke-width="0.6"/>
+
+  </g>
 </svg>
