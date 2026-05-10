@@ -202,14 +202,19 @@ function ResetTutorialButton({ currentUserId }) {
   )
 }
 
+const ARRIVAL_TEST_CITIES = [
+  { city: 'amsterdam', label: '🇳🇱 Amsterdam' },
+  { city: 'berlin',    label: '🇩🇪 Berlin' },
+  { city: 'prague',    label: '🇨🇿 Prague' },
+]
+
 function ArrivalAnimTestBlock() {
   const [done, setDone] = useState(null)
-  function test(n) {
-    const fn = window[`__testArrival${n}`]
-    if (typeof fn === 'function') {
-      fn('berlin')
-      setDone(n)
-      setTimeout(() => setDone(null), 2500)
+  function test(city) {
+    if (typeof window.__testArrival === 'function') {
+      window.__testArrival(city)
+      setDone(city)
+      setTimeout(() => setDone(null), 3000)
     }
   }
   return (
@@ -221,18 +226,14 @@ function ArrivalAnimTestBlock() {
         Se déclenche automatiquement à l'heure d'arrivée du train dans la BDD.
       </p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {[
-          { n: 1, label: '🎉 Confetti' },
-          { n: 2, label: '🔴 Tampon' },
-          { n: 3, label: '📮 Carte postale' },
-        ].map(({ n, label }) => (
-          <button key={n} onClick={() => test(n)} style={{
+        {ARRIVAL_TEST_CITIES.map(({ city, label }) => (
+          <button key={city} onClick={() => test(city)} style={{
             fontSize: '0.8rem', fontWeight: 700, padding: '7px 14px', borderRadius: '12px',
-            background: done === n ? 'rgba(22,163,74,0.1)' : 'rgba(167,139,250,0.12)',
-            color: done === n ? 'var(--match)' : '#a78bfa',
+            background: done === city ? 'rgba(22,163,74,0.1)' : 'rgba(167,139,250,0.12)',
+            color: done === city ? 'var(--match)' : '#a78bfa',
             border: 'none', cursor: 'pointer', fontFamily: 'inherit',
           }}>
-            {done === n ? '✓ Lancée !' : label}
+            {done === city ? '✓ Lancée !' : label}
           </button>
         ))}
       </div>

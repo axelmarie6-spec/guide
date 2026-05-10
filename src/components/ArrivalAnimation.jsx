@@ -1,260 +1,175 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { CITY_SCHEDULE } from '../lib/travel'
-import { useT } from '../context/ThemeContext'
 
-const ANIM_CSS = `
-@keyframes confetti-fly {
-  0%   { transform: translate(0,0) rotate(0deg); opacity: 1; }
-  75%  { opacity: 1; }
-  100% { transform: translate(var(--tx),var(--ty)) rotate(var(--rot)); opacity: 0; }
-}
-@keyframes stamp-slam {
-  0%   { transform: scale(2.4) rotate(-15deg); opacity: 0; }
-  55%  { transform: scale(0.92) rotate(2deg); opacity: 1; }
-  75%  { transform: scale(1.04) rotate(-0.5deg); }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
-}
-@keyframes stamp-out {
-  0%   { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(0.75); }
-}
-@keyframes postcard-up {
-  from { transform: translateY(110%); }
-  to   { transform: translateY(0); }
-}
-@keyframes postcard-down {
-  from { transform: translateY(0); }
-  to   { transform: translateY(110%); }
-}
-`
-
-let cssInjected = false
-function injectCss() {
-  if (cssInjected) return
-  const el = document.createElement('style')
-  el.textContent = ANIM_CSS
-  document.head.appendChild(el)
-  cssInjected = true
-}
-
-const CONFETTI_COLORS = [
-  '#e8603a', '#e8a030', '#4a90d9', '#3baa7a',
-  '#a78bfa', '#f472b6', '#facc15', '#34d399',
-]
-
-// ── Variant 1 : Confetti ───────────────────────────────────────
-function ConfettiAnim({ onDone }) {
-  const particles = useMemo(() => [...Array(64)].map((_, i) => ({
-    id: i,
-    left: 15 + Math.random() * 70,
-    bottom: 30 + Math.random() * 20,
-    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-    delay: Math.random() * 0.55,
-    dur: 1.4 + Math.random() * 1.3,
-    w: 6 + Math.random() * 8,
-    h: 4 + Math.random() * 5,
-    tx: `${(Math.random() - 0.5) * 440}px`,
-    ty: `${-(120 + Math.random() * 380)}px`,
-    rot: `${Math.random() * 800 - 400}deg`,
-  })), [])
-
-  useEffect(() => {
-    const t = setTimeout(onDone, 3600)
-    return () => clearTimeout(t)
-  }, [onDone])
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 200, overflow: 'hidden' }}>
-      {particles.map(p => (
-        <div key={p.id} style={{
-          position: 'absolute',
-          left: `${p.left}%`,
-          bottom: `${p.bottom}%`,
-          width: p.w, height: p.h,
-          borderRadius: 2,
-          background: p.color,
-          '--tx': p.tx,
-          '--ty': p.ty,
-          '--rot': p.rot,
-          animation: `confetti-fly ${p.dur}s cubic-bezier(0,0.55,0.35,1) ${p.delay}s both`,
-          opacity: 0,
-        }} />
-      ))}
-    </div>
-  )
-}
-
-// ── Variant 2 : Tampon passeport ───────────────────────────────
-function StampAnim({ city, onDone }) {
-  const [phase, setPhase] = useState('in')
+// ── Full-screen arrival screen ─────────────────────────────────
+function ArrivalScreen({ city, onDone }) {
   const cityInfo = CITY_SCHEDULE.find(c => c.city === city) ?? CITY_SCHEDULE[0]
-  const today = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase('out'), 2400)
-    const t2 = setTimeout(onDone, 3300)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [onDone])
-
-  return (
-    <div
-      onClick={onDone}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 200,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(0,0,0,0.5)',
-        backdropFilter: 'blur(6px)',
-        WebkitBackdropFilter: 'blur(6px)',
-        cursor: 'pointer',
-      }}
-    >
-      <div style={{
-        width: 230, height: 230, borderRadius: '50%',
-        border: '7px double rgba(190,30,30,0.8)',
-        outline: '2px solid rgba(190,30,30,0.2)',
-        outlineOffset: 5,
-        boxShadow: 'inset 0 0 0 3px rgba(190,30,30,0.15), 0 0 50px rgba(190,30,30,0.22)',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(190,30,30,0.06)',
-        animation: phase === 'in'
-          ? 'stamp-slam 0.45s cubic-bezier(0.2,0,0.2,1.5) both'
-          : 'stamp-out 0.65s ease-in both',
-        color: 'rgba(190,30,30,0.88)',
-        userSelect: 'none',
-      }}>
-        <div style={{ fontSize: '2.6rem', lineHeight: 1, marginBottom: 3 }}>{cityInfo.flag}</div>
-        <div style={{ fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.25em', textTransform: 'uppercase', opacity: 0.65 }}>
-          Arrivée
-        </div>
-        <div style={{
-          fontSize: '1.45rem', fontWeight: 800, letterSpacing: '0.06em',
-          textTransform: 'uppercase', textAlign: 'center', lineHeight: 1.1,
-          marginTop: 2,
-        }}>
-          {cityInfo.label}
-        </div>
-        <div style={{ fontSize: '0.58rem', fontWeight: 600, letterSpacing: '0.14em', marginTop: 8, opacity: 0.55 }}>
-          {today}
-        </div>
-        <div style={{ fontSize: '0.52rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', marginTop: 3, opacity: 0.4 }}>
-          Europe Tour 2026
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Variant 3 : Carte postale ──────────────────────────────────
-function PostcardAnim({ city, onDone }) {
-  const [leaving, setLeaving] = useState(false)
-  const cityInfo = CITY_SCHEDULE.find(c => c.city === city) ?? CITY_SCHEDULE[0]
-  const dateStr = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' })
-
-  useEffect(() => {
-    const t1 = setTimeout(() => setLeaving(true), 3600)
-    const t2 = setTimeout(onDone, 4500)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [onDone])
+  const from  = new Date(cityInfo.from)
+  const to    = new Date(cityInfo.to)
+  const nights = Math.round((to - from) / 86400000)
+  const toStr  = to.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 200,
-      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-      pointerEvents: 'none',
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: '#0f0d0b',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '0 24px',
     }}>
-      <div
-        onClick={onDone}
-        style={{
-          width: 'calc(100% - 32px)', maxWidth: 420,
-          marginBottom: 'calc(env(safe-area-inset-bottom, 0px) + 84px)',
-          background: '#faf5ed',
-          borderRadius: 20,
-          boxShadow: '0 24px 64px rgba(0,0,0,0.38), 0 4px 14px rgba(0,0,0,0.14)',
-          border: '1px solid rgba(184,168,136,0.35)',
-          padding: '20px 20px 18px',
-          animation: leaving
-            ? 'postcard-down 0.65s cubic-bezier(0.4,0,1,1) both'
-            : 'postcard-up 0.5s cubic-bezier(0.16,1,0.3,1) both',
-          pointerEvents: 'auto', cursor: 'pointer',
-        }}
-      >
-        {/* Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          paddingBottom: 13, marginBottom: 13,
-          borderBottom: '1px solid rgba(184,168,136,0.28)',
-        }}>
-          <span style={{ fontSize: '2.6rem', lineHeight: 1 }}>{cityInfo.flag}</span>
-          <div>
-            <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#9b8060', marginBottom: 2 }}>
-              Bienvenue à
-            </div>
-            <div style={{ fontSize: '1.55rem', fontWeight: 800, color: '#271808', letterSpacing: '-0.01em' }}>
-              {cityInfo.label}
-            </div>
-          </div>
-          {/* Faux timbre */}
-          <div style={{
-            marginLeft: 'auto', flexShrink: 0,
-            width: 54, height: 54, borderRadius: 8,
-            border: '2px solid rgba(184,168,136,0.45)',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(232,96,58,0.07)',
-            gap: 2,
-          }}>
-            <span style={{ fontSize: '1.5rem' }}>🚄</span>
-            <span style={{ fontSize: '0.45rem', fontWeight: 700, letterSpacing: '0.1em', color: '#b8a888', textTransform: 'uppercase' }}>Arrivée</span>
-          </div>
-        </div>
+      <style>{`
+        @keyframes aa-fade {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes aa-up {
+          from { opacity: 0; transform: translateY(18px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes aa-pop {
+          0%   { transform: scale(0) rotate(-18deg); opacity: 0; }
+          60%  { transform: scale(1.18) rotate(4deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes aa-line {
+          from { transform: scaleX(0); }
+          to   { transform: scaleX(1); }
+        }
+        @keyframes aa-glow {
+          0%, 100% { opacity: 0.45; }
+          50%      { opacity: 0.9; }
+        }
+        @keyframes aa-ring {
+          0%   { transform: scale(1); opacity: 0.6; }
+          100% { transform: scale(3); opacity: 0; }
+        }
+      `}</style>
 
-        {/* Corps */}
-        <p style={{ margin: '0 0 13px', fontSize: '0.88rem', color: '#4a3218', lineHeight: 1.65 }}>
-          Vous venez d'arriver !<br />
-          <span style={{ fontSize: '0.76rem', color: '#9b8060' }}>Bonne découverte et profitez bien du séjour.</span>
-        </p>
+      {/* Ambient glow */}
+      <div style={{
+        position: 'absolute', top: '38%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 340, height: 340, borderRadius: '50%',
+        background: 'rgba(232,160,48,0.07)',
+        filter: 'blur(64px)',
+        animation: 'aa-glow 3.5s ease-in-out 0.6s infinite',
+        pointerEvents: 'none',
+      }} />
 
-        {/* Footer */}
+      {/* Badge */}
+      <p style={{
+        fontSize: '0.65rem', fontWeight: 800,
+        letterSpacing: '0.24em', textTransform: 'uppercase',
+        color: 'rgba(232,160,48,0.65)', margin: '0 0 22px',
+        animation: 'aa-up 0.55s ease 0.2s both',
+      }}>
+        Arrivée
+      </p>
+
+      {/* Flag + pulse rings */}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
         <div style={{
-          paddingTop: 11, borderTop: '1px solid rgba(184,168,136,0.22)',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          position: 'absolute',
+          width: 80, height: 80, borderRadius: '50%',
+          border: '2px solid rgba(232,160,48,0.3)',
+          animation: 'aa-ring 2s ease-out 1.4s infinite',
+        }} />
+        <div style={{
+          position: 'absolute',
+          width: 80, height: 80, borderRadius: '50%',
+          border: '2px solid rgba(232,160,48,0.2)',
+          animation: 'aa-ring 2s ease-out 1.9s infinite',
+        }} />
+        <div style={{
+          fontSize: '5.5rem', lineHeight: 1,
+          animation: 'aa-pop 0.52s cubic-bezier(0.34,1.56,0.64,1) 0.55s both',
         }}>
-          <span style={{ fontSize: '0.63rem', color: '#c4b090', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            Europe Tour 2026
-          </span>
-          <span style={{ fontSize: '0.63rem', color: '#c4b090' }}>{dateStr}</span>
+          {cityInfo.flag}
         </div>
       </div>
+
+      {/* City name */}
+      <h1 style={{
+        fontSize: '2.9rem', fontWeight: 800,
+        color: 'rgba(255,255,255,0.93)',
+        margin: 0, letterSpacing: '-0.03em', textAlign: 'center',
+        animation: 'aa-up 0.55s ease 0.85s both',
+      }}>
+        {cityInfo.label}
+      </h1>
+
+      {/* Amber line */}
+      <div style={{
+        width: 72, height: 2, borderRadius: 1,
+        background: 'rgba(232,160,48,0.55)',
+        margin: '20px 0 0',
+        transformOrigin: 'left center',
+        animation: 'aa-line 0.45s ease 1.2s both',
+      }} />
+
+      {/* Stay info */}
+      <p style={{
+        fontSize: '0.88rem', color: 'rgba(255,255,255,0.38)',
+        margin: '14px 0 0', letterSpacing: '0.02em',
+        animation: 'aa-up 0.5s ease 1.45s both',
+      }}>
+        {nights} nuit{nights > 1 ? 's' : ''} · jusqu'au {toStr}
+      </p>
+
+      {/* CTA */}
+      <button
+        onClick={onDone}
+        style={{
+          marginTop: 40,
+          padding: '13px 36px', borderRadius: '24px',
+          background: 'rgba(232,160,48,0.14)',
+          border: '1.5px solid rgba(232,160,48,0.45)',
+          color: 'rgba(232,160,48,0.95)',
+          fontSize: '1rem', fontWeight: 700, cursor: 'pointer',
+          fontFamily: 'inherit', letterSpacing: '0.01em',
+          animation: 'aa-up 0.6s ease 2s both',
+        }}
+      >
+        C'est parti →
+      </button>
+
+      {/* Skip */}
+      <button
+        onClick={onDone}
+        style={{
+          position: 'absolute', top: 20, right: 20,
+          padding: '7px 16px', borderRadius: '14px',
+          background: 'rgba(255,255,255,0.07)', border: 'none',
+          color: 'rgba(255,255,255,0.32)', fontSize: '0.78rem',
+          cursor: 'pointer', fontFamily: 'inherit',
+          animation: 'aa-fade 0.5s ease 0.5s both',
+        }}
+      >
+        Passer
+      </button>
     </div>
   )
 }
 
 // ── Manager ────────────────────────────────────────────────────
 export default function ArrivalAnimManager() {
-  const [active, setActive] = useState(null) // null | { variant: 1|2|3, city: string }
+  const [activeCity, setActiveCity] = useState(null)
 
-  const trigger = useCallback((variant, city) => {
-    injectCss()
-    setActive({ variant, city: city ?? 'bruxelles' })
+  const trigger = useCallback((city) => {
+    setActiveCity(city ?? 'bruxelles')
   }, [])
 
-  const dismiss = useCallback(() => setActive(null), [])
+  const dismiss = useCallback(() => setActiveCity(null), [])
 
+  // Test hooks for admin panel
   useEffect(() => {
-    injectCss()
-    window.__testArrival1 = (city) => trigger(1, city ?? 'berlin')
-    window.__testArrival2 = (city) => trigger(2, city ?? 'berlin')
-    window.__testArrival3 = (city) => trigger(3, city ?? 'berlin')
-    return () => {
-      delete window.__testArrival1
-      delete window.__testArrival2
-      delete window.__testArrival3
-    }
+    window.__testArrival = (city) => trigger(city ?? 'berlin')
+    return () => { delete window.__testArrival }
   }, [trigger])
 
-  // Real trigger: fire at train arrival_time if not already shown today
+  // Real trigger: fires at train arrival_time, once per day
   useEffect(() => {
     let cancelled = false
     let timer = null
@@ -266,23 +181,24 @@ export default function ArrivalAnimManager() {
 
       const { data: trains } = await supabase
         .from('trains')
-        .select('arrival_time, date')
+        .select('arrival_time')
         .eq('date', today)
         .not('arrival_time', 'is', null)
         .limit(1)
 
       if (cancelled || !trains?.length) return
+
       const [h, m] = trains[0].arrival_time.split(':').map(Number)
       const arrivalMs = new Date().setHours(h, m, 0, 0)
       const delay = arrivalMs - Date.now()
 
-      // Find which city we arrive at today (city whose 'from' === today)
+      // City whose 'from' date is today = the city we're arriving in
       const arrivingCity = CITY_SCHEDULE.find(c => c.from === today)?.city ?? 'bruxelles'
 
       const fire = () => {
         if (cancelled) return
         localStorage.setItem(shownKey, '1')
-        trigger(1, arrivingCity)
+        trigger(arrivingCity)
       }
 
       if (delay <= 0) {
@@ -299,9 +215,6 @@ export default function ArrivalAnimManager() {
     }
   }, [trigger])
 
-  if (!active) return null
-  if (active.variant === 1) return <ConfettiAnim onDone={dismiss} />
-  if (active.variant === 2) return <StampAnim city={active.city} onDone={dismiss} />
-  if (active.variant === 3) return <PostcardAnim city={active.city} onDone={dismiss} />
-  return null
+  if (!activeCity) return null
+  return <ArrivalScreen city={activeCity} onDone={dismiss} />
 }
