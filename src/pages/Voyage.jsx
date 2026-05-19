@@ -20,6 +20,10 @@ const MEMBER_COLORS = ['#6b6560', '#4a90d9', '#3baa7a', '#e8a030', '#a78bfa']
 
 // ── Helpers ───────────────────────────────────────────────────
 
+function isFlight(train) {
+  return train.notes?.includes('✈️') ?? false
+}
+
 function getTrainStatuses(trains) {
   const today = new Date().toISOString().slice(0, 10)
   const upcoming = trains.filter(t => t.date >= today).sort((a, b) => a.date.localeCompare(b.date))
@@ -184,6 +188,7 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
     setUploading(false)
   }
 
+  const flight = isFlight(train)
   const accentColor = train.status === 'next' ? 'var(--sky)' : 'var(--text-primary)'
 
   return (
@@ -241,11 +246,18 @@ function TrainDetailSheet({ train, pdfs, isAdmin, onClose, onSaved }) {
 
             {/* Info grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-              {[
-                { icon: '🚉', label: 'Voie départ', val: train.platform_dep || '—' },
-                { icon: '🏁', label: 'Voie arrivée', val: train.platform_arr || '—' },
-                { icon: '🗓️', label: 'Date', val: fmtDate(train.date) },
-              ].map(({ icon, label, val }) => (
+              {(flight
+                ? [
+                    { icon: '✈️', label: 'Vol', val: train.train_number || '—' },
+                    { icon: '🛫', label: 'Départ', val: fmtTime(train.departure_time) },
+                    { icon: '🗓️', label: 'Date', val: fmtDate(train.date) },
+                  ]
+                : [
+                    { icon: '🚉', label: 'Voie départ', val: train.platform_dep || '—' },
+                    { icon: '🏁', label: 'Voie arrivée', val: train.platform_arr || '—' },
+                    { icon: '🗓️', label: 'Date', val: fmtDate(train.date) },
+                  ]
+              ).map(({ icon, label, val }) => (
                 <div key={label} style={{ background: 'rgba(26,23,20,0.04)', borderRadius: '14px', padding: '10px 8px', textAlign: 'center' }}>
                   <p style={{ fontSize: '1rem', margin: '0 0 4px' }}>{icon}</p>
                   <p style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', margin: '0 0 2px', fontWeight: 500 }}>{label}</p>
@@ -384,8 +396,18 @@ function DelayBadge({ s }) {
 
 // ── Train Card ────────────────────────────────────────────────
 
+function RouteArrow({ flight }) {
+  if (flight) return <span style={{ fontSize: '0.9rem' }}>✈️</span>
+  return (
+    <svg width="9" height="9" viewBox="0 0 24 24" fill="none">
+      <path d="M5 12h14M13 6l6 6-6 6" stroke="var(--text-tertiary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 function TrainCard({ train, onClick }) {
   const { dm, T } = useT()
+  const flight = isFlight(train)
   const status = useTrainStatus(train)
 
   if (train.status === 'past') {
@@ -429,7 +451,7 @@ function TrainCard({ train, onClick }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, marginRight: 8 }}>
               <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--sky)', flexShrink: 0 }} />
-              <p style={{ fontWeight: 700, fontSize: '0.72rem', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Prochain train · {fmtDate(train.date)}</p>
+              <p style={{ fontWeight: 700, fontSize: '0.72rem', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{flight ? 'Vol retour' : 'Prochain train'} · {fmtDate(train.date)}</p>
             </div>
             <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
               {train.train_number && (
@@ -450,9 +472,9 @@ function TrainCard({ train, onClick }) {
               <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sky)', flexShrink: 0 }} />
                 <div style={{ flex: 1, height: 1.5, background: 'rgba(74,144,217,0.25)', borderRadius: 2 }} />
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="var(--sky)" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                <RouteArrow flight={flight} />
               </div>
-              {train.platform_dep && <p style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', margin: 0 }}>Voie {train.platform_dep}</p>}
+              {!flight && train.platform_dep && <p style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', margin: 0 }}>Voie {train.platform_dep}</p>}
             </div>
             <div style={{ textAlign: 'right' }}>
               <p style={{ fontSize: '2.2rem', fontWeight: 800, lineHeight: 1, margin: 0, letterSpacing: '-0.03em' }}>{fmtTime(train.arrival_time)}</p>
@@ -492,9 +514,9 @@ function TrainCard({ train, onClick }) {
             <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 3 }}>
               <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(26,23,20,0.2)', flexShrink: 0 }} />
               <div style={{ flex: 1, height: 1, background: 'rgba(26,23,20,0.12)' }} />
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="var(--text-tertiary)" strokeWidth="2.5" strokeLinecap="round" /></svg>
+              <RouteArrow flight={flight} />
             </div>
-            {train.platform_dep && <p style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', margin: 0 }}>Voie {train.platform_dep}</p>}
+            {!flight && train.platform_dep && <p style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', margin: 0 }}>Voie {train.platform_dep}</p>}
           </div>
           <div style={{ textAlign: 'right', minWidth: 0 }}>
             <p style={{ fontWeight: 800, fontSize: '1.4rem', lineHeight: 1, margin: 0, letterSpacing: '-0.02em' }}>{fmtTime(train.arrival_time)}</p>
