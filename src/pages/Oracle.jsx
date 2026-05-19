@@ -344,9 +344,10 @@ export default function Oracle() {
       added_by:    user.id,
     })
 
+    if (error) console.error('[Oracle] insert error:', error)
     const cityLabel = CITY_LABELS[pendingActivity.city] ?? pendingActivity.city
     const feedback = error
-      ? 'Erreur lors de l\'ajout. Réessaie.'
+      ? `Erreur lors de l'ajout : ${error.message}`
       : `✅ **${pendingActivity.name}** ajouté au deck pour ${cityLabel} !`
 
     setMessages(prev => [...prev, { role: 'assistant', content: feedback }])
