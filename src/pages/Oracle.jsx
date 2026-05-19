@@ -339,8 +339,6 @@ export default function Oracle() {
       description: pendingActivity.description || null,
       category:    pendingActivity.category,
       price_eur:   pendingActivity.price_eur ?? null,
-      latitude:    pendingActivity.latitude  ?? null,
-      longitude:   pendingActivity.longitude ?? null,
       added_by:    user.id,
     })
 
