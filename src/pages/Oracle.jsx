@@ -270,7 +270,7 @@ export default function Oracle() {
       if (activitiesRes.data) setDeckActivities(activitiesRes.data)
       if (trainsRes.data)     setTrains(trainsRes.data)
       if (airbnbsRes.data)    setAirbnbs(airbnbsRes.data)
-    })
+    }).catch(err => console.error('[Oracle] context load failed:', err))
   }, [])
 
   // Auto-scroll on new content — scroll page to absolute bottom
@@ -348,6 +348,9 @@ export default function Oracle() {
       ? `Erreur lors de l'ajout : ${error.message}`
       : `✅ **${pendingActivity.name}** ajouté au deck pour ${cityLabel} !`
 
+    if (!error) {
+      setDeckActivities(prev => [...prev, { city: pendingActivity.city, name: pendingActivity.name }])
+    }
     setMessages(prev => [...prev, { role: 'assistant', content: feedback }])
     setPendingActivity(null)
     setConfirmLoading(false)
