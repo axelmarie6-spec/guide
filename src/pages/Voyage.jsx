@@ -61,7 +61,7 @@ function CopyChip({ label, value, last }) {
   )
 
   return (
-    <button onClick={() => { navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1800) }}
+    <button onClick={async () => { try { await navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch {} }}
       style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', ...border }}>
       <div style={{ flex: 1, minWidth: 0, paddingRight: 12 }}>
         <p style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 500, margin: '0 0 2px' }}>{label}</p>

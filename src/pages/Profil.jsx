@@ -398,9 +398,13 @@ function TravelPromptSection({ profile }) {
   const prompt = useMemo(() => buildPrompt(profile), [profile])
 
   async function copy() {
-    await navigator.clipboard.writeText(prompt)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2500)
+    try {
+      await navigator.clipboard.writeText(prompt)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    } catch {
+      // clipboard access denied or unavailable — do nothing
+    }
   }
 
   return (

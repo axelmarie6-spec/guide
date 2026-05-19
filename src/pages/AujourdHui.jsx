@@ -9,7 +9,10 @@ import { useT } from '../context/ThemeContext'
 import { useTrainStatus } from '../lib/trainStatus'
 
 const TRIP_START = new Date('2026-08-01T00:00:00')
-const TRIP_DAYS = 22
+// Derived from CITY_SCHEDULE so it stays in sync with the actual last day
+const TRIP_DAYS = Math.round(
+  (new Date(CITY_SCHEDULE.at(-1).to + 'T00:00:00') - TRIP_START) / 86400000
+) + 1
 const OWM_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
 const WEATHER_CACHE_KEY = 'weather_cache_v6'
 // OWM city query fallback (GPS denied)

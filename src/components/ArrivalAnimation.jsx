@@ -179,7 +179,7 @@ export default function ArrivalAnimManager() {
 
     async function schedule() {
       const today = new Date().toISOString().slice(0, 10)
-      const shownKey = `arrival_anim_shown_${today}`
+      const shownKey = `arrival_anim_shown_${user.id}_${today}`
       if (localStorage.getItem(shownKey)) return
 
       const { data: trains } = await supabase
@@ -200,7 +200,7 @@ export default function ArrivalAnimManager() {
 
       const fire = () => {
         if (cancelled) return
-        localStorage.setItem(shownKey, '1')
+        localStorage.setItem(`arrival_anim_shown_${user.id}_${today}`, '1')
         trigger(arrivingCity)
       }
 

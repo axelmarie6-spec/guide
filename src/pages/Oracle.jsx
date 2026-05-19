@@ -324,7 +324,9 @@ export default function Oracle() {
     }
     setStreamText('')
 
-    if (toolCall) setPendingActivity(toolCall)
+    if (toolCall?.name && toolCall?.description && toolCall?.category && toolCall?.city) {
+      setPendingActivity(toolCall)
+    }
 
     setStreaming(false)
   }
